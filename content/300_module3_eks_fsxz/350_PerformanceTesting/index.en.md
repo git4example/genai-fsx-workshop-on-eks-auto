@@ -1,6 +1,7 @@
 ---
 title : "Performance test with FIO and IOping"
 weight : 340
+hidden: true
 ---
 -------------------------------------------------------------
 

@@ -88,15 +88,15 @@ awsAccountConfig:
   # This role is assumed by Participants when accessing an account provisioned by Workshop Studio.
   participantRole:
     managedPolicies:
-      #- "arn:aws:iam::aws:policy/IAMFullAccess"
-      - "arn:aws:iam::aws:policy/AdministratorAccess"
-      #- "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-      #- "arn:aws:iam::aws:policy/AmazonFSxFullAccess"
-      #- "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
-      #- arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
-      #- arn:aws:iam::aws:policy/AmazonEC2FullAccess
-      #- arn:aws:iam::aws:policy/job-function/SystemAdministrator
-      #- arn:aws:iam::aws:policy/AWSCloud9Administrator
+      # - "arn:aws:iam::aws:policy/IAMFullAccess"
+      # - "arn:aws:iam::aws:policy/AdministratorAccess"
+      - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+      - "arn:aws:iam::aws:policy/AmazonFSxFullAccess"
+      - "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      - arn:aws:iam::aws:policy/AmazonEC2FullAccess
+      - arn:aws:iam::aws:policy/job-function/SystemAdministrator
+      - arn:aws:iam::aws:policy/AWSCloud9Administrator
 
 infrastructure:
   cloudformationTemplates:

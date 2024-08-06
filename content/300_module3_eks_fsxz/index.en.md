@@ -1,6 +1,7 @@
 ---
 title : "Module 3 - Using OpenZFS with Amazon EKS"
 weight : 300
+hidden: true
 ---
 -------------------------------------------------------------
 

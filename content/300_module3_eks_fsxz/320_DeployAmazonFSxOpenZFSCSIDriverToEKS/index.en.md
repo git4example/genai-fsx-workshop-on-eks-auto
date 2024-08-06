@@ -1,6 +1,7 @@
 ---
 title : "Deploy Amazon FSx for OpenZFS CSI Driver to EKS cluster"
 weight : 320
+hidden: true
 ---
 -------------------------------------------------------------
 
