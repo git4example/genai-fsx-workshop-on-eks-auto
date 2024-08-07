@@ -78,7 +78,7 @@ Parameters:
 
   eksBlueprint:
     Description: "S3 Bucket location for EKS blueprint"
-    Default: "https://ws-assets-prod-iad-r-dub-85e3be25bd827406.s3.eu-west-1.amazonaws.com/dcab7555-32fc-42d2-97e5-2b7a35cd008f/eks-blueprints-v1beta1.tf"
+    Default: "https://ws-assets-prod-iad-r-dub-85e3be25bd827406.s3.eu-west-1.amazonaws.com/dcab7555-32fc-42d2-97e5-2b7a35cd008f/eks-blueprints.tf"
     Type: String
 
 Conditions: 
