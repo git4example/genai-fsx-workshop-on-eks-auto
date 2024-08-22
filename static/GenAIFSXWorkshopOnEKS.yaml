@@ -32,11 +32,11 @@ Parameters:
     ConstraintDescription: Must be a valid kubectl version
   C9TerraformVersion:
     Type: String
-    Default: 1.7.1
+    Default: 1.9.3
     ConstraintDescription: Must be a valid terraform version
   C9NodeViewerVersion:
     Type: String
-    Default: v0.5.0
+    Default: v0.6.0
     ConstraintDescription: Must be a valid eks node viewer version
   C9ImageId:
     Description: ImageId for the Cloud9 instance
@@ -472,11 +472,11 @@ Resources:
             - !Sub sudo -H -u ec2-user aws s3 cp ${eksBlueprint} /home/ec2-user/environment/eksworkshop/main.tf
             - !Sub sed -i.bak -e 's/--AWS_REGION--/${AWS::Region}/' /home/ec2-user/environment/eksworkshop/main.tf
             - !Sub sed -i.bak -e 's/--EKS_VERSION--/${EKSClusterVersion}/' /home/ec2-user/environment/eksworkshop/main.tf              
-            - !Sub sed -i.bak -e 's/--AWS_ACCOUNT_ID--/${AWS::AccountId}/' /home/ec2-user/environment/eksworkshop/main.tf
+            # - !Sub sed -i.bak -e 's/--AWS_ACCOUNT_ID--/${AWS::AccountId}/' /home/ec2-user/environment/eksworkshop/main.tf
             - cd /home/ec2-user/environment/eksworkshop/
             - !Sub 'export CFN_RESPONSE_URL="${WaitForStackCreationHandle}"'
             - sudo -H -u ec2-user /usr/bin/terraform init
-            - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.vpc" -auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.vpc" -auto-approve 
             - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.eks" -auto-approve
             - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
             - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
