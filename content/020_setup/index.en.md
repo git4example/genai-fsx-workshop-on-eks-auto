@@ -1,9 +1,10 @@
 ---
 title : "Getting Started"
 weight : 10
+# hidden: true
 ---
 
-To start the workshop, follow one of the following depending on whether you are...
+Before we start the workshop, Lets first setup your environment. 
 
-::children
+<!-- ::children -->
 

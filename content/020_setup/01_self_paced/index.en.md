@@ -1,7 +1,7 @@
 ---
 title : "On Demand Workshop"
 weight : 10
-#hidden: false
+hidden: true
 ---
 -------------------------------------------------------------
 

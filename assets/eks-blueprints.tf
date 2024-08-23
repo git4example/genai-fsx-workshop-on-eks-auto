@@ -62,6 +62,7 @@ provider "kubectl" {
   token                  = data.aws_eks_cluster_auth.this.token
 }
 
+
 data "aws_eks_cluster_auth" "this" {
   name = module.eks.cluster_name
 }
@@ -94,6 +95,8 @@ locals {
     Blueprint = local.name
   }
 }
+
+
 
 ################################################################################
 # EKS Cluster

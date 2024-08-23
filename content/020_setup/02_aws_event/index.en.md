@@ -44,115 +44,8 @@ weight: 10
 
 Please select the appropriate region in the top right corner.
 
-## Connect to your environments via Cloud9 or Linux or Windows Management Box
+## Connect to your environments via Cloud9 
 
-:::alert{header="Important" type="warning"}
-**Please click on either Cloud9 or  Linux or Windows below for the method to access the workshop. We recommend you to choose Cloud9.**
-:::
-
-::::tabs{variant="container" activeTabId="cloud9"}
-:::tab{id="linux" label="Linux"}
-You can access your Linux management box via two ways:
-
-### Option A. Download the SSH key from the event engine and access from SSH client
-
-- On the bottom left, click on **Get EC2 SSH Key**, next click **Download Key pair**
-
-![Workshop Studio](/static/images/account_access.png)
-
-![Access Page](/static/images/ssh_key.png)
-
-- It will then download a `ws-default-keypair.pem` SSH key file to your users downloads folder (the downloaded file will also be shown at the bottom of the Chrome screen for reference).
-- Navigate to the [EC2 console](https://console.aws.amazon.com/ec2), click on instances on the left, Select "Workshop Linux Instance 1", and Copy down the Public IPv4 address from the AWS Console for your Instance (Ensure your region is `lab-region`)
-
-- Open your SSH client, and connect the EC2 instance
-
-```bash
-ssh -i ws-default-keypair.pem ec2-user@ip-address
-```
-
-- Logon as root user
-
-```bash
-sudo -i
-```
-
-### Option B. Use System Manager Session Manager to connect to your Linux instance terminal
-
-- Find the EC2 Instance for Linux Management Box from the AWS Console, and click "Connect" (Ensure your region is the right region of your lab)
-
-  ![LinuxConnect](/static/images/Linux02.png)
-
-- Click "Connect" at the `Session Manager` Tab
-
-  ![SessionManager](/static/images/Linux03.png)
-
-- Switch to the root user
-
-```bash
-sudo -i
-```
-
-:::
-
-:::tab{id="windows" label="Windows"}
-Firstly let’s retrieve the Windows administrator password from AWS Secrets
-Manager
-
-- From **your workstation** navigate to your AWS console session, from the top search bar in the AWS console, type and select **Secrets Manager**.
-
-- Click on the value shown under **Secret name** (i.e. AdminSecret-abczxy).
-
-- Scroll down the page and click on **Retrieve secret value** under Secret Value.
-
-![AdminSecret](/static/images/AdminSecret.png)
-
-![Retrive](/static/images/Retrive.png)
-
-- Copy and paste the password value shown for **Secret key value** into a notepad file.
-
-- Next let’s connect to your Windows Server EC2 instance.
-
-- From the AWS console and top search bar, type and & select **EC2**.
-
-- From the left-hand menu, select **Instances**.
-
-- In the right-hand pane, select the box next to **Workshop Windows instance 1**, then right click and select **Connect**.
-
-- Click on The RDP Client tab, then **Download Remote Desktop File**.
-
-- Open the downloaded Remote Desktop File and select Connect at the prompt.
-- Enter the credentials below and click on OK.
-
-| Username | Password |
-| :------: | :-------:|
-| Administrator | the value you obtained from Secrets manager |
-
-- You have now successfully logged into your Windows workshop instance.
-- Open Visual Studio Code -> File -> Open Folder, and choose the folder `eks-fsx-workshop` in the Desktop.
-
-![VSD01](/static/images/vsc01.png)
-![VSD02](/static/images/vsc02.png)
-
-- Open `Visual Studio Code`, press `Ctrl+Shift+P`, and type in `select default profile`, then choose `Git Bash` as the default one.
-![VS04](/static/images/VS04.png)
-![VS05](/static/images/VS05.png)
-
-- Open `Visual Studio Code` -> Terminal -> New Terminal or Open `cmd` from your Windows Workshop Instance, and run the following command, replace  with your `lab region name`.
-![VSD03](/static/images/vsc03.png)
-
-
-- You should be able to see `Git Bash` as your terminal
-  
-![VS06](/static/images/VS06.png)
-
-::alert[It is important to run as Git Bash in this workshop, as majority of the command in the workshop are not powershell, but bash based.]{header="Important" type="warning"}
-
-::alert[All remaining tasks for the workshop will be performed through the Remote Desktop Session to the Windows EC2 Instance you just connected to in the previous steps.]
-
-:::
-
-:::tab{id="cloud9" label="Cloud9"}
 
 ::alert[Note that you should be logging as eks-fsx-workshop-admin mentioned above. If you are not, please follow the instruction of Log Into AWS Console.]
 
@@ -185,7 +78,6 @@ Expected Output look like this, Do not to confuse with command prompt `WSPartici
 
 ![Cloud9_Terminal](/static/images/Cloud9-Terminal.png)
 
-::::
 
 - Replace `<region name>` with your lab region name as shared by your workshop operator. 
 
