@@ -476,9 +476,9 @@ Resources:
             - cd /home/ec2-user/environment/eksworkshop/
             - !Sub 'export CFN_RESPONSE_URL="${WaitForStackCreationHandle}"'
             - sudo -H -u ec2-user /usr/bin/terraform init
-            - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.vpc" -auto-approve 
-            - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.eks" -auto-approve
-            - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
+            # - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.vpc" -auto-approve 
+            # - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.eks" -auto-approve
+            # - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
             - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
             - |
               curl -X PUT -H 'Content-Type:' --data-binary '{"Status" : "SUCCESS","Reason" : "Creation Complete", "UniqueId" : "1","Data" : "Creation complete"}' $CFN_RESPONSE_URL
