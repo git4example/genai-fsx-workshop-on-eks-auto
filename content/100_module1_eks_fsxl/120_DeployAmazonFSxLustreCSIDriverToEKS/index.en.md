@@ -35,24 +35,9 @@ echo $CLUSTER_NAME_2
 
 1. Go to the right working directory.
 
-::::tabs{variant="container" activeTabId="cloud9"}
-:::tab{id="linux" label="Linux"}
-
-::code[cd /eks-fsx-workshop/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
-:::
-:::tab{id="windows" label="Windows"}
-
-::code[cd /c/Users/Administrator/Desktop/eks-fsx-workshop/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
-
-You should be in the current working directory as shown in the below screenshot
-![windows_FSxL](/static/images/Windows_FSxL.png)
-
-:::
-:::tab{id="cloud9" label="Cloud9"}
 
 ::code[cd /home/ec2-user/environment/eks-fsx-workshop/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
-:::
-::::
+
 
 The below steps will guide you to set the environmental variables, create a service account, create and attach an IAM policy and deploy the CSI driver for Amazon FSx for Lustre.
 

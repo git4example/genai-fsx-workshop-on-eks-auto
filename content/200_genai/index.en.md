@@ -1,5 +1,5 @@
 ---
-title : "Dynamicly Provision FSxL"
+title : "Deploy GenAI chatbot"
 weight : 100
 ---
 -------------------------------------------------------------
