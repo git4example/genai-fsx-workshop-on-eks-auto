@@ -1,6 +1,6 @@
 ---
 title : "Replicate the data between the regions for Amazon EKS cluster"
-weight : 160
+weight : 330
 ---
 -------------------------------------------------------------
 
