@@ -32,7 +32,7 @@ Parameters:
     ConstraintDescription: Must be a valid kubectl version
   C9TerraformVersion:
     Type: String
-    Default: 1.9.3
+    Default: 1.9.5
     ConstraintDescription: Must be a valid terraform version
   C9NodeViewerVersion:
     Type: String
@@ -45,22 +45,22 @@ Parameters:
   EKSClusterVersion:
     Description: EKS Cluster Version
     Type: String
-    Default: 1.30
+    Default: "1.30"
     ConstraintDescription: Must be a valid eks version
   EKSClusterName:
     Description: EKS Cluster Name
     Type: String
     Default: eksworkshop
     ConstraintDescription: Must be a valid eks version
-  ArmInstanceType:
-    Description: Instance type for the Arm-64 instance
-    Type: String
-    Default: t4g.micro
-  AMIArm:
-    Description: AMI ID for the Arm Architecture instance types
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-kernel-5.10-hvm-arm64-gp2
-  #Used only by Workshop Studio, if you are self-deploying the stack leave the default value to NONE
+  # ArmInstanceType:
+  #   Description: Instance type for the Arm-64 instance
+  #   Type: String
+  #   Default: t4g.micro
+  # AMIArm:
+  #   Description: AMI ID for the Arm Architecture instance types
+  #   Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+  #   Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-kernel-5.10-hvm-arm64-gp2
+  # Used only by Workshop Studio, if you are self-deploying the stack leave the default value to NONE
   ParticipantRoleArn:
     Description: "ARN of the Team Role"
     Default: NONE
@@ -467,11 +467,12 @@ Resources:
             - sudo yum -y install terraform-${TERRAFORM_VERSION} 
             - terraform -v
             - echo '=== Create EKS Cluster ==='
+            - !Sub echo 'EKS Cluster version - ${EKSClusterVersion} will be created in region ${AWS::Region}'
             - sudo -H -u ec2-user mkdir -p /home/ec2-user/environment/eksworkshop/
             # - !Sub sudo -H -u ec2-user curl --silent --location -o /home/ec2-user/environment/eksworkshop/main.tf "${eksBlueprint}"
             - !Sub sudo -H -u ec2-user aws s3 cp ${eksBlueprint} /home/ec2-user/environment/eksworkshop/main.tf
             - !Sub sed -i.bak -e 's/--AWS_REGION--/${AWS::Region}/' /home/ec2-user/environment/eksworkshop/main.tf
-            - !Sub sed -i.bak -e 's/--EKS_VERSION--/${EKSClusterVersion}/' /home/ec2-user/environment/eksworkshop/main.tf              
+            - !Sub sed -i.bak -e 's/--EKS_VERSION--/${EKSClusterVersion}/' /home/ec2-user/environment/eksworkshop/main.tf
             # - !Sub sed -i.bak -e 's/--AWS_ACCOUNT_ID--/${AWS::AccountId}/' /home/ec2-user/environment/eksworkshop/main.tf
             - cd /home/ec2-user/environment/eksworkshop/
             - !Sub 'export CFN_RESPONSE_URL="${WaitForStackCreationHandle}"'
@@ -568,28 +569,28 @@ Resources:
       Roles:
         - Ref: InstanceRole  
 
-  ArmInstance: 
-    Type: AWS::EC2::Instance
-    Properties: 
-      ImageId: !Ref AMIArm
-      InstanceType: !Ref ArmInstanceType
-      IamInstanceProfile: !Ref InstanceProfile
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash
+  # ArmInstance: 
+  #   Type: AWS::EC2::Instance
+  #   Properties: 
+  #     ImageId: !Ref AMIArm
+  #     InstanceType: !Ref ArmInstanceType
+  #     IamInstanceProfile: !Ref InstanceProfile
+  #     UserData:
+  #       Fn::Base64: !Sub |
+  #         #!/bin/bash
           
-          adduser -m ssm-user
-          tee /etc/sudoers.d/ssm-agent-users <<'EOF'          
-          ssm-user ALL=(ALL) NOPASSWD:ALL
-          EOF
-          chmod 440 /etc/sudoers.d/ssm-agent-users 
+  #         adduser -m ssm-user
+  #         tee /etc/sudoers.d/ssm-agent-users <<'EOF'          
+  #         ssm-user ALL=(ALL) NOPASSWD:ALL
+  #         EOF
+  #         chmod 440 /etc/sudoers.d/ssm-agent-users 
 
-          yum install -y docker
-          systemctl start docker
-          usermod -a -G docker ssm-user
-      Tags:
-        - Key: Name
-          Value: "ArmBuildServer"
+  #         yum install -y docker
+  #         systemctl start docker
+  #         usermod -a -G docker ssm-user
+  #     Tags:
+  #       - Key: Name
+  #         Value: "ArmBuildServer"
 
 Outputs:
   Cloud9IDE:
