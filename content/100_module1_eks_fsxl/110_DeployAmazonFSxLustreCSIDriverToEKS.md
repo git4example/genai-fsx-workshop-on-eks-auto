@@ -1,6 +1,6 @@
 ---
 title : "Deploy Amazon FSx for Lustre CSI Driver to EKS cluster"
-weight : 120
+weight : 110
 ---
 -------------------------------------------------------------
 
@@ -16,15 +16,13 @@ Below steps to ensure that you are operating from the right AWS region and in th
 - Check if region and cluster names are set correctly, if not then follow one of the suitable page for your situation under **[Getting Started ](/020-setup)** to setup these variables. 
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
-echo $REGION_1
-echo $REGION_2
-echo $CLUSTER_NAME_1
-echo $CLUSTER_NAME_2
+echo $AWS_REGION
+echo $CLUSTER_NAME
 :::
 
 - Next update kubeconfig file to point it to EKS cluster in that region.
 
-::code[aws eks update-kubeconfig --name $CLUSTER_NAME_1 --region $REGION_1]{language=bash showLineNumbers=false showCopyAction=true}
+::code[aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION]{language=bash showLineNumbers=false showCopyAction=true}
 
 - Run kubectl command to confirm your access to the EKS cluster
 
@@ -36,7 +34,7 @@ echo $CLUSTER_NAME_2
 1. Go to the right working directory.
 
 
-::code[cd /home/ec2-user/environment/eks-fsx-workshop/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
+::code[cd /home/ec2-user/environment/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 The below steps will guide you to set the environmental variables, create a service account, create and attach an IAM policy and deploy the CSI driver for Amazon FSx for Lustre.
@@ -47,12 +45,11 @@ Copy and paste the following lines in the CLI.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
-CLUSTER_NAME_1="FSx-eks-cluster"
-VPC_ID=$(aws eks describe-cluster --name $CLUSTER_NAME_1 --region $REGION_1 --query "cluster.resourcesVpcConfig.vpcId" --output text)
-SUBNET_ID=$(aws eks describe-cluster --name $CLUSTER_NAME_1 --region $REGION_1 --query "cluster.resourcesVpcConfig.subnetIds[0]" --output text)
-SECURITY_GROUP_ID=$(aws cloudformation describe-stacks --stack-name FSxL-SecurityGroup-01 --region $REGION_1 --query "Stacks[0].Outputs[0].OutputValue" --output text)  
-S3_BUCKET=$(aws s3 ls | grep fsx-luster-bucket | grep -v fsx-luster-bucket-2ndregion | awk '{print$3}')
-S3_BUCKET_2NDREGION=$(aws s3 ls | grep fsx-luster-bucket-2ndregion | awk '{print$3}')
+VPC_ID=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION --query "cluster.resourcesVpcConfig.vpcId" --output text)
+SUBNET_ID=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION --query "cluster.resourcesVpcConfig.subnetIds[0]" --output text)
+SECURITY_GROUP_ID=$(aws ec2 describe-security-groups --filters Name=vpc-id,Values=${VPC_ID} Name=group-name,Values="FSxLSecurityGroup01"  --query "SecurityGroups[*].GroupId" --output text)  
+S3_BUCKET=$(aws s3 ls | grep fsx-lustre | grep -v fsx-lustre-2ndregion | awk '{print$3}')
+S3_BUCKET_2NDREGION=$(aws s3 ls | grep fsx-lustre-2ndregion | awk '{print$3}')
 :::
 
 :::alert{header="Note" type="info"}
@@ -126,10 +123,10 @@ Copy and run the below command to create the service account and attach the IAM 
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 eksctl create iamserviceaccount \
-    --region $REGION_1 \
+    --region $AWS_REGION \
     --name fsx-csi-controller-sa \
     --namespace kube-system \
-    --cluster $CLUSTER_NAME_1 \
+    --cluster $CLUSTER_NAME \
     --attach-policy-arn arn:aws:iam::$ACCOUNT_ID:policy/Amazon_FSx_Lustre_CSI_Driver \
     --approve
 :::
@@ -149,7 +146,7 @@ eksctl create iamserviceaccount \
 
 Copy and run the below command to save the role ARN.
 
-::code[export ROLE_ARN=$(aws cloudformation describe-stacks --stack-name "eksctl-${CLUSTER_NAME_1}-addon-iamserviceaccount-kube-system-fsx-csi-controller-sa" --query "Stacks[0].Outputs[0].OutputValue"  --region $REGION_1 --output text)]{language=bash showLineNumbers=false showCopyAction=true}
+::code[export ROLE_ARN=$(aws cloudformation describe-stacks --stack-name "eksctl-${CLUSTER_NAME}-addon-iamserviceaccount-kube-system-fsx-csi-controller-sa" --query "Stacks[0].Outputs[0].OutputValue"  --region $AWS_REGION --output text)]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 ### Step 6: Deploy the CSI driver of FSx for Lustre

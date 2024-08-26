@@ -1,6 +1,6 @@
 ---
 title : "Replicate the data between the regions for Amazon EKS cluster"
-weight : 330
+weight : 340
 ---
 -------------------------------------------------------------
 
@@ -75,7 +75,7 @@ Copy and run the below command to login to the container
 
 ::code[kubectl exec -it fsx-app -- bash]{language=bash showLineNumbers=false showCopyAction=true}
 
-Archive the data from the FSx for Luster file system into the linked S3 bucket. Run the below commands to manually export the file to the linked S3 bucket
+Archive the data from the FSx for Lustre file system into the linked S3 bucket. Run the below commands to manually export the file to the linked S3 bucket
 
 ::alert[lfs is a helper utility to administrate lustre cluster]
 

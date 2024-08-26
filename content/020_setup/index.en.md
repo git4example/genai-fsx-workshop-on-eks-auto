@@ -59,6 +59,7 @@ Please select the appropriate region in the top right corner.
  ![Cloud9_02](/static/images/Cloud9_02.png)
 
 
+### Validate the IAM role {#validate_iam}
 
 - In most cases, Cloud9 manages IAM credentials dynamically, however this currently not compatible with the Amazon EKS IAM authentication, so we will disable it and rely on an AWS IAM role instead. To do so, run the following commands in the Cloud9 workspace:
 
@@ -66,8 +67,6 @@ Please select the appropriate region in the top right corner.
 aws cloud9 update-environment --environment-id ${C9_PID} --managed-credentials-action DISABLE
 rm -vf ${HOME}/.aws/credentials
 ```
-
-### Validate the IAM role {#validate_iam}
 
 Use the [GetCallerIdentity](https://docs.aws.amazon.com/cli/latest/reference/sts/get-caller-identity.html) CLI command to validate that the Cloud9 IDE is using the correct IAM role.
 
@@ -77,40 +76,47 @@ aws sts get-caller-identity
 
 The output assumed-role name should look like the following:
 
-![Cloud9_Terminal](/static/images/Cloud9-Terminal.png)
+![Cloud9_Terminal](/static/images/Cloud9-Terminal-correct.png)
 
+If you see incorrect output like below example, please run above command to fix credentials:
+
+![Cloud9_Terminal](/static/images/Cloud9-Terminal-incorrect.png)
 
 - Set lab region name as configured by your workshop operator. 
 
 :::code[]{language=bash showLineNumbers=false showCopyAction=true}
 TOKEN=`curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` 
-export REGION_1=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
+export AWS_REGION=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
 :::
-
-::code[export REGION_2=us-east-2]{language=bash showLineNumbers=false showCopyAction=true}
 
 - Set cluster variables : 
 
-::code[export CLUSTER_NAME_1=eksworkshop]{language=bash showLineNumbers=false showCopyAction=true}
+::code[export CLUSTER_NAME=eksworkshop]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 - Check if region and cluster names are set correctly
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
-echo $REGION_1
-echo $REGION_2
-echo $CLUSTER_NAME_1
+echo $AWS_REGION
+echo $CLUSTER_NAME
 :::
 
-- Next update kubeconfig file to point it to EKS cluster in that region.
+## Update the kube-config file:
+Before you can start running all the commands included in this workshop, you need to update the kube-config file with the proper credentials to access the cluster. To do so, in your Cloud9 workspace run the following command:
 
-::code[aws eks update-kubeconfig --name $CLUSTER_NAME_1 --region $REGION_1]{language=bash showLineNumbers=false showCopyAction=true}
+::code[aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION]{language=bash showLineNumbers=false showCopyAction=true}
 
-- Run kubectl command to confirm your access to the EKS cluster.
+
+## Test the cluster:
+Run the command below to see the Kubernetes nodes currently provisioned:
 
 ::code[kubectl get nodes]{language=bash showLineNumbers=false showCopyAction=true}
 
+You should see two nodes provisioned (which are the on-demand nodes used by the Kubernetes controllers), such as the output below:
+
+
 ![get-nodes](/static/images/get-nodes.png)
+
 
 :::alert{header="Important" type="warning"}
 
@@ -130,7 +136,8 @@ expand section below to run command to clear managed credentials.
 Delete credentials file
 
 ```bash
-rm -f  ~/.aws/credentials 
+aws cloud9 update-environment --environment-id ${C9_PID} --managed-credentials-action DISABLE
+rm -vf ${HOME}/.aws/credentials
 ```
 
 Check once again to see you are using `eks-fsx-workshop-admin` role: 
@@ -141,7 +148,6 @@ kubectl get nodes
 ::::
 
 
-
-You may now proceed with the next step.
+You now have a Cloud9 environment set-up ready to use your Amazon EKS Cluster! You may now proceed with the next step.
 
 

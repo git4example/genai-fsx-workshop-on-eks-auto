@@ -1,6 +1,6 @@
 ---
 title : "Performance test with FIO and IOping"
-weight : 310
+weight : 320
 ---
 -------------------------------------------------------------
 
@@ -49,7 +49,7 @@ Copy and run the below command to provision the pod
 ::code[kubectl apply -f pod_performance.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 :::alert{header="Important" type="info"}
-Check the status of the pod, wait until it is up and running, normally it takes upto 1 minute. If your pod remains in pending for longer and pod events shows message like below, this means that FSx Luster filesystem is yet to be created. 
+Check the status of the pod, wait until it is up and running, normally it takes upto 1 minute. If your pod remains in pending for longer and pod events shows message like below, this means that FSx Lustre filesystem is yet to be created. 
 
 PVC `fsx-lustre-claim` should be in pending status, wait for upto 15 mins. Pod should transision to running once PVC `fsx-lustre-claim` is in bound status.
 

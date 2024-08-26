@@ -75,3 +75,5 @@ infrastructure:
           defaultValue: "{{.ParticipantAssumedRoleArn}}"
         - templateParameter: eksBlueprint
           defaultValue: "s3://{{.AssetsBucketName}}/{{.AssetsBucketPrefix}}eks-blueprints.tf"
+        - templateParameter: eksAssets
+          defaultValue: "s3://{{.AssetsBucketName}}/{{.AssetsBucketPrefix}}FSxL"

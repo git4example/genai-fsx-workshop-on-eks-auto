@@ -11,30 +11,6 @@ The Amazon EKS cluster was created with [**Terraform**](https://www.terraform.io
 
 **EKS Blueprints for Terraform** helps you compose complete EKS clusters that are fully bootstrapped with the operational software that is needed to deploy and operate workloads. With EKS Blueprints, you describe the configuration for the desired state of your EKS environment, such as the control plane, worker nodes, and Kubernetes add-ons, as an IaC blueprint. Once a blueprint is configured, you can use it to stamp out consistent environments across multiple AWS accounts and Regions using continuous deployment automation.
 
-## Update the kube-config file:
-Before you can start running all the commands included in this workshop, you need to update the kube-config file with the proper credentials to access the cluster. To do so, in your Cloud9 workspace run the following command:
-
-```bash
-aws eks update-kubeconfig --region ${AWS_REGION} --name eksworkshop
-```
-
-## Test the cluster:
-Run the command below to see the Kubernetes nodes currently provisioned:
-
-```bash
-kubectl get nodes 
-```
-
-You should see two nodes provisioned (which are the on-demand nodes used by the Kubernetes controllers), such as the output below:
-
-```
-NAME                                         STATUS   ROLES    AGE    VERSION
-ip-10-0-108-225.us-west-2.compute.internal   Ready    <none>   162m   v1.28.3-eks-e71965b
-ip-10-0-32-110.us-west-2.compute.internal    Ready    <none>   162m   v1.28.3-eks-e71965b
-```
-
-You now have a Cloud9 environment set-up ready to use your Amazon EKS Cluster!
-
 :::alert{header="Important" type="info"}
 Explore the Amazon Elastic Kubernetes Service (Amazon EKS) section in the AWS Console and the properties of the newly created Amazon EKS cluster.
 :::
@@ -55,8 +31,8 @@ kubectl -n karpenter get deploy/karpenter -o yaml
 
 Inspecting the output for the Karpenter controller Pod you can see the following environment variables set:
 
-* `CLUSTER_ENDPOINT` is the external Kubernetes cluster endpoint for new nodes to connect with, if the endpoint is not specified, nodes will discover the cluster endpoint using DescribeCluster API.
-* `INTERRUPTION_QUEUE` is the endpoint to the SQS queue created as part of the EKS Terraform blueprint. This SQS queue is used to hold Spot interruption notifications and AWS Health events.
+* *CLUSTER_ENDPOINT* is the external Kubernetes cluster endpoint for new nodes to connect with, if the endpoint is not specified, nodes will discover the cluster endpoint using DescribeCluster API.
+* *INTERRUPTION_QUEUE* is the endpoint to the SQS queue created as part of the EKS Terraform blueprint. This SQS queue is used to hold Spot interruption notifications and AWS Health events.
 
 Checkout the [Karpenter documentation](https://karpenter.sh/docs/reference/settings/) for information on the other configuration options.
 

@@ -78,7 +78,12 @@ Parameters:
 
   eksBlueprint:
     Description: "S3 Bucket location for EKS blueprint"
-    Default: "https://ws-assets-prod-iad-r-dub-85e3be25bd827406.s3.eu-west-1.amazonaws.com/dcab7555-32fc-42d2-97e5-2b7a35cd008f/eks-blueprints.tf"
+    # Default: "s3://ws-event-064e131b-cd4-ap-southeast-2/17e62541-8ca1-47a6-8b79-c48000056abe/assets/eks-blueprints.tf"
+    Type: String
+  
+  eksAssets:
+    Description: "S3 Bucket location for EKS Assets"
+    # Default: "s3://ws-event-064e131b-cd4-ap-southeast-2/17e62541-8ca1-47a6-8b79-c48000056abe/assets/FSxL"
     Type: String
 
 Conditions: 
@@ -466,11 +471,21 @@ Resources:
             - !Sub 'export TERRAFORM_VERSION=${C9TerraformVersion}'
             - sudo yum -y install terraform-${TERRAFORM_VERSION} 
             - terraform -v
+            - echo "=== Install eksctl ==="
+            - export ARCH=amd64
+            - export PLATFORM=$(uname -s)_$ARCH
+            - curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
+            - sudo tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp && rm -f eksctl_$PLATFORM.tar.gz
+            - sudo mv /tmp/eksctl /usr/local/bin
+            - echo "eksctl version"
+            - eksctl version
             - echo '=== Create EKS Cluster ==='
             - !Sub echo 'EKS Cluster version - ${EKSClusterVersion} will be created in region ${AWS::Region}'
             - sudo -H -u ec2-user mkdir -p /home/ec2-user/environment/eksworkshop/
+            - sudo -H -u ec2-user mkdir -p /home/ec2-user/environment/FSxL/
             # - !Sub sudo -H -u ec2-user curl --silent --location -o /home/ec2-user/environment/eksworkshop/main.tf "${eksBlueprint}"
             - !Sub sudo -H -u ec2-user aws s3 cp ${eksBlueprint} /home/ec2-user/environment/eksworkshop/main.tf
+            - sudo -H -u ec2-user aws s3 sync ${eksAssets} /home/ec2-user/environment/FSxL/ --delete
             - !Sub sed -i.bak -e 's/--AWS_REGION--/${AWS::Region}/' /home/ec2-user/environment/eksworkshop/main.tf
             - !Sub sed -i.bak -e 's/--EKS_VERSION--/${EKSClusterVersion}/' /home/ec2-user/environment/eksworkshop/main.tf
             # - !Sub sed -i.bak -e 's/--AWS_ACCOUNT_ID--/${AWS::AccountId}/' /home/ec2-user/environment/eksworkshop/main.tf

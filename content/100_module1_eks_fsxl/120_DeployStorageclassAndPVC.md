@@ -1,6 +1,6 @@
 ---
 title : "Deploy storage class and persistent volume claim"
-weight : 130
+weight : 120
 ---
 -------------------------------------------------------------
 In this section you will define the storageclass variables and create the storageclass for Amazon FSx for Lustre. Later you will create the persistent volume claim (PVC) and deploy the storage class. Observe the FSx for lustre file system is being auto provisioned. Kindly follow the below steps.
@@ -18,7 +18,7 @@ echo $S3_BUCKET
 
 1. Go to the right working directory.
 
-::code[cd /home/ec2-user/environment/eks-fsx-workshop/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
+::code[cd /home/ec2-user/environment/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 We are going to replace `SUBNET_ID`, `SECURITY_GROUP_ID` and `S3_BUCKET` in `fsxL-storage-class.yaml` next.

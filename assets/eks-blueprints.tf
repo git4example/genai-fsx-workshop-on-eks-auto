@@ -318,7 +318,7 @@ resource "random_string" "random" {
 
 
 # Region 1 Bucket
-module "fsx-luster-bucket" {
+module "fsx-lustre-bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "4.1.2"
   force_destroy = true
@@ -327,11 +327,11 @@ module "fsx-luster-bucket" {
     aws = aws.region1
   }
 
-  bucket_prefix="fsx-luster-${random_string.random.id}"
+  bucket_prefix="fsx-lustre-${random_string.random.id}"
 }
 
 # Region 2 Bucket
-module "fsx-luster-bucket-2ndregion" {
+module "fsx-lustre-bucket-2ndregion" {
   source  = "terraform-aws-modules/s3-bucket/aws"
   version = "4.1.2" 
   force_destroy = true
@@ -340,7 +340,7 @@ module "fsx-luster-bucket-2ndregion" {
     aws = aws.region2
   }
 
-  bucket_prefix="fsx-luster-2ndregion-${random_string.random.id}"
+  bucket_prefix="fsx-lustre-2ndregion-${random_string.random.id}"
 }
 
 ## S3 Cross region replication Role :
@@ -379,7 +379,7 @@ resource "aws_iam_policy" "s3-cross-region-replication-policy" {
       ],
       "Effect": "Allow",
       "Resource": [
-        "arn:aws:s3:::${module.fsx-luster-bucket.s3_bucket_id}"
+        "arn:aws:s3:::${module.fsx-lustre-bucket.s3_bucket_id}"
       ]
     },
     {
@@ -391,7 +391,7 @@ resource "aws_iam_policy" "s3-cross-region-replication-policy" {
       ],
       "Effect": "Allow",
       "Resource": [
-        "arn:aws:s3:::${module.fsx-luster-bucket.s3_bucket_id}/*"
+        "arn:aws:s3:::${module.fsx-lustre-bucket.s3_bucket_id}/*"
       ]
     },
     {
@@ -401,7 +401,7 @@ resource "aws_iam_policy" "s3-cross-region-replication-policy" {
         "s3:ReplicateTags"
       ],
       "Effect": "Allow",
-      "Resource": "arn:aws:s3:::${module.fsx-luster-bucket-2ndregion.s3_bucket_id}/*"
+      "Resource": "arn:aws:s3:::${module.fsx-lustre-bucket-2ndregion.s3_bucket_id}/*"
     }
   ]
 }

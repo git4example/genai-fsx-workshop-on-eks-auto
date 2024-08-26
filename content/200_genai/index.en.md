@@ -1,6 +1,6 @@
 ---
 title : "Deploy GenAI model and chatbot"
-weight : 100
+weight : 200
 ---
 -------------------------------------------------------------
 
