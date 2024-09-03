@@ -78,13 +78,13 @@ data "aws_availability_zones" "available" {
 
 data "aws_caller_identity" "current" {}
 
-# data "aws_region" "current" {}
-
 locals {
   name   = "eksworkshop"
   region = "--AWS_REGION--"
+  # region = "us-west-1"
 
   cluster_version = "--EKS_VERSION--"
+  # cluster_version = "1.30"
 
   vpc_cidr = "10.0.0.0/16"
   # azs      = slice(data.aws_availability_zones.available.names, 0, length(data.aws_availability_zones.available.names))
@@ -196,26 +196,173 @@ module "eks_blueprints_addons" {
 
   create_delay_dependencies = [for prof in module.eks.eks_managed_node_groups : prof.node_group_arn]
 
+  #---------------------------------------
+  # metrics server for EKS Cluster
+  #---------------------------------------
   enable_metrics_server = true
 
+  #---------------------------------------
+  # ebs csi driver for EKS Cluster
+  #---------------------------------------
   eks_addons = {
     aws-ebs-csi-driver = {
       service_account_role_arn = module.ebs_csi_driver_irsa.iam_role_arn
     }
   }
 
+  #---------------------------------------
+  # Karpenter Autoscaler for EKS Cluster
+  #---------------------------------------
   enable_karpenter = true
+  karpenter_enable_spot_termination          = true
+  karpenter_enable_instance_profile_creation = true
   karpenter = {
+    chart_version       = "1.0.1"     # https://gallery.ecr.aws/karpenter/karpenter
     repository_username = data.aws_ecrpublic_authorization_token.token.user_name
     repository_password = data.aws_ecrpublic_authorization_token.token.password
   }
-  karpenter_enable_spot_termination          = true
-  karpenter_enable_instance_profile_creation = true
+ 
   karpenter_node = {
     iam_role_use_name_prefix = false
+    iam_role_additional_policies = {
+      AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+    }
   }
+
+  #---------------------------------------
+  # AWS Load Balancer Controller Add-on
+  #---------------------------------------
+  enable_aws_load_balancer_controller = true
+  # turn off the mutating webhook for services because if you are using
+  # service.beta.kubernetes.io/aws-load-balancer-type: external
+  # aws_load_balancer_controller = {
+  #   set = [{
+  #     name  = "enableServiceMutatorWebhook"
+  #     value = "false"
+  #   }]
+  # }
+
+## fsx CSI driver can be installed here in fugure as needed.
+  # enable_aws_fsx_csi_driver = true
+  # aws_fsx_csi_driver = {
+  #   namespace     = "aws-fsx-csi-driver"
+  #   chart_version = "1.6.0"
+  #   role_policies = <ADDITIONAL_IAM_POLICY_ARN>
+  # }
+
+  #---------------------------------------
+  # Prommetheus and Grafana stack
+  #---------------------------------------
+  #---------------------------------------------------------------
+  # 1- Grafana port-forward `kubectl port-forward svc/kube-prometheus-stack-grafana 8080:80 -n kube-prometheus-stack`
+  # 2- Grafana Admin user: admin
+  # 3- Get sexret name from Terrafrom output: `terraform output grafana_secret_name`
+  # 3- Get admin user password: `aws secretsmanager get-secret-value --secret-id <REPLACE_WIRTH_SECRET_ID> --region $AWS_REGION --query "SecretString" --output text`
+  #---------------------------------------------------------------
+  enable_kube_prometheus_stack = true
+  kube_prometheus_stack = {
+    values = [
+      templatefile("${path.module}/helm-values/kube-prometheus.yaml", {
+        storage_class_type = kubernetes_storage_class.default_gp3.id
+      })
+    ]
+    chart_version = "48.1.1"
+    set_sensitive = [
+      {
+        name  = "grafana.adminPassword"
+        value = data.aws_secretsmanager_secret_version.admin_password_version.secret_string
+      }
+    ],
+  }
+
   tags = local.tags
 }
+
+#---------------------------------------------------------------
+# Grafana Admin credentials resources
+# Login to AWS secrets manager with the same role as Terraform to extract the Grafana admin password with the secret name as "grafana"
+#---------------------------------------------------------------
+data "aws_secretsmanager_secret_version" "admin_password_version" {
+  secret_id  = aws_secretsmanager_secret.grafana.id
+  depends_on = [aws_secretsmanager_secret_version.grafana]
+}
+
+resource "random_password" "grafana" {
+  length           = 16
+  special          = true
+  override_special = "@_"
+}
+
+#tfsec:ignore:aws-ssm-secret-use-customer-key
+resource "aws_secretsmanager_secret" "grafana" {
+  name_prefix             = "${local.name}-oss-grafana"
+  recovery_window_in_days = 0 # Set to zero for this example to force delete during Terraform destroy
+}
+
+resource "aws_secretsmanager_secret_version" "grafana" {
+  secret_id     = aws_secretsmanager_secret.grafana.id
+  secret_string = random_password.grafana.result
+}
+
+#---------------------------------------------------------------
+# Data on EKS Kubernetes Addons
+#---------------------------------------------------------------
+module "data_addons" {
+  source  = "aws-ia/eks-data-addons/aws"
+  version = ">= 1.33.0" # ensure to update this to the latest/desired version
+
+  oidc_provider_arn = module.eks.oidc_provider_arn
+
+  #---------------------------------------------------------------
+  # Neuron and NVIDIA Device Plugin Add-on
+  #---------------------------------------------------------------
+  enable_aws_neuron_device_plugin  = true
+  enable_nvidia_device_plugin = true
+  nvidia_device_plugin_helm_config = {
+    version =  "v0.16.1"
+    name    = "nvidia-device-plugin"
+    values  = [file("${path.module}/helm-values/nvidia-values.yaml")]
+  }
+
+
+#---------------------------------------------------------------
+# GP3 Encrypted Storage Class
+#---------------------------------------------------------------
+resource "kubernetes_annotations" "disable_gp2" {
+  annotations = {
+    "storageclass.kubernetes.io/is-default-class" : "false"
+  }
+  api_version = "storage.k8s.io/v1"
+  kind        = "StorageClass"
+  metadata {
+    name = "gp2"
+  }
+  force = true
+
+  depends_on = [module.eks]
+}
+
+resource "kubernetes_storage_class" "default_gp3" {
+  metadata {
+    name = "gp3"
+    annotations = {
+      "storageclass.kubernetes.io/is-default-class" : "true"
+    }
+  }
+
+  storage_provisioner    = "ebs.csi.aws.com"
+  reclaim_policy         = "Delete"
+  allow_volume_expansion = true
+  volume_binding_mode    = "WaitForFirstConsumer"
+  parameters = {
+    fsType    = "ext4"
+    encrypted = true
+    type      = "gp3"
+  }
+
+  depends_on = [kubernetes_annotations.disable_gp2]
+}
+
 
 
 resource "aws_eks_access_entry" "karpenter_node_access_entry" {
@@ -242,22 +389,6 @@ module "ebs_csi_driver_irsa" {
   }
 
   tags = local.tags
-}
-
-module "eks_blueprints_addons_load_balancer_controller" {
-  source  = "aws-ia/eks-blueprints-addons/aws"
-  version = ">= 1.16.3"
-
-  cluster_name      = module.eks.cluster_name
-  cluster_endpoint  = module.eks.cluster_endpoint
-  cluster_version   = module.eks.cluster_version
-  oidc_provider_arn = module.eks.oidc_provider_arn
-
-  enable_aws_load_balancer_controller = true
-
-  tags = local.tags
-
-  depends_on = [module.eks_blueprints_addons]
 }
 
 ################################################################################

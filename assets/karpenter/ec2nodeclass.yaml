@@ -1,0 +1,24 @@
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: inferentia
+spec:
+  amiFamily: AL2
+  amiSelectorTerms:
+   - id : ${GPU_AMI_ID}
+  blockDeviceMappings:
+    - deviceName: /dev/xvda
+      ebs:
+        deleteOnTermination: true
+        volumeSize: 100Gi
+        volumeType: gp3
+  role: "Karpenter-eksworkshop" 
+  subnetSelectorTerms:          
+    - tags:
+        karpenter.sh/discovery: "eksworkshop"
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: "eksworkshop"
+  tags:
+    intent: apps
+    managed-by: karpenter

@@ -81,8 +81,8 @@ Parameters:
     # Default: "s3://ws-event-064e131b-cd4-ap-southeast-2/17e62541-8ca1-47a6-8b79-c48000056abe/assets/eks-blueprints.tf"
     Type: String
   
-  eksAssets:
-    Description: "S3 Bucket location for EKS Assets"
+  Assets:
+    Description: "S3 Bucket location for Assets"
     # Default: "s3://ws-event-064e131b-cd4-ap-southeast-2/17e62541-8ca1-47a6-8b79-c48000056abe/assets/FSxL"
     Type: String
 
@@ -484,8 +484,8 @@ Resources:
             - sudo -H -u ec2-user mkdir -p /home/ec2-user/environment/eksworkshop/
             - sudo -H -u ec2-user mkdir -p /home/ec2-user/environment/eks/
             # - !Sub sudo -H -u ec2-user curl --silent --location -o /home/ec2-user/environment/eksworkshop/main.tf "${eksBlueprint}"
-            - !Sub sudo -H -u ec2-user aws s3 cp ${eksBlueprint} /home/ec2-user/environment/eksworkshop/main.tf
-            - sudo -H -u ec2-user aws s3 sync ${eksAssets} /home/ec2-user/environment/eks/ --delete
+            # - !Sub sudo -H -u ec2-user aws s3 cp ${eksBlueprint} /home/ec2-user/environment/eksworkshop/main.tf
+            - sudo -H -u ec2-user aws s3 sync ${Assets} /home/ec2-user/environment/ --delete
             - !Sub sed -i.bak -e 's/--AWS_REGION--/${AWS::Region}/' /home/ec2-user/environment/eksworkshop/main.tf
             - !Sub sed -i.bak -e 's/--EKS_VERSION--/${EKSClusterVersion}/' /home/ec2-user/environment/eksworkshop/main.tf
             # - !Sub sed -i.bak -e 's/--AWS_ACCOUNT_ID--/${AWS::AccountId}/' /home/ec2-user/environment/eksworkshop/main.tf
