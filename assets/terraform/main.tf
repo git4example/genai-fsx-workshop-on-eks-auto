@@ -323,7 +323,7 @@ module "data_addons" {
     name    = "nvidia-device-plugin"
     values  = [file("${path.module}/helm-values/nvidia-values.yaml")]
   }
-
+}
 
 #---------------------------------------------------------------
 # GP3 Encrypted Storage Class
