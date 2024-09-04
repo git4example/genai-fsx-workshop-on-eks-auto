@@ -1,115 +1,70 @@
-# ##
-# ## https://github.com/awslabs/mountpoint-s3-csi-driver/tree/main/examples/kubernetes/static_provisioning
-# ---
-# apiVersion: v1
-# kind: PersistentVolume
-# metadata:
-#   name: s3-pv
-# spec:
-#   capacity:
-#     storage: 1200Gi # ignored, required
-#   accessModes:
-#     - ReadWriteMany # supported options: ReadWriteMany / ReadOnlyMany
-#   mountOptions:
-#     - uid=1000
-#     - gid=2000
-#     - allow-other
-#     - allow-delete
-#     - region us-west-2
-#   csi:
-#     driver: s3.csi.aws.com # required
-#     volumeHandle: s3-csi-driver-volume
-#     volumeAttributes:
-#       bucketName: eht-eks-data
-# ---
-# apiVersion: v1
-# kind: PersistentVolumeClaim
-# metadata:
-#   name: s3-claim
-#   namespace: default
-# spec:
-#   accessModes:
-#     - ReadWriteMany # supported options: ReadWriteMany / ReadOnlyMany
-#   storageClassName: "" # required for static provisioning
-#   resources:
-#     requests:
-#       storage: 1200Gi # ignored, required
-#   volumeName: s3-pv
-# ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mistral-deployment
+  name: vllm-mistral-inf2-deployment
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mistral-server
+      app: vllm-mistral-inf2-server
   template:
     metadata:
       labels:
-        app: mistral-server
+        app: vllm-mistral-inf2-server
     spec:
-      nodeSelector:
-        karpenter.sh/nodepool: "inferentia"
+      initContainers:
+      - name: install
+        image: public.ecr.aws/u3r1l1j7/eks-genai:neuronrayvllm-100G
+        command:
+        - huggingface-cli
+        - download
+        - "enghwa/neuron-mistral7bv0.2"
+        - "--local-dir"
+        - "/work-dir/Mistral-7B-Instruct-v0.2"
+        volumeMounts:
+        - name: workdir
+          mountPath: "/work-dir"
       containers:
       - name: inference-server
-        # image: ghcr.io/huggingface/text-generation-inference:2.0.3
-        image:  public.ecr.aws/u3r1l1j7/eks-genai:mistral-inst-v0.3-7b-8k-2-1
+        image: public.ecr.aws/u3r1l1j7/eks-genai:neuronrayvllm-100G
         resources:
           requests:
-            # cpu: "2"
-            # memory: "7Gi"
-            #ephemeral-storage: "20Gi"
             aws.amazon.com/neuron: 1
           limits:
-            #cpu: "2"
-              # memory: "7Gi"
-              #ephemeral-storage: "20Gi"
             aws.amazon.com/neuron: 1
-        args:             #https://huggingface.co/docs/text-generation-inference/en/basic_tutorials/launcher
-        - --model-id=$(MODEL_ID)
-        - --num-shard=1
-        - --trust-remote-code
-        - --max-total-tokens=8192
+        args:
+        - --model=$(MODEL_ID)
+        - --enforce-eager
+        - --gpu-memory-utilization=0.96
+        - --device=neuron
+        - --max-num-seqs=4
+        - --tensor-parallel-size=2
+        - --max-model-len=10240
+        - --served-model-name=mistralai/Mistral-7B-Instruct-v0.2-neuron
         env:
         - name: MODEL_ID
-          value: /data/Mistral-7B-Instruct-v0.3-neuron-8k-2_1/
-        # #   value: "/a"
-        # - name: FLASH_DECODING
-        #   value: "1"
-        # - name: PORT
-        #   value: "8000"
-        # - name: HUGGING_FACE_HUB_TOKEN
-        #   valueFrom:
-        #     secretKeyRef:
-        #       name: hf-secret
-        #       key: hf_api_token
-      #   volumeMounts:
-      #     - mountPath: /a
-      #       name: s3-storage
-      # volumes:
-      #   - hostPath:
-      #       path: /var/log/a
-      #       type: DirectoryOrCreate
-      #     name: hf-data
-      #   - name: s3-storage
-      #     persistentVolumeClaim:
-      #       claimName: s3-claim
+          value: /work-dir/Mistral-7B-Instruct-v0.2/
+        - name: NEURON_COMPILE_CACHE_URL
+          value: /work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
+        - name: PORT
+          value: "8000"
+        volumeMounts:
+        - name: workdir
+          mountPath: "/work-dir"
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+      - name: workdir
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: mistral-service
-  annotations:
-    service.beta.kubernetes.io/aws-load-balancer-type: external
-    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
+  name: vllm-mistral7b--service
 spec:
   selector:
-    app: mistral-server
-  type: LoadBalancer
-  externalTrafficPolicy: Local
+    app: vllm-mistral-inf2-server
   ports:
   - protocol: TCP
     port: 80

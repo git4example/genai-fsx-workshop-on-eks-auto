@@ -12,20 +12,6 @@ spec:
       labels:
         app: vllm-mistral-inf2-server
     spec:
-      nodeSelector:
-        karpenter.sh/nodepool: "inferentia"
-      initContainers:
-      - name: install
-        image: public.ecr.aws/u3r1l1j7/eks-genai:neuronrayvllm-100G
-        command:
-        - huggingface-cli
-        - download
-        - "enghwa/neuron-mistral7bv0.2"
-        - "--local-dir"
-        - "/work-dir/Mistral-7B-Instruct-v0.2"
-        volumeMounts:
-        - name: workdir
-          mountPath: "/work-dir"
       containers:
       - name: inference-server
         image: public.ecr.aws/u3r1l1j7/eks-genai:neuronrayvllm-100G
@@ -51,14 +37,15 @@ spec:
         - name: PORT
           value: "8000"
         volumeMounts:
-        - name: workdir
+        - name: persistent-storage
           mountPath: "/work-dir"
       volumes:
       - name: dshm
         emptyDir:
           medium: Memory
-      - name: workdir
-        emptyDir: {}
+      - name: persistent-storage
+        persistentVolumeClaim:
+          claimName: fsx-lustre-claim
 ---
 apiVersion: v1
 kind: Service

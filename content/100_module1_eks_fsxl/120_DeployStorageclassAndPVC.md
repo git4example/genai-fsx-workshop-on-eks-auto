@@ -18,7 +18,7 @@ echo $S3_BUCKET
 
 1. Go to the right working directory.
 
-::code[cd /home/ec2-user/environment/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
+::code[cd /home/ec2-user/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 We are going to replace `SUBNET_ID`, `SECURITY_GROUP_ID` and `S3_BUCKET` in `fsxL-storage-class.yaml` next.

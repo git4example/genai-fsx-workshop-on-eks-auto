@@ -34,7 +34,7 @@ echo $CLUSTER_NAME
 1. Go to the right working directory.
 
 
-::code[cd /home/ec2-user/environment/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
+::code[cd /home/ec2-user/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 The below steps will guide you to set the environmental variables, create a service account, create and attach an IAM policy and deploy the CSI driver for Amazon FSx for Lustre.
