@@ -53,3 +53,8 @@ Check object sizes on bucket
 ```bash
 aws s3 ls s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20 --recursive --human-readable --summarize
 ```
+
+
+- Deploy EKS Job with FSxL PVC to provision FSxL and then deploy pod to pull model on the S3 bucket
+- This job should be successfully download model. Once this is successful then we can use this FSxL bucket to be mounted in Mistral pod in next module
+- Ask Eng Hwa to install huggingface_hub[hf_transfer] in his container to help pull model faster

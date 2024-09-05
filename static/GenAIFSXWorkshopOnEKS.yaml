@@ -487,6 +487,7 @@ Resources:
             # - sudo -H -u ec2-user mkdir -p /home/ec2-user/environment/eks/
             # - !Sub sudo -H -u ec2-user curl --silent --location -o /home/ec2-user/environment/eksworkshop/main.tf "${eksBlueprint}"
             # - !Sub sudo -H -u ec2-user aws s3 cp ${eksBlueprint} /home/ec2-user/environment/eksworkshop/main.tf
+             - !Sub 'echo "Assets Bucket : ${Assets}"'
             - sudo -H -u ec2-user aws s3 sync ${Assets}eks /home/ec2-user/environment/eks --delete
             - sudo -H -u ec2-user aws s3 sync ${Assets}karpenter /home/ec2-user/environment/karpenter --delete
             - sudo -H -u ec2-user aws s3 sync ${Assets}terraform /home/ec2-user/environment/terraform --delete
