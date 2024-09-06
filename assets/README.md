@@ -22,14 +22,14 @@ DOWNLOAD MODEL
 Simple download : 
 ```bash
 pip install -U "huggingface_hub[cli]"
-huggingface-cli download "enghwa/neuron-mistral7bv0.2" --local-dir <your directory>
+huggingface-cli download "enghwa/neuron-mistral7bv0.2" --local-dir Mistral-7B-Instruct-v0.2
 ```
 
 Faster download : 
 ```bash
-pip install huggingface_hub[hf_transfer] # Faster download 
+pip install huggingface_hub[hf_transfer] 
 export HF_HUB_ENABLE_HF_TRANSFER=1     
-huggingface-cli download "enghwa/neuron-mistral7bv0.2" --local-dir <your directory>
+huggingface-cli download "enghwa/neuron-mistral7bv0.2" --local-dir Mistral-7B-Instruct-v0.2
 ```
 OR 
 
@@ -52,6 +52,35 @@ aws ec2 modify-volume --volume-id $C9VOLUME --size 100
 Check object sizes on bucket
 ```bash
 aws s3 ls s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20 --recursive --human-readable --summarize
+```
+
+
+
+Shortcuts 
+
+```bash
+alias k=kubectl
+alias ka="kubectl apply -f "
+alias kc="kubectl create "
+alias ke="kubectl exec -it "
+alias kg="kubectl get "
+alias kgn="kubectl get node -o=custom-columns='Name:.metadata.name,InternalIP:.status.addresses[?(@.type==\"InternalIP\")].address,ExternalIP:.status.addresses[?(@.type==\"ExternalIP\")].address,ID:.spec.providerID'"
+alias kd="kubectl describe "
+alias kr="kubectl replace --force -f "
+alias kdel="kubectl delete "
+alias kex="kubectl explain --recursive "
+alias ks="kubectl -n kube-system "
+alias ksg="kubectl -n kube-system get "
+alias ksd="kubectl -n kube-system describe "
+alias kconf="k config set-context $(k config current-context) --namespace "
+alias kconfv="k config view"
+alias ktest="k run -it netshoot --image=nicolaka/netshoot /bin/bash"
+export dry="-o=yaml --dry-run=client"
+export w="-o=wide"
+export y="-o=yaml"
+export j="-o=json"
+export l="--show-labels"
+export c="-o=custom-columns"
 ```
 
 

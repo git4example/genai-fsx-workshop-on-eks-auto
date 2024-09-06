@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download-mistral
+spec:
+  template:
+    metadata:
+      labels:
+        app: download-mistral
+    spec:
+      containers:
+      - name: download
+        image: public.ecr.aws/u3r1l1j7/eks-genai:neuronrayvllm-100G
+        command:
+        - huggingface-cli
+        - download
+        - "enghwa/neuron-mistral7bv0.2"
+        - "--local-dir"
+        - "/work-dir/Mistral-7B-Instruct-v0.2"
+        volumeMounts:
+        - name: persistent-storage
+          mountPath: "/work-dir"
+      volumes:
+      - name: persistent-storage
+        persistentVolumeClaim:
+          claimName: fsx-lustre-claim
