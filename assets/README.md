@@ -17,13 +17,14 @@ aws s3 sync s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/karpen
 aws s3 sync s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/terraform /home/ec2-user/environment/terraform --delete
 ```
 
-DOWNLOAD MODEL
+## DOWNLOAD MODEL
 
 Simple download : 
 ```bash
 pip install -U "huggingface_hub[cli]"
 huggingface-cli download "enghwa/neuron-mistral7bv0.2" --local-dir Mistral-7B-Instruct-v0.2
 ```
+OR 
 
 Faster download : 
 ```bash
@@ -39,6 +40,17 @@ sudo yum install git-lfs
 git lfs install
 git clone https://huggingface.co/enghwa/neuron-mistral7bv0.2
 ```
+
+## UPLOAD MODEL to S3
+
+```bash
+go install github.com/peak/s5cmd/v2@master
+
+```
+
+
+
+
 
 To modify volume : 
 ```bash
