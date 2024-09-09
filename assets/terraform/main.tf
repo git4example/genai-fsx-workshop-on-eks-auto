@@ -148,6 +148,7 @@ module "eks" {
   }
 
   vpc_id     = module.vpc.vpc_id
+  # subnet_ids = module.vpc.public_subnets
   subnet_ids = module.vpc.private_subnets
 
   create_cloudwatch_log_group   = false
@@ -565,12 +566,12 @@ resource "aws_vpc_security_group_ingress_rule" "allow988" {
   to_port           = 988
 }
 
-resource "aws_vpc_security_group_ingress_rule" "allow1021-23" {
+resource "aws_vpc_security_group_ingress_rule" "allow1018-23" {
   provider    = aws.region1
   description = "Allows Lustre traffic between FSx for Lustre file servers"
   security_group_id = aws_security_group.FSxLSecurityGroup01.id
   cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 1021
+  from_port         = 1018
   ip_protocol       = "tcp"
   to_port           = 1023
 }

@@ -12,5 +12,6 @@ parameters:
     autoImportPolicy: NEW_CHANGED_DELETED
     deploymentType: PERSISTENT_1
     perUnitStorageThroughput: "50"
+    fileSystemTypeVersion: "2.15"
 mountOptions:
     - flock

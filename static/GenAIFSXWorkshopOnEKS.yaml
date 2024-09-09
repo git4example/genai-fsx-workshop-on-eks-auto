@@ -427,7 +427,7 @@ Resources:
                 --instance-id $INSTANCEID \
                 --query "Reservations[0].Instances[0].BlockDeviceMappings[0].Ebs.VolumeId" \
                 --output text --region $AWS_REGION)
-              aws ec2 modify-volume --volume-id $VOLUMEID --size $SIZE --region $AWS_REGION
+              aws ec2 modify-volume --volume-id $VOLUMEID --size $SIZE --volume-type gp3 --region $AWS_REGION
               while [ \
                 "$(aws ec2 describe-volumes-modifications \
                   --volume-id $VOLUMEID \
@@ -502,20 +502,20 @@ Resources:
             - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
             - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
             #Install huggingface-cli and download model
-            - sudo -H -u ec2-user echo "Install huggingface-cli and download model"
-            - sudo -H -u ec2-user echo "Starting model download @ `date`"
-            - sudo -H -u ec2-user pip install -U "huggingface_hub[cli]"
-            - sudo -H -u ec2-user pip install huggingface_hub[hf_transfer] 
-            - sudo -H -u ec2-user export HF_HUB_ENABLE_HF_TRANSFER=1  
-            - sudo -H -u ec2-user /usr/local/bin/huggingface-cli download "enghwa/neuron-mistral7bv0.2" --local-dir Mistral-7B-Instruct-v0.2
-            - sudo -H -u ec2-user echo "End model download @ `date`"
+            # - sudo -H -u ec2-user echo "Install huggingface-cli and download model"
+            # - sudo -H -u ec2-user echo "Starting model download @ `date`"
+            # - sudo -H pip install -U "huggingface_hub[cli]"
+            # - sudo -H pip install -U huggingface_hub[hf_transfer] 
+            # - sudo -H -u ec2-user export HF_HUB_ENABLE_HF_TRANSFER=1  
+            # - sudo -H -u ec2-user /usr/local/bin/huggingface-cli download "enghwa/neuron-mistral7bv0.2" --local-dir Mistral-7B-Instruct-v0.2
+            # - sudo -H -u ec2-user echo "End model download @ `date`"
             #Install c5cmd and push model to S3
-            - sudo -H -u ec2-user echo "Install c5cmd and push model to S3"
-            - sudo -H -u ec2-user echo "Starting model upload @ `date`"
-            - sudo -H -u ec2-user export S3_BUCKET=$(aws s3 ls | grep fsx-lustre | grep -v fsx-lustre-2ndregion | awk '{print$3}')
-            - sudo -H -u ec2-user go install github.com/peak/s5cmd/v2@master
-            - sudo -H -u ec2-user /home/ec2-user/go/bin/s5cmd cp /home/ec2-user/environment/Mistral-7B-Instruct-v0.2/ s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2/
-            - sudo -H -u ec2-user echo "End model upload @ `date`"
+            # - sudo -H -u ec2-user echo "Install c5cmd and push model to S3"
+            # - sudo -H -u ec2-user echo "Starting model upload @ `date`"
+            # - sudo -H -u ec2-user export S3_BUCKET=$(aws s3 ls | grep fsx-lustre | grep -v fsx-lustre-2ndregion | awk '{print$3}')
+            # - sudo -H -u ec2-user go install github.com/peak/s5cmd/v2@master
+            # - sudo -H -u ec2-user /home/ec2-user/go/bin/s5cmd cp /home/ec2-user/environment/Mistral-7B-Instruct-v0.2/ s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2/
+            # - sudo -H -u ec2-user echo "End model upload @ `date`"
             # - sudo -H -u ec2-user export S3_BUCKET=$(aws s3 ls | grep fsx-lustre | grep -v fsx-lustre-2ndregion | awk '{print$3}')
             # - sudo -H -u ec2-user aws s3 sync ${Assets}neuron-mistral7bv0.2 s3://${S3_BUCKET}/neuron-mistral7bv0.2 --delete
             - |

@@ -153,7 +153,7 @@ Copy and run the below command to save the role ARN.
 
 Copy and the run the following command to deploy the CSI driver.
 
-::code[kubectl apply -k "github.com/kubernetes-sigs/aws-fsx-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.1"]{language=bash showLineNumbers=false showCopyAction=true}
+::code[kubectl apply -k "github.com/kubernetes-sigs/aws-fsx-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.2"]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 Verify whether the CSI driver has been installed successfully with the following command.

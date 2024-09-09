@@ -12,7 +12,17 @@ spec:
       labels:
         app: vllm-mistral-inf2-server
     spec:
+      tolerations:
+      - key: "aws.amazon.com/neuron"
+        operator: "Exists"
+        effect: "NoSchedule"
       containers:
+      - name: netshoot
+        image: nicolaka/netshoot
+        command: ["sleep","infinity"]
+        volumeMounts:
+        - name: persistent-storage
+          mountPath: "/work-dir"
       - name: inference-server
         image: public.ecr.aws/u3r1l1j7/eks-genai:neuronrayvllm-100G
         resources:
@@ -31,9 +41,9 @@ spec:
         - --served-model-name=mistralai/Mistral-7B-Instruct-v0.2-neuron
         env:
         - name: MODEL_ID
-          value: /work-dir/Mistral-7B-Instruct-v0.2/
+          value: /work-dir/work-dir/Mistral-7B-Instruct-v0.2/
         - name: NEURON_COMPILE_CACHE_URL
-          value: /work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
+          value: /work-dir/work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
         - name: PORT
           value: "8000"
         volumeMounts:
