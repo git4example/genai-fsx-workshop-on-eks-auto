@@ -15,48 +15,30 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: download-upload-mistral
+  name: download-mistral
 spec:  
   template:
     metadata:
       labels:
-        app: download-upload-mistral
+        app: download-mistral
     spec:
       serviceAccountName: s3-upload
       nodeSelector:
         karpenter.sh/nodepool: download
       restartPolicy: OnFailure
-      initContainers:
-      - name: download
-        image: public.ecr.aws/parikshit/huggingface-cli 
-        command:
-        - huggingface-cli
-        - download
-        - "enghwa/neuron-mistral7bv0.2"
-        - "--local-dir"
-        - "/work-dir/Mistral-7B-Instruct-v0.2"
-        volumeMounts:
-        - name: workdir
-          mountPath: "/work-dir"
       containers:
-      - name: upload
-        image: public.ecr.aws/parikshit/s5cmd
+      - name: download
+        image: hello2parikshit/s5cmd
         args:
         - sync 
-        - /work-dir 
         - s3://$S3_BUCKET/
+        - /work-di/Mistral-7B-Instruct-v0.2
         volumeMounts:
         - name: workdir
           mountPath: "/work-dir"
       volumes:
       - name: workdir
-        emptyDir: {}
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: s3-upload
-  namespace: default
-  annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::$ACCOUNT_ID:role/AmazonEKS_S3_Upload
+        hostPath:
+          path: /work-dir
+          type: DirectoryOrCreate 
 #EOF

@@ -200,7 +200,7 @@ spec:
         image: hello2parikshit/s5cmd
         args:
         - sync 
-        - /work-dir 
+        - /work-dir/Mistral-7B-Instruct-v0.2
         - s3://$S3_BUCKET/
         volumeMounts:
         - name: workdir
@@ -229,3 +229,16 @@ download-upload-mistral-lt2qw    1/1     Running           0          3m41s
 download-upload-mistral-lt2qw    0/1     Completed         0          6m14s
 ```
 
+# 2nd Run finished in 10 mins
+```bash
+WSParticipantRole:~/environment/eks/download $ kg po -w
+NAME                             READY   STATUS    RESTARTS   AGE
+download-upload-mistral-x5gnz    0/1     Pending   0          3s
+kube-ops-view-5d9d967b77-nx7hv   1/1     Running   0          10m
+download-upload-mistral-x5gnz    0/1     Pending   0          30s
+download-upload-mistral-x5gnz    0/1     Init:0/1   0          30s
+download-upload-mistral-x5gnz    0/1     Init:0/1   0          38s
+download-upload-mistral-x5gnz    0/1     PodInitializing   0          7m45s
+download-upload-mistral-x5gnz    1/1     Running           0          7m50s
+download-upload-mistral-x5gnz    0/1     Completed         0          10m
+```

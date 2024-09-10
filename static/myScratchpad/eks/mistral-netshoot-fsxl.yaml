@@ -12,21 +12,19 @@ spec:
       labels:
         app: vllm-mistral-inf2-server
     spec:
-      initContainers:
-      - name: install
-        image: public.ecr.aws/u3r1l1j7/eks-genai:neuronrayvllm-100G
-        command:
-        - huggingface-cli
-        - download
-        - "enghwa/neuron-mistral7bv0.2"
-        - "--local-dir"
-        - "/work-dir/Mistral-7B-Instruct-v0.2"
-        volumeMounts:
-        - name: workdir
-          mountPath: "/work-dir"
+      tolerations:
+      - key: "aws.amazon.com/neuron"
+        operator: "Exists"
+        effect: "NoSchedule"
       containers:
+      - name: netshoot
+        image: nicolaka/netshoot
+        command: ["sleep","infinity"]
+        volumeMounts:
+        - name: persistent-storage
+          mountPath: "/work-dir"
       - name: inference-server
-        image: public.ecr.aws/u3r1l1j7/eks-genai:neuronrayvllm-100G
+        image: public.ecr.aws/u3r1l1j7/eks-genai:neuronrayvllm-100G-root
         resources:
           requests:
             aws.amazon.com/neuron: 1
@@ -43,25 +41,26 @@ spec:
         - --served-model-name=mistralai/Mistral-7B-Instruct-v0.2-neuron
         env:
         - name: MODEL_ID
-          value: /work-dir/Mistral-7B-Instruct-v0.2/
+          value: /work-dir/work-dir/Mistral-7B-Instruct-v0.2/
         - name: NEURON_COMPILE_CACHE_URL
-          value: /work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
+          value: /work-dir/work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
         - name: PORT
           value: "8000"
         volumeMounts:
-        - name: workdir
+        - name: persistent-storage
           mountPath: "/work-dir"
       volumes:
       - name: dshm
         emptyDir:
           medium: Memory
-      - name: workdir
-        emptyDir: {}
+      - name: persistent-storage
+        persistentVolumeClaim:
+          claimName: fsx-lustre-claim
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: vllm-mistral7b--service
+  name: vllm-mistral7b-service
 spec:
   selector:
     app: vllm-mistral-inf2-server

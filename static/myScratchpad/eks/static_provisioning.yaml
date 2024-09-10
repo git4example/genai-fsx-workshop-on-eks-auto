@@ -39,7 +39,7 @@ spec:
     karpenter.sh/nodepool: default
   containers:
   - name: download
-    # image: public.ecr.aws/u3r1l1j7/eks-genai:neuronrayvllm-100G
+    # image: public.ecr.aws/u3r1l1j7/eks-genai:neuronrayvllm-100G-root
     image: shaowenchen/huggingface-cli
     command:
     - huggingface-cli

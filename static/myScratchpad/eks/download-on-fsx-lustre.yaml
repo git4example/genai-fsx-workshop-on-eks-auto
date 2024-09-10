@@ -10,7 +10,7 @@ spec:
     spec:
       containers:
       - name: download
-        image: public.ecr.aws/u3r1l1j7/eks-genai:neuronrayvllm-100G
+        image: public.ecr.aws/u3r1l1j7/eks-genai:neuronrayvllm-100G-root
         command:
         - huggingface-cli
         - download
