@@ -73,7 +73,5 @@ infrastructure:
           defaultValue: "{{.ParticipantRoleArn}}"
         - templateParameter: ParticipantAssumedRoleArn
           defaultValue: "{{.ParticipantAssumedRoleArn}}"
-        - templateParameter: eksBlueprint
-          defaultValue: "s3://{{.AssetsBucketName}}/{{.AssetsBucketPrefix}}terraform/eks-blueprints.tf"
         - templateParameter: Assets
           defaultValue: "s3://{{.AssetsBucketName}}/{{.AssetsBucketPrefix}}"

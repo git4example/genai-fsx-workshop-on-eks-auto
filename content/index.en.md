@@ -1,5 +1,5 @@
 ---
-title: "GenAI FSx Workshop on Amazon EKS"
+title: "GenAI with Data on EKS and Amazon FSx"
 weight: 0
 ---
 

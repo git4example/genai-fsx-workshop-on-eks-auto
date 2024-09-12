@@ -75,11 +75,6 @@ Parameters:
     Description: "Name of the Team Role"
     Default: NONE
     Type: String
-
-  eksBlueprint:
-    Description: "S3 Bucket location for EKS blueprint"
-    # Default: "s3://ws-event-064e131b-cd4-ap-southeast-2/17e62541-8ca1-47a6-8b79-c48000056abe/assets/eks-blueprints.tf"
-    Type: String
   
   Assets:
     Description: "S3 Bucket location for Assets"
@@ -440,7 +435,6 @@ Resources:
             - sudo -H -u ec2-user aws sts get-caller-identity
             - echo '=== INSTALL kubectl ==='
             - !Sub 'export KUBECTL_VERSION=${C9KubectlVersion}'
-            # - sudo curl --silent --location -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl
             - sudo curl --silent --location -o /usr/local/bin/kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/${KUBECTL_VERSION}/2024-07-12/bin/linux/amd64/kubectl
             - sudo chmod +x /usr/local/bin/kubectl
             - sudo /usr/local/bin/kubectl version --client
@@ -483,17 +477,9 @@ Resources:
             - eksctl version
             - echo '=== Create EKS Cluster ==='
             - !Sub echo 'EKS Cluster version - ${EKSClusterVersion} will be created in region ${AWS::Region}'
-            # - sudo -H -u ec2-user mkdir -p /home/ec2-user/environment/eksworkshop/
-            # - sudo -H -u ec2-user mkdir -p /home/ec2-user/environment/eks/
-            # - !Sub sudo -H -u ec2-user curl --silent --location -o /home/ec2-user/environment/eksworkshop/main.tf "${eksBlueprint}"
-            # - !Sub sudo -H -u ec2-user aws s3 cp ${eksBlueprint} /home/ec2-user/environment/eksworkshop/main.tf
             - !Sub sudo -H -u ec2-user aws s3 sync ${Assets} /home/ec2-user/environment/ --delete
-            # - sudo -H -u ec2-user aws s3 sync ${Assets}eks /home/ec2-user/environment/eks --delete
-            # - sudo -H -u ec2-user aws s3 sync ${Assets}karpenter /home/ec2-user/environment/karpenter --delete
-            # - sudo -H -u ec2-user aws s3 sync ${Assets}terraform /home/ec2-user/environment/terraform --delete
             - !Sub sed -i.bak -e 's/--AWS_REGION--/${AWS::Region}/' /home/ec2-user/environment/terraform/main.tf
             - !Sub sed -i.bak -e 's/--EKS_VERSION--/${EKSClusterVersion}/' /home/ec2-user/environment/terraform/main.tf
-            # - !Sub sed -i.bak -e 's/--AWS_ACCOUNT_ID--/${AWS::AccountId}/' /home/ec2-user/environment/terraform/main.tf
             - cd /home/ec2-user/environment/terraform/
             - !Sub 'export CFN_RESPONSE_URL="${WaitForStackCreationHandle}"'
             - sudo -H -u ec2-user /usr/bin/terraform init
@@ -501,23 +487,6 @@ Resources:
             - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.eks" -auto-approve
             - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
             - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
-            #Install huggingface-cli and download model
-            # - sudo -H -u ec2-user echo "Install huggingface-cli and download model"
-            # - sudo -H -u ec2-user echo "Starting model download @ `date`"
-            # - sudo -H pip install -U "huggingface_hub[cli]"
-            # - sudo -H pip install -U huggingface_hub[hf_transfer] 
-            # - sudo -H -u ec2-user export HF_HUB_ENABLE_HF_TRANSFER=1  
-            # - sudo -H -u ec2-user /usr/local/bin/huggingface-cli download "enghwa/neuron-mistral7bv0.2" --local-dir Mistral-7B-Instruct-v0.2
-            # - sudo -H -u ec2-user echo "End model download @ `date`"
-            #Install c5cmd and push model to S3
-            # - sudo -H -u ec2-user echo "Install c5cmd and push model to S3"
-            # - sudo -H -u ec2-user echo "Starting model upload @ `date`"
-            # - sudo -H -u ec2-user export S3_BUCKET=$(aws s3 ls | grep fsx-lustre | grep -v fsx-lustre-2ndregion | awk '{print$3}')
-            # - sudo -H -u ec2-user go install github.com/peak/s5cmd/v2@master
-            # - sudo -H -u ec2-user /home/ec2-user/go/bin/s5cmd cp /home/ec2-user/environment/Mistral-7B-Instruct-v0.2/ s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2/
-            # - sudo -H -u ec2-user echo "End model upload @ `date`"
-            # - sudo -H -u ec2-user export S3_BUCKET=$(aws s3 ls | grep fsx-lustre | grep -v fsx-lustre-2ndregion | awk '{print$3}')
-            # - sudo -H -u ec2-user aws s3 sync ${Assets}neuron-mistral7bv0.2 s3://${S3_BUCKET}/neuron-mistral7bv0.2 --delete
             - |
               curl -X PUT -H 'Content-Type:' --data-binary '{"Status" : "SUCCESS","Reason" : "Creation Complete", "UniqueId" : "1","Data" : "Creation complete"}' $CFN_RESPONSE_URL
             - sudo shutdown --reboot 1
@@ -605,29 +574,6 @@ Resources:
       Path: /
       Roles:
         - Ref: InstanceRole  
-
-  # ArmInstance: 
-  #   Type: AWS::EC2::Instance
-  #   Properties: 
-  #     ImageId: !Ref AMIArm
-  #     InstanceType: !Ref ArmInstanceType
-  #     IamInstanceProfile: !Ref InstanceProfile
-  #     UserData:
-  #       Fn::Base64: !Sub |
-  #         #!/bin/bash
-          
-  #         adduser -m ssm-user
-  #         tee /etc/sudoers.d/ssm-agent-users <<'EOF'          
-  #         ssm-user ALL=(ALL) NOPASSWD:ALL
-  #         EOF
-  #         chmod 440 /etc/sudoers.d/ssm-agent-users 
-
-  #         yum install -y docker
-  #         systemctl start docker
-  #         usermod -a -G docker ssm-user
-  #     Tags:
-  #       - Key: Name
-  #         Value: "ArmBuildServer"
 
 Outputs:
   Cloud9IDE:

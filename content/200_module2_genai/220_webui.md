@@ -1,7 +1,9 @@
 ---
 title : "Deploy webui chat application"
-weight : 211
+weight : 220
 ---
+
+Now lets deploy chatboot to interact with our mistral model we deployed in previous step.
 
 ```bash
 cat <<EOF | kubectl apply -f -
@@ -76,6 +78,12 @@ spec:
 EOF
 ```
 
+This will take upto 2 - 5 mins for the application load balancer to be ready to serve chatbot
+```bash
+kubectl get ing
+```
+Copy ADDRESS url for ALB an open in new browser tab.
 
+Next select mistral model and start chatting with our mistral model .. 
 
 ![Open WebUI](/static/images/OpenWebUI.png)
