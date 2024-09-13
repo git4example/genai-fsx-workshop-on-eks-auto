@@ -35,9 +35,9 @@ spec:
         - --served-model-name=mistralai/Mistral-7B-Instruct-v0.2-neuron
         env:
         - name: MODEL_ID
-          value: /work-dir/work-dir/Mistral-7B-Instruct-v0.2/
+          value: /work-dir/Mistral-7B-Instruct-v0.2/
         - name: NEURON_COMPILE_CACHE_URL
-          value: /work-dir/work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
+          value: /work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
         - name: PORT
           value: "8000"
         volumeMounts:

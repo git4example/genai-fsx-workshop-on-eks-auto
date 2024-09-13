@@ -1,6 +1,6 @@
 ---
 title : "Model Download and Upload"
-weight : 13
+weight : 23
 hidden : false
 ---
 -------------------------------------------------------------
@@ -212,13 +212,29 @@ EOF
 ```
 
 
-
+You can check if karpeter was able to spin up new instance for our `download-upload-mistral` pod above. 
 
 ```bash
 alias kl='kubectl -n karpenter logs -l app.kubernetes.io/name=karpenter --all-containers=true -f --tail=20'
 ```
 
-## DOWNLOAD AND UPLOAD FINISHED IN ABOUT 6 - 7 MINS
+```bash
+kl
+```
+
+## CHECK DOWNLOAD AND UPLOAD FINISHED 
+
+Check if `download-upload-mistral` pod created above reaches `Completed` status. 
+
+```bash
+kubectl get pod -w
+```
+
+This should take about IN ABOUT 6 - 12 MINS
+
+Example of two different runs : 
+
+# 1st run finished in 6 - 7 mins
 ```bash
 WSParticipantRole:~/environment $ kg po -w
 NAME                             READY   STATUS     RESTARTS   AGE
@@ -229,7 +245,7 @@ download-upload-mistral-lt2qw    1/1     Running           0          3m41s
 download-upload-mistral-lt2qw    0/1     Completed         0          6m14s
 ```
 
-# 2nd Run finished in 10 mins
+# 2nd run finished in 10 mins
 ```bash
 WSParticipantRole:~/environment/eks/download $ kg po -w
 NAME                             READY   STATUS    RESTARTS   AGE

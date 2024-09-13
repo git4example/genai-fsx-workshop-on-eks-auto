@@ -1,6 +1,6 @@
 ---
 title : "Explore EKS and Karpenter"
-weight : 11
+weight : 21
 ---
 
 ## Automation used for the creation of this Amazon EKS Cluster

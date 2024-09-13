@@ -84,6 +84,9 @@ kubectl get ing
 ```
 Copy ADDRESS url for ALB an open in new browser tab.
 
-Next select mistral model and start chatting with our mistral model .. 
+Please note that LLM model will take about 12 - 15 mins to load in memory before you can load this model dropdown as shown below and start chatting. Until this point, you will not see this model in the dropdown because model endpoint is not communicating with webui. 
+
+You can refresh page after sometime to see if its ready to serve the model, Once its available in dropdown, select mistral model and start chatting with our mistral model .. 
 
 ![Open WebUI](/static/images/OpenWebUI.png)
+
