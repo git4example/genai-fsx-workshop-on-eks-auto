@@ -460,6 +460,31 @@ module "fsx-lustre-bucket" {
   }
 
   bucket_prefix="fsx-lustre-${random_string.random.id}"
+#   policy = jsonencode({
+#     "Version": "2012-10-17",
+#     "Statement": [
+#         {
+#             "Sid": "Example permissions",
+#             "Effect": "Allow",
+#             "Principal": {
+#                 "AWS": "arn:aws:iam::883594451245:root"
+#             },
+#             "Action": [
+#            "s3:DeleteObject",
+#                 "s3:DeleteObjectVersion",
+#                 "s3:GetObject",
+#                 "s3:GetObjectVersion",
+#                 "s3:ListBucket",
+#                 "s3:ListBucketVersions",
+#                 "s3:PutObject"
+#             ],
+#             "Resource": [
+#                 "arn:aws:s3:::${module.fsx-lustre-bucket.s3_bucket_id}",
+#                 "arn:aws:s3:::${module.fsx-lustre-bucket.s3_bucket_id}/*"
+#             ]
+#         }
+#     ]
+# })
 }
 
 # Region 2 Bucket
