@@ -86,7 +86,6 @@ huggingface-cli download "enghwa/neuron-mistral7bv0.2" --local-dir Mistral-7B-In
 ```
 
 
-
 ```bash
 # 10 mins to download - on gp3 - 3000 iops - 125MB Throughput 
 docker run -v ./myMistral:/data/myMistral hello2parikshit/huggingface-cli download enghwa/neuron-mistral7bv0.2 --local-dir /data/myMistral
@@ -151,8 +150,6 @@ Check object sizes on bucket
 ```bash
 aws s3 ls s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20 --recursive --human-readable --summarize
 ```
-
-
 
 
 Shortcuts 

@@ -478,9 +478,10 @@ Resources:
             - echo '=== Create EKS Cluster ==='
             - !Sub echo 'EKS Cluster version - ${EKSClusterVersion} will be created in region ${AWS::Region}'
             # - !Sub sudo -H -u ec2-user aws s3 sync ${Assets} /home/ec2-user/environment/ --delete
-            - sudo -H -u ec2-user aws s3 sync ${Assets}eks /home/ec2-user/environment/eks --delete
-            - sudo -H -u ec2-user aws s3 sync ${Assets}karpenter /home/ec2-user/environment/karpenter --delete
-            - sudo -H -u ec2-user aws s3 sync ${Assets}terraform /home/ec2-user/environment/terraform --delete
+            - !Sub sudo -H -u ec2-user aws s3 sync ${Assets}eks /home/ec2-user/environment/eks --delete
+            - !Sub sudo -H -u ec2-user aws s3 sync ${Assets}karpenter /home/ec2-user/environment/karpenter --delete
+            - !Sub sudo -H -u ec2-user aws s3 sync ${Assets}terraform /home/ec2-user/environment/terraform --delete
+            # Replace region and eks version
             - !Sub sed -i.bak -e 's/--AWS_REGION--/${AWS::Region}/' /home/ec2-user/environment/terraform/main.tf
             - !Sub sed -i.bak -e 's/--EKS_VERSION--/${EKSClusterVersion}/' /home/ec2-user/environment/terraform/main.tf
             - cd /home/ec2-user/environment/terraform/
@@ -491,9 +492,18 @@ Resources:
             - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
             - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
             # copy model to fsx bucket
-            - sudo -H -u ec2-user S3_BUCKET=$(aws s3 ls | grep fsx-lustre | grep -v fsx-lustre-2ndregion | awk '{print$3}')
+            - export S3_BUCKET=$(aws s3 ls | grep fsx-lustre | grep -v fsx-lustre-2ndregion | awk '{print$3}')
             - sudo -H -u ec2-user echo "Bucket name:" $S3_BUCKET
-            - !Sub sudo -H -u ec2-user aws s3 sync ${Assets}Mistral-7B-Instruct-v0.2/ $S3_BUCKET/Mistral-7B-Instruct-v0.2/ --delete
+             #Install c5cmd and push model to S3
+            # - sudo -H -u ec2-user echo "Install c5cmd and push model to S3"
+            # - sudo -H -u ec2-user echo "Starting model upload @ `date`"
+
+            # - sudo -H -u ec2-user go install github.com/peak/s5cmd/v2@master
+            # - !Sub sudo -H -u ec2-user /home/ec2-user/go/bin/s5cmd cp ${Assets}Mistral-7B-Instruct-v0.2/ s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2/
+            # - sudo -H -u ec2-user echo "End model upload @ `date`"
+
+            # - sudo -H -u ec2-user aws s3 sync ${Assets}neuron-mistral7bv0.2 s3://${S3_BUCKET}/neuron-mistral7bv0.2 --delete
+            - !Sub sudo -H -u ec2-user aws s3 sync ${Assets}Mistral-7B-Instruct-v0.2 s3://${S3_BUCKET}/Mistral-7B-Instruct-v0.2 --delete
             - |
               curl -X PUT -H 'Content-Type:' --data-binary '{"Status" : "SUCCESS","Reason" : "Creation Complete", "UniqueId" : "1","Data" : "Creation complete"}' $CFN_RESPONSE_URL
             - sudo shutdown --reboot 1
