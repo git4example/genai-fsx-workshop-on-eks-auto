@@ -1,6 +1,5 @@
 
-DO NOT FULL SYNC THIS ASSET BUCKET. WE HAVE "neuron-mistral7bv0.2" FOLDER ON THIS BUCKET "s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20" WITH 29 GB OF MODEL WHICH WILL BE DELETED IF YOU FULL SYNC
-
+DO NOT FULL SYNC THIS ASSET BUCKET. WE HAVE "Mistral-7B-Instruct-v0.2" FOLDER ON THIS BUCKET "s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20" WITH 27 GB OF MODEL WHICH WILL BE DELETED IF YOU FULL SYNC
 
 
 USE FOLLOWING COMMANDs TO SYNC YOUR LOCAL TO S3 : 
@@ -17,7 +16,60 @@ aws s3 sync s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/karpen
 aws s3 sync s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/terraform /home/ec2-user/environment/terraform --delete
 ```
 
-## DOWNLOAD MODEL
+## DOWNLOAD AND UPLOAD MODEL TO ASSET BUCKET
+Step 1 : Spin up Cloud 9 environment in your account
+Step 2 : change its volume to Size : 100GB , Type : GpP3 , IOPS : 10000 , Throughput : 1000
+
+To modify volume you can use commands like this, you may need to adjust stack name according to your account: 
+```bash
+C9STACK=$(aws cloudformation list-stacks --query "StackSummaries[?contains(StackName, 'aws-cloud9')].StackName" --output text) 
+C9INSTANCE=$(aws cloudformation describe-stack-resources --stack-name "$C9STACK" --query "StackResources[?ResourceType=='AWS::EC2::Instance'].PhysicalResourceId" --output text)
+C9VOLUME=$(aws ec2 describe-volumes --filters "Name=attachment.instance-id,Values=$C9INSTANCE" --query "Volumes[].VolumeId" --output=text) 
+aws ec2 modify-volume --volume-type gp3 --volume-id $C9VOLUME --size 100 --iops 10000 --throughput 1000
+```
+
+
+Stpe 3 : run following commands to expand volume
+
+```bash
+sudo lsblk
+sudo growpart /dev/nvme0n1 1
+
+# Check filesystem xfs or ext
+df -hT
+# for xfs filesystem
+sudo xfs_growfs -d /
+
+# for ext filesystem
+sudo resize2fs /dev/nvme0n1p1
+```
+
+Step 4 : Download model 
+```bash
+docker run -v ./work-dir/:/work-dir/ --entrypoint huggingface-cli public.ecr.aws/parikshit/huggingface-cli download "enghwa/neuron-mistral7bv0.2" --local-dir /work-dir/Mistral-7B-Instruct-v0.2
+```
+
+Step 5 : Upload model to asset bucket. In following command replace credentials from the workshop studio to allow access to assets bucket.
+
+```bash
+docker run -e AWS_DEFAULT_REGION="region" \
+  -e AWS_ACCESS_KEY_ID="<access-id>>" \
+  -e AWS_SECRET_ACCESS_KEY="<access-key>" \
+  -e AWS_SESSION_TOKEN="<session-token>" \
+  -v ./work-dir/:/work-dir/  public.ecr.aws/parikshit/s5cmd cp /work-dir/Mistral-7B-Instruct-v0.2/ s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/Mistral-7B-Instruct-v0.2/
+```
+
+Step 6 : Check object sizes on bucket
+```bash
+aws s3 ls --summarize --human-readable --recursive s3://<bucket-name>/
+```
+
+Step 7 : Terminate your cloud9 if not required. 
+
+
+
+
+## OTHER WAYS to DOWNLOAD MODEL
 
 Simple download : 
 ```bash
@@ -86,14 +138,12 @@ aws s3 ls --summarize --human-readable --recursive s3://<bucket-name>/
 
 
 
-
-
 To modify volume : 
 ```bash
 C9STACK=$(aws cloudformation list-stacks --query "StackSummaries[?contains(StackName, 'aws-cloud9')].StackName" --output text) 
 C9INSTANCE=$(aws cloudformation describe-stack-resources --stack-name "$C9STACK" --query "StackResources[?ResourceType=='AWS::EC2::Instance'].PhysicalResourceId" --output text)
 C9VOLUME=$(aws ec2 describe-volumes --filters "Name=attachment.instance-id,Values=$C9INSTANCE" --query "Volumes[].VolumeId" --output=text) 
-aws ec2 modify-volume --volume-id $C9VOLUME --size 100
+aws ec2 modify-volume --volume-type gp3 --volume-id $C9VOLUME --size 100 --iops 10000 --throughput 1000
 ```
 
 
@@ -139,16 +189,6 @@ export c="-o=custom-columns"
 
 
 
-
-```bash
-sudo lsblk
-sudo growpart /dev/nvme0n1 1
-# for xfs filesystem
-sudo xfs_growfs -d /
-
-# for ext filesystem
-sudo resize2fs /dev/nvme0n1p1
-```
 
 ## Unable to register fsx luster csi node driver
 
