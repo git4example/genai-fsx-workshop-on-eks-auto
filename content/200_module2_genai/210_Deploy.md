@@ -14,7 +14,7 @@ A Karpenter NodePool sets constraints on the nodes that can be created by Karpen
 cd /home/ec2-user/environment/eks/genai
 ```
 
-Find latest Supported EKS Optimized AMI 
+Find latest Supported EKS Optimized AMI
 ```bash
 export K8S_VERSION=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION --query cluster.version --output text)
 export GPU_AMI_ID="$(aws ssm get-parameter --name /aws/service/eks/optimized-ami/${K8S_VERSION}/amazon-linux-2-gpu/recommended/image_id --query Parameter.Value --output text)"
@@ -63,10 +63,10 @@ kubectl apply -f https://raw.githubusercontent.com/aws-neuron/aws-neuron-sdk/mas
 :::
 
 
-##### Deploy Mistral Application 
+##### Deploy Mistral Application
 
 ```bash
-kubectl apply -f mistral-fsx.yaml
+kubectl apply -f mistral-fsxl.yaml
 ```
 
 This will take upto 10 mins. You can monitor pod creation with following commands to see it transitioning to `Running`

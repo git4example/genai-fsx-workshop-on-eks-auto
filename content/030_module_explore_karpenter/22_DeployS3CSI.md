@@ -82,7 +82,7 @@ spec:
         iops: 10000
         throughput: 1000
 
-  role: "Karpenter-eksworkshop" 
+  role: "Karpenter-eksworkshop"
   subnetSelectorTerms:          
     - tags:
         karpenter.sh/discovery: "eksworkshop"
@@ -292,6 +292,3 @@ spec:
         claimName: fsx-lustre-pvc
 EOF
 ```
-
-
-

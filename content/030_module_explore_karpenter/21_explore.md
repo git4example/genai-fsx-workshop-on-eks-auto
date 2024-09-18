@@ -36,14 +36,12 @@ Inspecting the output for the Karpenter controller Pod you can see the following
 
 Checkout the [Karpenter documentation](https://karpenter.sh/docs/reference/settings/) for information on the other configuration options.
 
-To check Karpenter is running you can check the Pods, Deployment and Service are Running.
-
-To check running pods run the command below. There should be at least two `karpenter` pods.
+To check Karpenter is running you can check that the Pods are running using the below command. There should be at least two `karpenter` pods.
 ```bash
 kubectl get pods --namespace karpenter
 ```
 
-You should see an output similar to the one below. 
+You should see an output similar to the one below.
 ```
 NAME                         READY   STATUS    RESTARTS   AGE
 karpenter-75f6596894-pgrsd   1/1     Running   0          48s

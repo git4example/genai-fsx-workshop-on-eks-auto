@@ -9,7 +9,7 @@ In this section you will define the storageclass variables and create the storag
 
 In the following steps you will be using the environment variables which was created in the previous section.
 
-1. We already set following variables in previous section, Run the below command to verify the values for these variables. 
+1. We already set following variables in previous section, Run the below command to verify the values for these variables.
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 echo $SUBNET_ID
 echo $SECURITY_GROUP_ID
@@ -21,7 +21,7 @@ echo $S3_BUCKET
 ::code[cd /home/ec2-user/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
 
-We are going to replace `SUBNET_ID`, `SECURITY_GROUP_ID` and `S3_BUCKET` in `fsxL-storage-class.yaml` next.
+Below is the output of the `fsxL-storage-class.yaml` file. This file has the StorageClass definition that we will use with the CSI driver to dynamically provision a Persistent Volume Claim (PVC) from Amazon FSx for Lustre. Take a moment inspect the available parameters which you can configure for the FSx for Lustre Instance that will be provisioned by the CSI driver.
 
 :::code[]{language=yaml showLineNumbers=true showCopyAction=false}
 #fsxL-storage-class.yaml
@@ -43,6 +43,8 @@ mountOptions:
     - flock
 :::
 
+ Run the below command, to replace the placeholder values in the `fsxL-storage-class.yaml` file for `SUBNET_ID`, `SECURITY_GROUP_ID` and `S3_BUCKET` with our actual environment values.
+
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 sed -i'' -e "s/SUBNET_ID/$SUBNET_ID/g" fsxL-storage-class.yaml
 sed -i'' -e "s/SECURITY_GROUP_ID/$SECURITY_GROUP_ID/g" fsxL-storage-class.yaml
@@ -52,7 +54,7 @@ sed -i'' -e "s/S3_BUCKET/$S3_BUCKET/g" fsxL-storage-class.yaml
 3. Verify replaced values are correct.
 
 ::code[cat fsxL-storage-class.yaml]{language=bash showLineNumbers=false showCopyAction=true}
- 
+
 ::::expand{header="Click to expand the section to understand the settings defined in the fsxL-storage-class.yaml file"}
 
 * **subnetId** – The subnet ID that the Amazon FSx for Lustre file system should be created in. Amazon FSx for Lustre is not supported in all Availability Zones. Open the Amazon FSx for Lustre console at `https://console.aws.amazon.com/fsx/` to confirm that the subnet that you want to use is in a supported Availability Zone. The subnet can include your nodes, or can be a different subnet or VPC. If the subnet that you specify is not the same subnet that you have nodes in, then your VPCs must be connected, and you must ensure that you have the necessary ports open in your security groups.

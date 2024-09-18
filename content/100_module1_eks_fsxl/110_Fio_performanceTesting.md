@@ -1,6 +1,6 @@
 ---
 title : "Performance test with FIO and IOping"
-weight : 320
+weight : 240
 ---
 -------------------------------------------------------------
 
@@ -20,7 +20,9 @@ Amazon FSx for Lustre file system is built for high performance workloads. In th
 
 Go to the right working directory.
 
-::code[cd /home/ec2-user/environment/eks-fsx-workshop/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
+
+::code[cd /home/ec2-user/environment/eks/FSxL/]{language=bash showLineNumbers=false showCopyAction=true}
+
 
 Write down the availability zone of the FSx for Lustre with below output of the command
 
@@ -36,11 +38,11 @@ Edit the **pod_performance.yaml**
 
 Press “i” to go into edit mode
 
-Uncomment by removing `#` in the last two lines starting with **nodeSelector** and **topology.kubernetes.io/zone**, as the below screenshot. 
+Uncomment by removing `#` in the last two lines starting with **nodeSelector** and **topology.kubernetes.io/zone**, as the below screenshot.
 
 Replace the `us-east-2c` with the availability zone you noted from the previous step, as the below screenshot.
 
-Press ESC and type `:wq` then press enter. 
+Press ESC and type `:wq` then press enter.
 
 ![FSXlperf03](/static/images/fsxl_perf_03.png)
 
@@ -49,7 +51,7 @@ Copy and run the below command to provision the pod
 ::code[kubectl apply -f pod_performance.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 :::alert{header="Important" type="info"}
-Check the status of the pod, wait until it is up and running, normally it takes upto 1 minute. If your pod remains in pending for longer and pod events shows message like below, this means that FSx Lustre filesystem is yet to be created. 
+Check the status of the pod, wait until it is up and running, normally it takes upto 1 minute. If your pod remains in pending for longer and pod events shows message like below, this means that FSx Luster filesystem is yet to be created.
 
 PVC `fsx-lustre-claim` should be in pending status, wait for upto 15 mins. Pod should transision to running once PVC `fsx-lustre-claim` is in bound status.
 

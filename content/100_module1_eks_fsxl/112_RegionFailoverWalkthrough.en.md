@@ -1,9 +1,9 @@
 ---
 title : "Replicate data between the regions"
-weight : 340
+weight : 260
 ---
 -------------------------------------------------------------
-### IN THIS SECTION - we will show customers how they can replicate data using S3 replication, and view it at their target S3bucket. We will not get them to deploy another FSxL file system and Pod to access it,  (not good use of time).. we will state they can achieve sharing data or DR in a different region, by follow the instructions from module 1 (deploy FSxL) & 2 (deploy GenAI app) along with deploying their EKS cluster.
+
 
 In this section, you will be performing a cross region replication of data between the Amazon S3 bucket. Which will enable the data movement from one EKS cluster to the other EKS cluster in `us-east-2`. To complete this section you will deploy the pod in the current region and sync the data between the regions. Deploy the pod to read the replicated data from the persistent storage layer of Amazon FSx for Lustre file system running in `us-east-2`. Let's start
 
@@ -33,7 +33,21 @@ echo $CLUSTER_NAME_2
 
 Go to the right working directory.
 
+::::tabs{variant="container" activeTabId="cloud9"}
+:::tab{id="linux" label="Linux"}
+::code[cd /eks-fsx-workshop/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
+:::
+:::tab{id="windows" label="Windows"}
+
+::code[cd /c/Users/Administrator/Desktop/eks-fsx-workshop/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
+
+For Windows: You should be in the current working directory as shown in the below screenshot
+![windows_FSxL](/static/images/Windows_FSxL.png)
+:::
+:::tab{id="cloud9" label="Cloud9"}
 ::code[cd /home/ec2-user/environment/eks-fsx-workshop/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
+:::
+::::
 
 Copy and run the below command to deploy the `pod.yaml`
 
@@ -76,7 +90,7 @@ Copy and run the below command to login to the container
 
 ::code[kubectl exec -it fsx-app -- bash]{language=bash showLineNumbers=false showCopyAction=true}
 
-Archive the data from the FSx for Lustre file system into the linked S3 bucket. Run the below commands to manually export the file to the linked S3 bucket
+Archive the data from the FSx for Luster file system into the linked S3 bucket. Run the below commands to manually export the file to the linked S3 bucket
 
 ::alert[lfs is a helper utility to administrate lustre cluster]
 

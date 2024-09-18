@@ -13,7 +13,7 @@ Below steps to ensure that you are operating from the right AWS region and in th
 
 ::::expand{header="Confirm your access to the EKS cluster, Only run these commands if you have not yet done so in the previous steps."}
 
-- Check if region and cluster names are set correctly, if not then follow one of the suitable page for your situation under **[Getting Started ](/020-setup)** to setup these variables. 
+- Check if region and cluster names are set correctly, if not then follow one of the suitable page for your situation under **[Getting Started ](/020-setup)** to setup these variables.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 echo $AWS_REGION
@@ -109,7 +109,7 @@ EOF
 
 ### Step 3: Create the IAM policy
 
-Copy and run the following command to create an IAM polcy. 
+Copy and run the following command to create an IAM polcy.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 aws iam create-policy \
@@ -119,7 +119,7 @@ aws iam create-policy \
 
 ### Step 4: Create a Kubernetes service account for the driver and attach the policy to the service account
 
-Copy and run the below command to create the service account and attach the IAM policy created in Step 3. 
+Copy and run the below command to create the service account and attach the IAM policy created in Step 3.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 eksctl create iamserviceaccount \
@@ -148,6 +148,10 @@ Copy and run the below command to save the role ARN.
 
 ::code[export ROLE_ARN=$(aws cloudformation describe-stacks --stack-name "eksctl-${CLUSTER_NAME}-addon-iamserviceaccount-kube-system-fsx-csi-controller-sa" --query "Stacks[0].Outputs[0].OutputValue"  --region $AWS_REGION --output text)]{language=bash showLineNumbers=false showCopyAction=true}
 
+Copy the output of this ROLE_ARN into your notepad file 
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
+echo $ROLE_ARN
+:::
 
 ### Step 6: Deploy the CSI driver of FSx for Lustre
 
@@ -174,7 +178,7 @@ fsx-csi-node-jxscw                  3/3     Running   0          45s
 
 ### Step 7: Annotate service account that we created in step 4 above
 
-Copy and the run the following commands to add IAM role to the service account 
+Copy and the run the following commands to add IAM role to the service account
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 kubectl annotate serviceaccount -n kube-system fsx-csi-controller-sa \
@@ -207,4 +211,4 @@ secrets:
 
 ## Summary
 
-In this section you have completed the pre-requisite tasks of creating environmental variables, creating service account with the right IAM policy and role ARN. Post which you have deployed the CSI driver of FSx for Lustre and verified the service account contents.  In the next section you will create the storage class and the persistent volume claim (PVC) for FSx for Lustre file system. 
+In this section you have completed the pre-requisite tasks of creating environmental variables, creating service account with the right IAM policy and role ARN. Post which you have deployed the CSI driver of FSx for Lustre and verified the service account contents.  In the next section you will create the storage class and the persistent volume claim (PVC) for FSx for Lustre file system.
