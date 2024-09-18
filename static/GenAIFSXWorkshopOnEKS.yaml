@@ -493,7 +493,7 @@ Resources:
             - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
             # copy model to fsx bucket
             - export S3_BUCKET=$(aws s3 ls | grep fsx-lustre | grep -v fsx-lustre-2ndregion | awk '{print$3}')
-            - sudo -H -u ec2-user echo "Bucket name:" $S3_BUCKET
+            - sudo -H -u ec2-user echo "Bucket name:" ${S3_BUCKET}
              #Install c5cmd and push model to S3
             # - sudo -H -u ec2-user echo "Install c5cmd and push model to S3"
             # - sudo -H -u ec2-user echo "Starting model upload @ `date`"
@@ -503,7 +503,8 @@ Resources:
             # - sudo -H -u ec2-user echo "End model upload @ `date`"
 
             # - sudo -H -u ec2-user aws s3 sync ${Assets}neuron-mistral7bv0.2 s3://${S3_BUCKET}/neuron-mistral7bv0.2 --delete
-            - !Sub sudo -H -u ec2-user aws s3 sync ${Assets}Mistral-7B-Instruct-v0.2 s3://${S3_BUCKET}/Mistral-7B-Instruct-v0.2 --delete
+            - sudo -H -u ec2-user aws configure set default.s3.max_concurrent_requests 20
+            - sudo -H -u ec2-user aws s3 sync ${Assets}Mistral-7B-Instruct-v0.2 s3://${S3_BUCKET}/Mistral-7B-Instruct-v0.2 --delete
             - |
               curl -X PUT -H 'Content-Type:' --data-binary '{"Status" : "SUCCESS","Reason" : "Creation Complete", "UniqueId" : "1","Data" : "Creation complete"}' $CFN_RESPONSE_URL
             - sudo shutdown --reboot 1
