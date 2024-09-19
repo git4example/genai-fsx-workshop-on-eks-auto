@@ -1,7 +1,7 @@
 ---
 title : "Model Download and Upload"
 weight : 23
-hidden : false
+hidden : true
 ---
 -------------------------------------------------------------
 
@@ -232,20 +232,9 @@ kubectl get pod -w
 
 This should take about IN ABOUT 6 - 12 MINS
 
-Example of two different runs : 
+Example : 
 
-# 1st run finished in 6 - 7 mins
-```bash
-WSParticipantRole:~/environment $ kg po -w
-NAME                             READY   STATUS     RESTARTS   AGE
-download-upload-mistral-lt2qw    0/1     Init:0/1   0          8s
-kube-ops-view-5d9d967b77-hs5zq   1/1     Running    0          4h44m
-download-upload-mistral-lt2qw    0/1     PodInitializing   0          3m39s
-download-upload-mistral-lt2qw    1/1     Running           0          3m41s
-download-upload-mistral-lt2qw    0/1     Completed         0          6m14s
-```
-
-# 2nd run finished in 10 mins
+# Download should finished in 6 to 12 mins
 ```bash
 WSParticipantRole:~/environment/eks/download $ kg po -w
 NAME                             READY   STATUS    RESTARTS   AGE

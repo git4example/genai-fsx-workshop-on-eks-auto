@@ -35,12 +35,10 @@ kubectl get nodepool,ec2nodeclass
 
 ```
 NAME                               NODECLASS    NODES   READY   AGE
-nodepool.karpenter.sh/download     download     0       True    37m
-nodepool.karpenter.sh/inferentia   inferentia   0       True    1m
+nodepool.karpenter.sh/inferentia   inferentia   0       True    6s
 
 NAME                                        READY   AGE
-ec2nodeclass.karpenter.k8s.aws/download     True    37m
-ec2nodeclass.karpenter.k8s.aws/inferentia   True    1m
+ec2nodeclass.karpenter.k8s.aws/inferentia   True    6s
 ```
 
 

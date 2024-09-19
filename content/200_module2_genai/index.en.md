@@ -1,5 +1,5 @@
 ---
-title : "Deploy GenAI model and chatbot"
+title : "Module 2 - Deploy GenAI model and chatbot"
 weight : 200
 ---
 -------------------------------------------------------------

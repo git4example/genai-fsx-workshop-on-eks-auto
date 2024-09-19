@@ -1,6 +1,6 @@
 ---
 title : "Replicate data between the regions"
-weight : 260
+weight : 160
 ---
 -------------------------------------------------------------
 
@@ -14,15 +14,13 @@ In this section, you will be performing a cross region replication of data betwe
 - Check if region and cluster names are set correctly, if not then follow one of the suitable page for your situation under **[Getting Started ](/020-setup)** to setup these variables.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
-echo $REGION_1
-echo $REGION_2
-echo $CLUSTER_NAME_1
-echo $CLUSTER_NAME_2
+echo $AWS_REGION
+echo $CLUSTER_NAME
 :::
 
 - Next update kubeconfig file to point it to EKS cluster in that region.
 
-::code[aws eks update-kubeconfig --name $CLUSTER_NAME_1 --region $REGION_1]{language=bash showLineNumbers=false showCopyAction=true}
+::code[aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION]{language=bash showLineNumbers=false showCopyAction=true}
 
 - Run kubectl command to confirm your access to the EKS cluster
 
@@ -33,21 +31,8 @@ echo $CLUSTER_NAME_2
 
 Go to the right working directory.
 
-::::tabs{variant="container" activeTabId="cloud9"}
-:::tab{id="linux" label="Linux"}
-::code[cd /eks-fsx-workshop/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
-:::
-:::tab{id="windows" label="Windows"}
+::code[cd /home/ec2-user/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
-::code[cd /c/Users/Administrator/Desktop/eks-fsx-workshop/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
-
-For Windows: You should be in the current working directory as shown in the below screenshot
-![windows_FSxL](/static/images/Windows_FSxL.png)
-:::
-:::tab{id="cloud9" label="Cloud9"}
-::code[cd /home/ec2-user/environment/eks-fsx-workshop/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
-:::
-::::
 
 Copy and run the below command to deploy the `pod.yaml`
 
@@ -64,15 +49,15 @@ metadata:
 spec:
   containers:
   - name: app
-    image: amazonlinux:2
-    command: ["bash"]
+    image: amazonlinux:2023
+    command: ["/bin/sh"]
     securityContext:
       privileged: true
     args: ["-c", "while true; do echo $(date -u) >> /data/out.txt; sleep 5; done"]
     lifecycle:
       postStart:
         exec:
-          command: ["amazon-linux-extras", "install", "lustre2.10", "-y"]
+          command: ["dnf", "install", "lustre-client", "-y"]
     volumeMounts:
     - name: persistent-storage
       mountPath: /data
@@ -118,7 +103,11 @@ aws s3 ls s3://$S3_BUCKET_2NDREGION/export/
 
 You should be able to see that both S3 buckets have the `out.txt` file
 
-::alert[This could take 1-2 minutes for both buckets to show ]
+::alert[This could take upto 10 minutes (???? NEED TO FIGURE OUT TIME HERE ???) for both buckets to show, because we also have Mistral model stored on the bucket which will take increased time to replicate for first time]
+
+
+# [ We need to remove following steps 4 - 7 as we dont have EKS cluster in 2nd region for this workshop ]
+
 
 ### Step 4: Check the file is synced in the new EKS cluster in 2nd region
 

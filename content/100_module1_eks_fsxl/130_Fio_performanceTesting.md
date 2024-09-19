@@ -1,6 +1,6 @@
 ---
 title : "Performance test with FIO and IOping"
-weight : 240
+weight : 130
 ---
 -------------------------------------------------------------
 
@@ -21,12 +21,12 @@ Amazon FSx for Lustre file system is built for high performance workloads. In th
 Go to the right working directory.
 
 
-::code[cd /home/ec2-user/environment/eks/FSxL/]{language=bash showLineNumbers=false showCopyAction=true}
+::code[cd /home/ec2-user/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 Write down the availability zone of the FSx for Lustre with below output of the command
 
-::code[aws ec2 describe-subnets --subnet-id $SUBNET_ID --region $REGION_1 | jq .Subnets[0].AvailabilityZone]{language=bash showLineNumbers=false showCopyAction=true}
+::code[aws ec2 describe-subnets --subnet-id $SUBNET_ID --region $AWS_REGION | jq .Subnets[0].AvailabilityZone]{language=bash showLineNumbers=false showCopyAction=true}
 
 ::alert[Note: In Cloud9 you can follow the same instructions or you could edit the file directly from Cloud9 browser]
 

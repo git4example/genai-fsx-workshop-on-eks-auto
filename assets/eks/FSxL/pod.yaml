@@ -5,7 +5,7 @@ metadata:
 spec:
   containers:
   - name: app
-    image: amazonlinux:2
+    image: amazonlinux:2023
     command: ["/bin/sh"]
     securityContext:
       privileged: true
@@ -13,7 +13,7 @@ spec:
     lifecycle:
       postStart:
         exec:
-          command: ["amazon-linux-extras", "install", "lustre2.15", "-y"]
+          command: ["dnf", "install", "lustre-client", "-y"]
     volumeMounts:
     - name: persistent-storage
       mountPath: /data

@@ -1,6 +1,6 @@
 ---
 title : "Connect multiple PODs to same PVC"
-weight : 240
+weight : 140
 ---
 -------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 ---
 title : "Create cross region replication for S3 buckets"
-weight : 330
+weight : 150
 ---
 -------------------------------------------------------------
 
@@ -45,7 +45,7 @@ For AWS Sponsored Workshop, the bucket is pre-created for you, please select the
 
 ### Step 7: Set up an AWS Identity and Access Management (IAM) role that Amazon S3 can assume to replicate objects on your behalf. Choose an existing role that has been pre-created for you, and also select *Replicate objects encrypted with AWS KMS*
 
-::alert[For AWS Sponsored Workshop the Pre-created IAM role starts with **s3-crr**]
+::alert[For AWS Sponsored Workshop the Pre-created IAM role starts with **s3-cross-region-replication-role**]
 
 IAM role: 
 
@@ -72,10 +72,10 @@ After this the rule is created, you can see that in your AWS S3 console page.
 
 
 :::alert{header="Note" type="info"}
-For AWS Sponsored Workshop, The IAM permission for **s3-crr-xxx** is pre-created for you. If you are running the self-paced labs, please create the IAM permission as instructed below.
+For AWS Sponsored Workshop, The IAM permission for **s3-cross-region-replication-role-xxx** is pre-created for you. If you are running the self-paced labs, please create the IAM permission as instructed below.
 :::
 
-Let us also look at the IAM permission for the IAM role **s3-crr-xxx**. **DOC-EXAMPLE-BUCKET1** is the source S3 bucket, and the **DOC-EXAMPLE-BUCKET2** is the destination bucket which has been replaced with the two S3 buckets pre-created. You can also check that in your IAM console.
+Let us also look at the IAM permission for the IAM role **s3-cross-region-replication-role-xxx**. **DOC-EXAMPLE-BUCKET1** is the source S3 bucket, and the **DOC-EXAMPLE-BUCKET2** is the destination bucket which has been replaced with the two S3 buckets pre-created. You can also check that in your IAM console.
 
 ::::expand{header="To verify click and check that the bucket names have changed"}
 
