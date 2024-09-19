@@ -1,7 +1,7 @@
 ---
 title: 'AWS Sponsored Workshop'
 chapter: false
-weight: 10
+weight: 21
 ---
 ## Login into the AWS Console
 

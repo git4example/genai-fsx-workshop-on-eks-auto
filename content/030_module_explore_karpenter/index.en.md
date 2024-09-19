@@ -1,6 +1,6 @@
 ---
 title : "Explore workshop environment"
-weight : 21
+weight : 30
 ---
 
 ## Exlpore workshop environment

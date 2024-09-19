@@ -1,8 +1,11 @@
 ---
 title : "Replicate data between the regions"
-weight : 160
+weight : 330
 ---
 -------------------------------------------------------------
+
+
+### IN THIS SECTION - we will show customers how they can replicate data using S3 replication, and view it at their target S3bucket. We will not get them to deploy another FSxL file system and Pod to access it,  (not good use of time).. we will state they can achieve sharing data or DR in a different region, by follow the instructions from module 1 (deploy FSxL) & 2 (deploy GenAI app) along with deploying their EKS cluster.
 
 
 In this section, you will be performing a cross region replication of data between the Amazon S3 bucket. Which will enable the data movement from one EKS cluster to the other EKS cluster in `us-east-2`. To complete this section you will deploy the pod in the current region and sync the data between the regions. Deploy the pod to read the replicated data from the persistent storage layer of Amazon FSx for Lustre file system running in `us-east-2`. Let's start

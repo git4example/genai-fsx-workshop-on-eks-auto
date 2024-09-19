@@ -1,5 +1,5 @@
 ---
-title : "Cross Region Performance and Desaster Recovery"
+title : "Cross Region Replication for Desaster Recovery"
 weight : 300
 ---
 -------------------------------------------------------------

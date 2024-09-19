@@ -1,6 +1,6 @@
 ---
 title : "Deploy S3 CSI Driver to EKS cluster"
-weight : 22
+weight : 32
 hidden : true
 ---
 -------------------------------------------------------------

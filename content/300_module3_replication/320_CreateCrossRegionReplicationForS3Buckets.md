@@ -1,6 +1,6 @@
 ---
 title : "Create cross region replication for S3 buckets"
-weight : 150
+weight : 320
 ---
 -------------------------------------------------------------
 
