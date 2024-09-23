@@ -18,4 +18,8 @@ Amazon Elastic Kubernetes Service (EKS) released CSI drivers for FSx for Lustre,
 
 The infrastructure comprises of an Amazon EKS cluster with two EC2 worker nodes and Amazon FSx for Lustre file system that spans across multiple regions. On this infrastructure, we will walk through how to leverage [Amazon FSx for Lustre CSI Driver](https://github.com/kubernetes-sigs/aws-fsx-csi-driver) to create storage volume powered by Amazon FSx for for Lustre file system that runs on Amazon EKS cluster. Amazon FSx for for Lustre CSI driver provides a CSI interface that allows Amazon EKS clusters to manage the lifecycle of Amazon FSx for for Lustre file systems.The test environment could be created quite easily with a Infrastructure of Code (IaC) approach thanks to AWS CloudFormation’s capability and we will dive deep into how to deploy Amazon FSx for OpenZFS CSI into the Amazon EKS cluster via [Kustomize](https://kustomize.io/) or [Helm](https://helm.sh/), and creating the storage class, persistent volume claims so as to let the application pod mount on the volume provided by Amazon FSx for Lustre file system.
 
+
+
+
+
 ::children

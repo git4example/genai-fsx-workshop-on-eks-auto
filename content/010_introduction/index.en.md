@@ -9,6 +9,26 @@ Errors or corrections? Contact ppariksh@amazon.com and ameenamz@amazon.com
 
 -------------------------------------------------------------
 
+Lab Guide: Architecture of EKS Hosted LLM
+
+## Introduction to Large Language Models (LLMs)
+Large Language Models (LLMs) are a type of machine learning model that is trained on vast amounts of text data to learn the patterns and structure of natural language. These models can then be used for a wide range of natural language processing tasks, such as text generation, question answering, and language translation. In this lab we are going to use the Mistral-7B model.
+
+
+## Mistral-7B-Instruct
+Mistral-7B-Instruct is a specific LLM model with 7 billion parameters. The "Instruct" in the name refers to the fact that this model has been trained to follow instructions and perform a wide variety of tasks, beyond just generating text. This is suitable for chat applications.
+
+## What is VLLM?
+VLLM, https://github.com/vllm-project/vllm, is a framework that allows LLM models like Mistral-7B-Instruct to be deployed that provide text generation inference. VLLM provides an API that is compatible with the OpenAI API, making it easy to integrate LLM applications.
+
+## Deploying Mistral-7B-Instruct on EKS
+To provide text generation inference with an OpenAI-compatible endpoint, we will deploy the Mistral-7B-Instruct model using the VLLM framework on Amazon Elastic Kubernetes Service (EKS). Karpenter will spin up the inferentia2 EC2 node, and it will launch a VLLM pod.
+
+## Consuming the Inference Service
+The "Open WebUI" application is designed to consume the OpenAI-compatible endpoint provided by the VLLM-hosted Mistral-7B-Instruct model. This allows users to interact with the LLM model through a chat-based interface.
+To use the Open WebUI application, simply connect to the provided URL and start chatting with the LLM model.  You need to register and create a username (use any email address, it will not mail you). The application will handle the communication with the VLLM-hosted Mistral-7B-Instruct model, providing a seamless user experience.
+
+
 ****Reword this****
 
 Generative Artificial Intelligence is transforming the way businesses function and is accelerating the pace of innovation. In general, the AI field is changing the way businesses utilize technology. Generative AI technology involves tuning and deploying Large Language Models (LLM), and gives developers access to those models to execute prompts and conversations. Platform teams who standardize on Kubernetes can tune and deploy the LLMs on Amazon Elastic Kubernetes Service (https://aws.amazon.com/eks/ ). Amazon EKS is a managed Kubernetes service that makes it easier to deploy, manage, and scale containerized applications using Kubernetes on AWS. One of the core strengths of Amazon EKS is its scalability; the data plane can dynamically expand, which ensues that as the AI models demand more computational power, Amazon EKS can seamlessly accommodate. For instance, Amazon EKS clusters can scale to support tens of thousands of active containers, which makes it ideal for intensive AI workloads. Beyond scalability, Amazon EKS offers a high degree of customization, that allows users to fine-tune configurations to match specific requirements. Amazon EKS incorporates robust built-in safeguards to protect both your AI models and the data.
@@ -17,6 +37,8 @@ Generative AI models represent a significant breakthrough in the field of Artifi
 
 LLMs comprise of billions of parameters which require large amount of resources for high performance training as well as low latency inference. Amazon EKS serves as an effective orchestrator to help achieve rapid scale out and scale in needed for these generative AI workloads while providing tools to meet enterprise governance and control. Amazon EKS not only simplifies management but also offers a wide variety of open-source tools to tackle unique ML challenges. Amazon EKS empowers you with full control over your environments, which ensures optimal cost efficiency.
 
+
+![lab-image](/static/images/lab-image.png)
 
 ## Workshop Objective
 In this workshop, you will learn how you can:

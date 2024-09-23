@@ -6,6 +6,8 @@ weight : 110
 
 In this section, the following steps will guide you to deploy CSI Driver of Amazon FSx for Lustre. As a prerequisite step you will have to set the environment variables, create a service account & IAM poilcy with role ARN. Then proceed with the CSI driver deployment for FSx for lustre filesystem.
 
+## Describe what the CSI driver is used for? and is it required for Static provisioned PVs which are claimed through PVC?
+
 Below steps to ensure that you are operating from the right AWS region and in the right working directory with the access to the EKS cluster.
 
 
@@ -148,7 +150,7 @@ Copy and run the below command to save the role ARN.
 
 ::code[export ROLE_ARN=$(aws cloudformation describe-stacks --stack-name "eksctl-${CLUSTER_NAME}-addon-iamserviceaccount-kube-system-fsx-csi-controller-sa" --query "Stacks[0].Outputs[0].OutputValue"  --region $AWS_REGION --output text)]{language=bash showLineNumbers=false showCopyAction=true}
 
-Copy the output of this ROLE_ARN into your notepad file 
+Copy the output of this ROLE_ARN into your notepad file
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 echo $ROLE_ARN
 :::
