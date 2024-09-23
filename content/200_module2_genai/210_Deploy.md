@@ -63,11 +63,13 @@ kubectl apply -f https://raw.githubusercontent.com/aws-neuron/aws-neuron-sdk/mas
 
 ##### Deploy Mistral Application
 
+**You will deploy a vLLM pod, from ECR image, and configure it to use the PVC you previously created, where this has the inference server config details... etc.. feel free to cat the mistral-fsxl.yaml**
+
 ```bash
 kubectl apply -f mistral-fsxl.yaml
 ```
 
-This will take upto 10 mins. You can monitor pod creation with following commands to see it transitioning to `Running`
+This will take upto 10 mins (**you can go to the next step, and dont need to wait for this**). You can monitor pod creation with following commands to see it transitioning to `Running`
 
 ```bash
 kubectl get pod -w

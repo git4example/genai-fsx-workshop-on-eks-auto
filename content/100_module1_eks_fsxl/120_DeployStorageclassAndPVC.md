@@ -5,6 +5,16 @@ weight : 120
 -------------------------------------------------------------
 In this section you will define the storageclass variables and create the storageclass for Amazon FSx for Lustre. Later you will create the persistent volume claim (PVC) and deploy the storage class. Observe the FSx for lustre file system is being auto provisioned. Kindly follow the below steps.
 
+### Two modes for persistent storage
+* STatic Provisioning -  Storeage/Eks admin controls the lifecycle of the persistent volume and its data. The admin creates a PV (i.e. creates a FSxL instance and configures the PV details on EKS), and then provides these details for the DevOPS so they can make a claim for this PV in their PoD using PVC.
+* Dynamic Provisioning - the DevOps requests for the creation of the PV (new FSx instance) and PVC in one flow. Doesnt require separate process for STorage/EKS admin to create for them. They control the lifecycle of the Persistent volume data.
+  **XYZ
+
+* In this workshop we have already provisioned a configured a PV using Static provisioning (this is )  Follow the below instructions to learn how you can create a PV (which will create a new FSxL instance) and request a PVC (for your Pod to use) all in one flow using Dynamic provisioning. 
+
+
+
+
 ### Step 1: Define the storageclass
 
 In the following steps you will be using the environment variables which was created in the previous section.
