@@ -171,6 +171,7 @@ alias ksd="kubectl -n kube-system describe "
 alias kconf="k config set-context $(k config current-context) --namespace "
 alias kconfv="k config view"
 alias ktest="k run -it netshoot --image=nicolaka/netshoot /bin/bash"
+alias kl='kubectl -n karpenter logs -l app.kubernetes.io/name=karpenter --all-containers=true -f --tail=20'
 export dry="-o=yaml --dry-run=client"
 export w="-o=wide"
 export y="-o=yaml"
@@ -187,120 +188,93 @@ export c="-o=custom-columns"
 
 
 
-## Unable to register fsx luster csi node driver
 
-```log
-WSParticipantRole:~/environment/eks/genai $ ks logs fsx-csi-node-pq2mn 
-Defaulted container "fsx-plugin" out of: fsx-plugin, node-driver-registrar, liveness-probe
-I0909 08:55:33.484429       1 driver.go:61] "Driver Information" Driver="fsx.csi.aws.com" Version="v1.2.0"
-I0909 08:55:33.484501       1 metadata.go:72] "retrieving instance data from ec2 metadata"
-I0909 08:55:36.628226       1 metadata.go:75] "ec2 metadata is not available"
-I0909 08:55:36.628248       1 metadata.go:83] "retrieving instance data from kubernetes api"
-I0909 08:55:36.628558       1 metadata.go:88] "kubernetes api is available"
-I0909 08:55:36.641170       1 node.go:66] "regionFromSession Node service" region=""
-I0909 08:55:43.421070       1 mount_linux.go:243] Detected OS without systemd
-
-WSParticipantRole:~/environment/eks/genai $ ks logs fsx-csi-node-pq2mn -c node-driver-registrar
-I0909 08:55:36.751564       1 main.go:135] Version: v2.10.0
-I0909 08:55:36.751601       1 main.go:136] Running node-driver-registrar in mode=
-I0909 08:55:36.751606       1 main.go:157] Attempting to open a gRPC connection with: "/csi/csi.sock"
-I0909 08:55:36.752246       1 main.go:164] Calling CSI driver to discover driver name
-I0909 08:55:36.754234       1 main.go:173] CSI driver name: "fsx.csi.aws.com"
-I0909 08:55:36.754259       1 node_register.go:55] Starting Registration Server at: /registration/fsx.csi.aws.com-reg.sock
-I0909 08:55:36.754376       1 node_register.go:64] Registration Server started at: /registration/fsx.csi.aws.com-reg.sock
-I0909 08:55:36.754528       1 node_register.go:88] Skipping HTTP server because endpoint is set to: ""
-I0909 08:55:37.146704       1 main.go:90] Received GetInfo call: &InfoRequest{}
-I0909 08:55:37.202097       1 main.go:101] Received NotifyRegistrationStatus call: &RegistrationStatus{PluginRegistered:true,Error:,}
-WSParticipantRole:~/environment/eks/genai $ 
-
-
+### Pre-warm time : 
+```
+WSParticipantRole:~/environment/eks/download $ kg po -w
+NAME                             READY   STATUS    RESTARTS   AGE
+kube-ops-view-5d9d967b77-vqdnb   1/1     Running   0          5h22m
+netshoot-69d5ccd9dc-nv9bx        1/1     Running   0          40m
+pre-warm-mistral-smzj5           0/1     Pending   0          17s
+pre-warm-mistral-smzj5           0/1     Pending   0          29s
+pre-warm-mistral-smzj5           0/1     Init:0/1   0          29s
+pre-warm-mistral-smzj5           0/1     Init:0/1   0          58s
+pre-warm-mistral-smzj5           0/1     PodInitializing   0          3m51s
+pre-warm-mistral-smzj5           1/1     Running           0          3m53s
+pre-warm-mistral-smzj5           0/1     Completed         0          3m55s
 ```
 
+## Model loaded in 2.5 mins
+```
+WSParticipantRole:~/environment/eks/genai $ kg po -w
+NAME                                            READY   STATUS    RESTARTS   AGE
+kube-ops-view-5d9d967b77-vqdnb                  1/1     Running   0          5h49m
+vllm-mistral-inf2-deployment-7d886c8cc8-5dwcx   0/1     Pending   0          3s
+vllm-mistral-inf2-deployment-7d886c8cc8-5dwcx   0/1     Pending   0          11s
+vllm-mistral-inf2-deployment-7d886c8cc8-5dwcx   0/1     Pending   0          19s
+vllm-mistral-inf2-deployment-7d886c8cc8-5dwcx   0/1     ContainerCreating   0          19s
+open-webui-deployment-5d7ff94bc9-6s7f9          0/1     Pending             0          0s
+open-webui-deployment-5d7ff94bc9-6s7f9          0/1     Pending             0          0s
+open-webui-deployment-5d7ff94bc9-6s7f9          0/1     ContainerCreating   0          0s
+open-webui-deployment-5d7ff94bc9-6s7f9          1/1     Running             0          70s
+vllm-mistral-inf2-deployment-7d886c8cc8-5dwcx   1/1     Running             0          2m25s
+```
 
-```log
- k logs vllm-mistral-inf2-deployment-65d8f69d55-vv2mc -f 
-WARNING 09-09 21:35:36 _custom_ops.py:11] Failed to import from vllm._C with ModuleNotFoundError("No module named 'vllm._C'")
-INFO 09-09 21:35:38 api_server.py:177] vLLM API server version 0.5.0
-INFO 09-09 21:35:38 api_server.py:178] args: Namespace(host=None, port=8000, uvicorn_log_level='info', allow_credentials=False, allowed_origins=['*'], allowed_methods=['*'], allowed_headers=['*'], api_key=None, lora_modules=None, chat_template=None, response_role='assistant', ssl_keyfile=None, ssl_certfile=None, ssl_ca_certs=None, ssl_cert_reqs=0, root_path=None, middleware=[], model='/work-dir/Mistral-7B-Instruct-v0.2/', tokenizer=None, skip_tokenizer_init=False, revision=None, code_revision=None, tokenizer_revision=None, tokenizer_mode='auto', trust_remote_code=False, download_dir=None, load_format='auto', dtype='auto', kv_cache_dtype='auto', quantization_param_path=None, max_model_len=10240, guided_decoding_backend='outlines', distributed_executor_backend=None, worker_use_ray=False, pipeline_parallel_size=1, tensor_parallel_size=2, max_parallel_loading_workers=None, ray_workers_use_nsight=False, block_size=16, enable_prefix_caching=False, disable_sliding_window=False, use_v2_block_manager=False, num_lookahead_slots=0, seed=0, swap_space=4, gpu_memory_utilization=0.96, num_gpu_blocks_override=None, max_num_batched_tokens=None, max_num_seqs=4, max_logprobs=20, disable_log_stats=False, quantization=None, rope_scaling=None, rope_theta=None, enforce_eager=True, max_context_len_to_capture=None, max_seq_len_to_capture=8192, disable_custom_all_reduce=False, tokenizer_pool_size=0, tokenizer_pool_type='ray', tokenizer_pool_extra_config=None, enable_lora=False, max_loras=1, max_lora_rank=16, lora_extra_vocab_size=256, lora_dtype='auto', long_lora_scaling_factors=None, max_cpu_loras=None, fully_sharded_loras=False, device='neuron', image_input_type=None, image_token_id=None, image_input_shape=None, image_feature_size=None, image_processor=None, image_processor_revision=None, disable_image_processor=False, scheduler_delay_factor=0.0, enable_chunked_prefill=False, speculative_model=None, num_speculative_tokens=None, speculative_max_model_len=None, speculative_disable_by_batch_size=None, ngram_prompt_lookup_max=None, ngram_prompt_lookup_min=None, model_loader_extra_config=None, preemption_mode=None, served_model_name=['mistralai/Mistral-7B-Instruct-v0.2-neuron'], qlora_adapter_name_or_path=None, engine_use_ray=False, disable_log_requests=False, max_log_len=None)
-INFO 09-09 21:35:38 config.py:623] Defaulting to use ray for distributed inference
-WARNING 09-09 21:35:38 config.py:436] Possibly too large swap space. 8.00 GiB out of the 15.27 GiB total CPU memory is allocated for the swap space.
-INFO 09-09 21:35:38 llm_engine.py:161] Initializing an LLM engine (v0.5.0) with config: model='/work-dir/Mistral-7B-Instruct-v0.2/', speculative_config=None, tokenizer='/work-dir/Mistral-7B-Instruct-v0.2/', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, rope_scaling=None, rope_theta=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=10240, download_dir=None, load_format=LoadFormat.AUTO, tensor_parallel_size=2, disable_custom_all_reduce=False, quantization=None, enforce_eager=True, kv_cache_dtype=auto, quantization_param_path=None, device_config=cpu, decoding_config=DecodingConfig(guided_decoding_backend='outlines'), seed=0, served_model_name=mistralai/Mistral-7B-Instruct-v0.2-neuron)
-WARNING 09-09 21:35:39 utils.py:456] Pin memory is not supported on Neuron.
-2024-09-09 21:37:09.000563:  27  INFO ||NEURON_CACHE||: Compile cache path: /work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
-2024-09-09 21:37:09.000565:  27  INFO ||NEURON_CACHE||: Compile cache path: /work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
-2024-09-09 21:37:09.000576:  28  INFO ||NEURON_CACHE||: Compile cache path: /work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
-2024-09-09 21:37:09.000578:  28  INFO ||NEURON_CACHE||: Compile cache path: /work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
-concurrent.futures.process._RemoteTraceback: 
-"""
-Traceback (most recent call last):
-  File "/home/ray/anaconda3/lib/python3.11/concurrent/futures/process.py", line 261, in _process_worker
-    r = call_item.fn(*call_item.args, **call_item.kwargs)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/transformers_neuronx/compiler.py", line 471, in compile
-    self.build()
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/transformers_neuronx/compiler.py", line 478, in build
-    self.neff_bytes = compile_hlo_module(self.hlo_module, self.tag)
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/transformers_neuronx/compiler.py", line 121, in compile_hlo_module
-    neff_bytes = neuron_xla_compile(module_bytes, flags, input_format="hlo", platform_target="trn1",
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/libneuronxla/neuron_cc_wrapper.py", line 268, in neuron_xla_compile
-    neuron_xla_compile_impl(
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/libneuronxla/neuron_cc_wrapper.py", line 309, in neuron_xla_compile_impl
-    model_exists = compile_cache.exists(model_path)
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/libneuronxla/neuron_cc_cache.py", line 137, in wrapper
-    with self.lock_dir:
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/libneuronxla/neuron_cc_cache.py", line 118, in __enter__
-    self.lock_fd = open(self.lock_path, 'w')
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^
-PermissionError: [Errno 13] Permission denied: '/work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/lock'
-"""
+```
+$ k logs vllm-mistral-inf2-deployment-7d886c8cc8-5dwcx -f
+WARNING 09-23 00:07:19 _custom_ops.py:11] Failed to import from vllm._C with ModuleNotFoundError("No module named 'vllm._C'")
+INFO 09-23 00:07:22 api_server.py:177] vLLM API server version 0.5.0
+INFO 09-23 00:07:22 api_server.py:178] args: Namespace(host=None, port=8000, uvicorn_log_level='info', allow_credentials=False, allowed_origins=['*'], allowed_methods=['*'], allowed_headers=['*'], api_key=None, lora_modules=None, chat_template=None, response_role='assistant', ssl_keyfile=None, ssl_certfile=None, ssl_ca_certs=None, ssl_cert_reqs=0, root_path=None, middleware=[], model='/work-dir/Mistral-7B-Instruct-v0.2/', tokenizer=None, skip_tokenizer_init=False, revision=None, code_revision=None, tokenizer_revision=None, tokenizer_mode='auto', trust_remote_code=False, download_dir=None, load_format='auto', dtype='auto', kv_cache_dtype='auto', quantization_param_path=None, max_model_len=10240, guided_decoding_backend='outlines', distributed_executor_backend=None, worker_use_ray=False, pipeline_parallel_size=1, tensor_parallel_size=2, max_parallel_loading_workers=None, ray_workers_use_nsight=False, block_size=16, enable_prefix_caching=False, disable_sliding_window=False, use_v2_block_manager=False, num_lookahead_slots=0, seed=0, swap_space=4, gpu_memory_utilization=0.96, num_gpu_blocks_override=None, max_num_batched_tokens=None, max_num_seqs=4, max_logprobs=20, disable_log_stats=False, quantization=None, rope_scaling=None, rope_theta=None, enforce_eager=True, max_context_len_to_capture=None, max_seq_len_to_capture=8192, disable_custom_all_reduce=False, tokenizer_pool_size=0, tokenizer_pool_type='ray', tokenizer_pool_extra_config=None, enable_lora=False, max_loras=1, max_lora_rank=16, lora_extra_vocab_size=256, lora_dtype='auto', long_lora_scaling_factors=None, max_cpu_loras=None, fully_sharded_loras=False, device='neuron', image_input_type=None, image_token_id=None, image_input_shape=None, image_feature_size=None, image_processor=None, image_processor_revision=None, disable_image_processor=False, scheduler_delay_factor=0.0, enable_chunked_prefill=False, speculative_model=None, num_speculative_tokens=None, speculative_max_model_len=None, speculative_disable_by_batch_size=None, ngram_prompt_lookup_max=None, ngram_prompt_lookup_min=None, model_loader_extra_config=None, preemption_mode=None, served_model_name=['mistralai/Mistral-7B-Instruct-v0.2-neuron'], qlora_adapter_name_or_path=None, engine_use_ray=False, disable_log_requests=False, max_log_len=None)
+INFO 09-23 00:07:22 config.py:623] Defaulting to use ray for distributed inference
+WARNING 09-23 00:07:22 config.py:436] Possibly too large swap space. 8.00 GiB out of the 15.27 GiB total CPU memory is allocated for the swap space.
+INFO 09-23 00:07:22 llm_engine.py:161] Initializing an LLM engine (v0.5.0) with config: model='/work-dir/Mistral-7B-Instruct-v0.2/', speculative_config=None, tokenizer='/work-dir/Mistral-7B-Instruct-v0.2/', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, rope_scaling=None, rope_theta=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=10240, download_dir=None, load_format=LoadFormat.AUTO, tensor_parallel_size=2, disable_custom_all_reduce=False, quantization=None, enforce_eager=True, kv_cache_dtype=auto, quantization_param_path=None, device_config=cpu, decoding_config=DecodingConfig(guided_decoding_backend='outlines'), seed=0, served_model_name=mistralai/Mistral-7B-Instruct-v0.2-neuron)
+WARNING 09-23 00:07:23 utils.py:456] Pin memory is not supported on Neuron.
 
-The above exception was the direct cause of the following exception:
 
-Traceback (most recent call last):
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/vllm/entrypoints/openai/api_server.py", line 196, in <module>
-    engine = AsyncLLMEngine.from_engine_args(
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/vllm/engine/async_llm_engine.py", line 395, in from_engine_args
-    engine = cls(
-             ^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/vllm/engine/async_llm_engine.py", line 349, in __init__
-    self.engine = self._init_engine(*args, **kwargs)
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/vllm/engine/async_llm_engine.py", line 470, in _init_engine
-    return engine_class(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/vllm/engine/llm_engine.py", line 223, in __init__
-    self.model_executor = executor_class(
-                          ^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/vllm/executor/executor_base.py", line 41, in __init__
-    self._init_executor()
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/vllm/executor/neuron_executor.py", line 21, in _init_executor
-    self._init_worker()
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/vllm/executor/neuron_executor.py", line 34, in _init_worker
-    self.driver_worker.load_model()
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/vllm/worker/neuron_worker.py", line 45, in load_model
-    self.model_runner.load_model()
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/vllm/worker/neuron_model_runner.py", line 42, in load_model
-    self.model = get_neuron_model(self.model_config,
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/vllm/model_executor/model_loader/neuron.py", line 127, in get_neuron_model
-    model.load_weights(
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/vllm/model_executor/model_loader/neuron.py", line 98, in load_weights
-    self.model.to_neuron()
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/transformers_neuronx/base.py", line 73, in to_neuron
-    self.compile()
-  File "/home/ray/anaconda3/lib/python3.11/site-packages/transformers_neuronx/base.py", line 55, in compile
-    kernel.neff_bytes = neff_bytes_futures[hash_hlo(kernel.hlo_module)].result()
-                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/concurrent/futures/_base.py", line 456, in result
-    return self.__get_result()
-           ^^^^^^^^^^^^^^^^^^^
-  File "/home/ray/anaconda3/lib/python3.11/concurrent/futures/_base.py", line 401, in __get_result
-    raise self._exception
-PermissionError: [Errno 13] Permission denied: '/work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/lock'
+2024-09-23 00:08:59.000814:  27  INFO ||NEURON_CACHE||: Compile cache path: /work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
+2024-09-23 00:08:59.000900:  28  INFO ||NEURON_CACHE||: Compile cache path: /work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
+2024-09-23 00:09:00.000437:  27  INFO ||NEURON_CC_WRAPPER||: Using a cached neff at /work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/neuronxcc-2.14.227.0+2d4f85be/MODULE_b100285780ea94e4e6ea+2c2d707e/model.neff. Exiting with a successfully compiled graph.
+2024-09-23 00:09:00.000441:  27  INFO ||NEURON_CACHE||: Compile cache path: /work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
+2024-09-23 00:09:00.000471:  28  INFO ||NEURON_CC_WRAPPER||: Using a cached neff at /work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/neuronxcc-2.14.227.0+2d4f85be/MODULE_8ece72ba8982f6779d71+2c2d707e/model.neff. Exiting with a successfully compiled graph.
+2024-09-23 00:09:00.000490:  28  INFO ||NEURON_CACHE||: Compile cache path: /work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
+2024-Sep-23 00:09:01.0809 1:26 [1] include/socket.h:270 CCOM WARN Skipping IPv6 loopback adddress
+2024-Sep-23 00:09:01.0817 1:26 [1] init.cc:108 CCOM WARN Linux kernel 5.10 requires setting FI_EFA_FORK_SAFE=1 environment variable.  Multi-node support will be disabled.
+Please restart with FI_EFA_FORK_SAFE=1 set.
+2024-Sep-23 00:09:01.0830 1:26 [1] include/socket.h:270 CCOM WARN Skipping IPv6 loopback adddress
+2024-Sep-23 00:09:01.0830 1:25 [0] include/socket.h:270 CCOM WARN Skipping IPv6 loopback adddress
+INFO 09-23 00:09:22 serving_chat.py:92] Using default chat template:
+INFO 09-23 00:09:22 serving_chat.py:92] {%- if messages[0]['role'] == 'system' %}
+INFO 09-23 00:09:22 serving_chat.py:92]     {%- set system_message = messages[0]['content'] %}
+INFO 09-23 00:09:22 serving_chat.py:92]     {%- set loop_messages = messages[1:] %}
+INFO 09-23 00:09:22 serving_chat.py:92] {%- else %}
+INFO 09-23 00:09:22 serving_chat.py:92]     {%- set loop_messages = messages %}
+INFO 09-23 00:09:22 serving_chat.py:92] {%- endif %}
+INFO 09-23 00:09:22 serving_chat.py:92] 
+INFO 09-23 00:09:22 serving_chat.py:92] {{- bos_token }}
+INFO 09-23 00:09:22 serving_chat.py:92] {%- for message in loop_messages %}
+INFO 09-23 00:09:22 serving_chat.py:92]     {%- if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}
+INFO 09-23 00:09:22 serving_chat.py:92]         {{- raise_exception('After the optional system message, conversation roles must alternate user/assistant/user/assistant/...') }}
+INFO 09-23 00:09:22 serving_chat.py:92]     {%- endif %}
+INFO 09-23 00:09:22 serving_chat.py:92]     {%- if message['role'] == 'user' %}
+INFO 09-23 00:09:22 serving_chat.py:92]         {%- if loop.first and system_message is defined %}
+INFO 09-23 00:09:22 serving_chat.py:92]             {{- ' [INST] ' + system_message + '\n\n' + message['content'] + ' [/INST]' }}
+INFO 09-23 00:09:22 serving_chat.py:92]         {%- else %}
+INFO 09-23 00:09:22 serving_chat.py:92]             {{- ' [INST] ' + message['content'] + ' [/INST]' }}
+INFO 09-23 00:09:22 serving_chat.py:92]         {%- endif %}
+INFO 09-23 00:09:22 serving_chat.py:92]     {%- elif message['role'] == 'assistant' %}
+INFO 09-23 00:09:22 serving_chat.py:92]         {{- ' ' + message['content'] + eos_token}}
+INFO 09-23 00:09:22 serving_chat.py:92]     {%- else %}
+INFO 09-23 00:09:22 serving_chat.py:92]         {{- raise_exception('Only user and assistant roles are supported, with the exception of an initial optional system message!') }}
+INFO 09-23 00:09:22 serving_chat.py:92]     {%- endif %}
+INFO 09-23 00:09:22 serving_chat.py:92] {%- endfor %}
+INFO 09-23 00:09:22 serving_chat.py:92] 
+WARNING 09-23 00:09:22 serving_embedding.py:141] embedding_mode is False. Embedding API will not work.
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     10.0.99.182:33646 - "GET /v1/models HTTP/1.1" 200 OK
+INFO 09-23 00:09:32 metrics.py:341] Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 0.0 tokens/s, Running: 0 reqs, Swapped: 0 reqs, Pending: 0 reqs, GPU KV cache usage: 0.0%, CPU KV cache usage: 0.0%.
+INFO 09-23 00:09:42 metrics.py:341] Avg prompt throughput: 0.0 tokens/s, Avg generation throughput: 0.0 tokens/s, Running: 0 reqs, Swapped: 0 reqs, Pending: 0 reqs, GPU KV cache usage: 0.0%, CPU KV cache usage: 0.0%.
+INFO:     10.0.99.182:59268 - "GET /v1/models HTTP/1.1" 200 OK
 ```

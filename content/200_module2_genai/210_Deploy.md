@@ -14,23 +14,17 @@ A Karpenter NodePool sets constraints on the nodes that can be created by Karpen
 cd /home/ec2-user/environment/eks/genai
 ```
 
-Find latest Supported EKS Optimized AMI
-```bash
-export K8S_VERSION=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION --query cluster.version --output text)
-export GPU_AMI_ID="$(aws ssm get-parameter --name /aws/service/eks/optimized-ami/${K8S_VERSION}/amazon-linux-2-gpu/recommended/image_id --query Parameter.Value --output text)"
-```
-
 Let's deploy a Karpenter NodePool with the following configuration:
 
 
 ```bash
-cat inferentia_nodepool.yaml | envsubst | kubectl apply -f -
+kubectl apply -f inferentia_nodepool.yaml 
 ```
 
 
 ###### Verify NodePool and EC2NodeClass:
 :::code{showCopyAction=true showLineNumbers=true language=bash}
-kubectl get nodepool,ec2nodeclass
+kubectl get nodepool,ec2nodeclass inferentia
 :::
 
 ```
@@ -92,7 +86,7 @@ To read karpenter logs set-up the following alias to stream logs from all of the
 alias kl='kubectl -n karpenter logs -l app.kubernetes.io/name=karpenter --all-containers=true -f --tail=20'
 ```
 
-From now on to invoke the alias and get the logs we can just use:
+From now on to invoke the alias and get the logs we can just use to see if karpenter is launching inferentia node for our mistral pod.
 
 ```bash
 kl

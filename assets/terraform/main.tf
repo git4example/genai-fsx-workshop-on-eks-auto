@@ -372,6 +372,9 @@ resource "aws_eks_access_entry" "karpenter_node_access_entry" {
   principal_arn     = module.eks_blueprints_addons.karpenter.node_iam_role_arn
   kubernetes_groups = []
   type              = "EC2_LINUX"
+  lifecycle {
+    ignore_changes =  all 
+  }
 }
 
 module "ebs_csi_driver_irsa" {
@@ -612,6 +615,34 @@ resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
 
 
 ################################################################################
+# FSx Lustre filesystem for static provisioning
+################################################################################
+
+resource "aws_fsx_lustre_file_system" "fsx_lustre" {
+  import_path      = "s3://${module.fsx-lustre-bucket.s3_bucket_id}"
+  export_path      = "s3://${module.fsx-lustre-bucket.s3_bucket_id}/export"
+  auto_import_policy = "NEW_CHANGED_DELETED"
+  file_system_type_version = "2.15"
+  storage_capacity = 1200
+  subnet_ids       = [module.vpc.private_subnets[0]]
+  security_group_ids = [aws_security_group.FSxLSecurityGroup01.id]
+}
+
+
+resource "helm_release" "fsx_csi_driver" {
+  name       = "aws-fsx-csi-driver"
+  namespace  = "kube-system"
+  repository = "https://kubernetes-sigs.github.io/aws-fsx-csi-driver"
+  chart      = "aws-fsx-csi-driver"
+  version    = "1.9.0" 
+  set {
+    name  = "csi.enableFSxNInstances"
+    value = true
+  }
+}
+
+
+################################################################################
 # Kubernetes Manifests
 ################################################################################
 resource "kubectl_manifest" "kube_ops_view_deployment" {
@@ -761,6 +792,259 @@ resource "kubectl_manifest" "kube_ops_view_service" {
     module.eks
   ]
 }
+
+resource "kubectl_manifest" "nodepool_default" {
+  yaml_body = <<-YAML
+    apiVersion: karpenter.sh/v1
+    kind: NodePool
+    metadata:
+      name: default
+    spec:
+      template:
+        spec:
+          requirements:
+            - key: kubernetes.io/arch
+              operator: In
+              values: ["amd64"]
+            - key: kubernetes.io/os
+              operator: In
+              values: ["linux"]
+            - key: karpenter.sh/capacity-type
+              operator: In
+              values: ["on-demand"]
+            - key: karpenter.k8s.aws/instance-category
+              operator: In
+              values: ["c", "m", "r"]
+            - key: karpenter.k8s.aws/instance-generation
+              operator: Gt
+              values: ["4"]
+          nodeClassRef:
+            group: karpenter.k8s.aws
+            kind: EC2NodeClass
+            name: default
+      limits:
+        cpu: 1000
+      disruption:
+        consolidationPolicy: WhenEmpty
+        consolidateAfter: 180s
+      weight: 100
+  YAML
+
+  depends_on = [
+    module.eks
+  ]
+}
+
+resource "kubectl_manifest" "ec2nodeclass_default" {
+  yaml_body = <<-YAML
+    apiVersion: karpenter.k8s.aws/v1
+    kind: EC2NodeClass
+    metadata:
+      name: default
+    spec:
+      amiFamily: AL2 
+      role: "Karpenter-eksworkshop" 
+      subnetSelectorTerms:          
+        - tags:
+            karpenter.sh/discovery: "eksworkshop"
+      securityGroupSelectorTerms:
+        - tags:
+            karpenter.sh/discovery: "eksworkshop"
+      amiSelectorTerms:
+        - alias: al2@v20240917
+  YAML
+
+  depends_on = [
+    module.eks
+  ]
+}
+
+
+
+
+################################################################################
+# Pre-warming FSx Lustre filesystem with Mistral model
+################################################################################
+
+
+resource "kubectl_manifest" "nodepool_pre_warm" {
+  yaml_body = <<-YAML
+    apiVersion: karpenter.sh/v1
+    kind: NodePool
+    metadata:
+      name: pre-warm
+    spec:
+      template:
+        spec:
+          requirements:
+            - key: kubernetes.io/arch
+              operator: In
+              values: ["amd64"]
+            - key: kubernetes.io/os
+              operator: In
+              values: ["linux"]
+            - key: karpenter.sh/capacity-type
+              operator: In
+              values: ["on-demand"]
+            - key: karpenter.k8s.aws/instance-category
+              operator: In
+              values: ["c", "m", "r"]
+            - key: karpenter.k8s.aws/instance-generation
+              operator: Gt
+              values: ["4"]
+          nodeClassRef:
+            group: karpenter.k8s.aws
+            kind: EC2NodeClass
+            name: pre-warm
+      limits:
+        cpu: 1000
+      disruption:
+        consolidationPolicy: WhenEmpty
+        # expireAfter: 720h # 30 * 24h = 720h
+        consolidateAfter: 180s
+      weight: 100
+  YAML
+
+  depends_on = [
+    module.eks
+  ]
+}
+
+resource "kubectl_manifest" "ec2nodeclass_pre_warm" {
+  yaml_body = <<-YAML
+    apiVersion: karpenter.k8s.aws/v1
+    kind: EC2NodeClass
+    metadata:
+      name: pre-warm
+    spec:
+      amiFamily: AL2 # Amazon Linux 2
+      blockDeviceMappings:
+        - deviceName: /dev/xvda
+          ebs:
+            deleteOnTermination: true
+            volumeSize: 100Gi
+            volumeType: gp3
+            iops: 10000
+            throughput: 1000
+      role: "Karpenter-eksworkshop" 
+      subnetSelectorTerms:          
+        - tags:
+            karpenter.sh/discovery: "eksworkshop"
+      securityGroupSelectorTerms:
+        - tags:
+            karpenter.sh/discovery: "eksworkshop"
+      amiSelectorTerms:
+        - alias: al2@v20240917
+  YAML
+
+  depends_on = [
+    module.eks
+  ]
+}
+
+
+resource "kubernetes_job" "pre_warm_mistral" {
+  metadata {
+    name = "pre-warm-mistral"
+  }
+  spec {
+    template {
+      metadata {
+        labels = {
+          app = "pre-warm-mistral"
+        }
+      }
+      spec {
+        node_selector = {
+          "karpenter.sh/nodepool" = "pre-warm"
+        }
+        restart_policy = "OnFailure"
+        init_container {
+          name    = "copy"
+          image   = "nicolaka/netshoot"
+          command = ["/bin/bash"]
+          args    = ["-c", "cp -r /work-dir/Mistral-7B-Instruct-v0.2 /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
+          volume_mount {
+            name       = "persistent-storage"
+            mount_path = "/work-dir"
+          }
+        }
+        container {
+          name    = "delete"
+          image   = "nicolaka/netshoot"
+          command = ["/bin/bash"]
+          args    = ["-c", "rm -rf /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
+          volume_mount {
+            name       = "persistent-storage"
+            mount_path = "/work-dir"
+          }
+        }
+        volume {
+          name = "persistent-storage"
+          persistent_volume_claim {
+            claim_name = "fsx-lustre-claim-pre-warm"
+          }
+        }
+      }
+    }
+    completions = 1
+  }
+  wait_for_completion = true 
+  timeouts {
+    create = "20m"
+  }
+}
+
+resource "kubectl_manifest" "pre_warm_pv" {
+  yaml_body = <<-YAML
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: fsx-lustre-claim-pre-warm
+    spec:
+      accessModes:
+        - ReadWriteMany
+      storageClassName: ""
+      resources:
+        requests:
+          storage: 1200Gi
+      volumeName: fsx-pv-pre-warm
+  YAML
+
+  depends_on = [
+    module.eks
+  ]
+}
+
+
+resource "kubectl_manifest" "pre_warm_pvc" {
+  yaml_body = <<-YAML
+    apiVersion: v1
+    kind: PersistentVolume
+    metadata:
+      name: fsx-pv-pre-warm
+    spec:
+      persistentVolumeReclaimPolicy: Retain
+      capacity:
+        storage: 1200Gi
+      volumeMode: Filesystem
+      accessModes:
+        - ReadWriteMany
+      mountOptions:
+        - flock
+      csi:
+        driver: fsx.csi.aws.com
+        volumeHandle: ${aws_fsx_lustre_file_system.fsx_lustre.id}
+        volumeAttributes:
+          dnsname: ${aws_fsx_lustre_file_system.fsx_lustre.dns_name}
+          mountname: ${aws_fsx_lustre_file_system.fsx_lustre.mount_name}
+  YAML
+
+  depends_on = [
+    module.eks
+  ]
+}
+
 
 #---------------------------------------------------------------
 # Outputs

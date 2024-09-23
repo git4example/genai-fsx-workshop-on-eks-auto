@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: netshoot
+  name: netshoot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: netshoot
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: netshoot
+    spec:
+      nodeSelector:
+        karpenter.sh/nodepool: download
+      containers:
+      - image: nicolaka/netshoot
+        name: netshoot
+        command: ["/bin/bash"]
+        args: ["-c","sleep infinity"]
+        volumeMounts:
+        - name:  persistent-storage
+          mountPath: "/work-dir"
+      volumes:
+      - name: persistent-storage
+        persistentVolumeClaim:
+          claimName: fsx-lustre-claim-check
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fsx-lustre-claim-check
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 1200Gi
+  volumeName: fsx-pv-check
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: fsx-pv-check
+spec:
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 1200Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  mountOptions:
+    - flock
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: fs-0cf6b54e819111009
+    volumeAttributes:
+      dnsname: fs-0cf6b54e819111009.fsx.ap-southeast-2.amazonaws.com
+      mountname: fsx

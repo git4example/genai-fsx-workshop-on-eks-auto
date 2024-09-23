@@ -479,7 +479,6 @@ Resources:
             - !Sub echo 'EKS Cluster version - ${EKSClusterVersion} will be created in region ${AWS::Region}'
             # - !Sub sudo -H -u ec2-user aws s3 sync ${Assets} /home/ec2-user/environment/ --delete
             - !Sub sudo -H -u ec2-user aws s3 sync ${Assets}eks /home/ec2-user/environment/eks --delete
-            - !Sub sudo -H -u ec2-user aws s3 sync ${Assets}karpenter /home/ec2-user/environment/karpenter --delete
             - !Sub sudo -H -u ec2-user aws s3 sync ${Assets}terraform /home/ec2-user/environment/terraform --delete
             # Replace region and eks version
             - !Sub sed -i.bak -e 's/--AWS_REGION--/${AWS::Region}/' /home/ec2-user/environment/terraform/main.tf
@@ -511,6 +510,14 @@ Resources:
             - sudo -H -u ec2-user echo "Destination bucket object counts:"
             - sudo -H -u ec2-user aws s3 ls --summarize --human-readable --recursive s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2
             - sudo -H -u ec2-user echo "End model upload @ `date`"
+            # Delete pre-warming resources
+            - sudo -H -u ec2-user echo "Delete pre-warm nodepool, pre-warming job, pv and pvc"
+            - sudo -H -u ec2-user terraform destroy --target kubernetes_job.pre_warm_mistral --auto-approve
+            - sudo -H -u ec2-user terraform destroy --target kubectl_manifest.pre_warm_pvc --auto-approve
+            - sudo -H -u ec2-user terraform destroy --target kubectl_manifest.pre_warm_pv --auto-approve
+            - sudo -H -u ec2-user terraform destroy --target kubectl_manifest.nodepool_pre_warm --auto-approve
+            - sudo -H -u ec2-user terraform destroy --target kubectl_manifest.ec2nodeclass_pre_warm --auto-approve
+            - sudo -H -u ec2-user terraform destroy --target helm_release.fsx_csi_driver --auto-approve
             - |
               curl -X PUT -H 'Content-Type:' --data-binary '{"Status" : "SUCCESS","Reason" : "Creation Complete", "UniqueId" : "1","Data" : "Creation complete"}' $CFN_RESPONSE_URL
             - sudo shutdown --reboot 1

@@ -1,0 +1,67 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pre-warm-mistral
+spec:  
+  template:
+    metadata:
+      labels:
+        app: pre-warm-mistral
+    spec:
+      nodeSelector:
+        karpenter.sh/nodepool: download
+      restartPolicy: OnFailure
+      initContainers:
+      - name: copy
+        image: nicolaka/netshoot
+        command: ["/bin/bash"]
+        args: ["-c","cp -r /work-dir/Mistral-7B-Instruct-v0.2 /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
+        volumeMounts:
+        - name:  persistent-storage
+          mountPath: "/work-dir"
+      containers:
+      - name: delete
+        image: nicolaka/netshoot
+        command: ["/bin/bash"]
+        args: ["-c","rm -rf /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
+        volumeMounts:
+        - name:  persistent-storage
+          mountPath: "/work-dir"
+      volumes:
+      - name: persistent-storage
+        persistentVolumeClaim:
+          claimName: fsx-lustre-claim-pre-warm
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fsx-lustre-claim-pre-warm
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 1200Gi
+  volumeName: fsx-pv-pre-warm
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: fsx-pv-pre-warm
+spec:
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 1200Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  mountOptions:
+    - flock
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: fs-0cf6b54e819111009
+    volumeAttributes:
+      dnsname: fs-0cf6b54e819111009.fsx.ap-southeast-2.amazonaws.com
+      mountname: fsx
+

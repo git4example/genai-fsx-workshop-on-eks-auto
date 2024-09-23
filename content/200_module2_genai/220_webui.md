@@ -6,85 +6,16 @@ weight : 220
 Now lets deploy chatboot to interact with our mistral model we deployed in previous step.
 
 ```bash
-cat <<EOF | kubectl apply -f -
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: open-webui-deployment
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: open-webui-server
-  template:
-    metadata:
-      labels:
-        app: open-webui-server
-    spec:
-      containers:
-      - name: open-webui
-        image: kopi/openwebui
-        env:
-        - name: OPENAI_API_KEY
-          value: "xxx"
-        - name: OPENAI_API_BASE_URL
-          value: "http://vllm-mistral7b-service/v1"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: open-webui-service
-  annotations:
-    service.beta.kubernetes.io/aws-load-balancer-type: external
-    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
-spec:
-  selector:
-    app: open-webui-server
-  # type: LoadBalancer
-  ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 8080
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: open-webui-ingress
-  annotations:
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/healthcheck-path: /
-    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '10'
-    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: '9'
-    alb.ingress.kubernetes.io/healthy-threshold-count: '2'
-    alb.ingress.kubernetes.io/unhealthy-threshold-count: '10'
-    alb.ingress.kubernetes.io/success-codes: '200-302'
-    alb.ingress.kubernetes.io/load-balancer-name: open-webui-ingress
-  labels:
-    app: open-webui-ingress
-spec:
-  ingressClassName: alb
-  rules:
-  - http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: open-webui-service
-            port: 
-              number: 80
-EOF
-```
+kubectl apply -f open-webui.yaml
+````
 
-This will take upto 2 - 5 mins for the application load balancer to be ready to serve chatbot
+This will take upto 2 - 5 mins for the application load balancer to be ready to serve chatbot.
 ```bash
 kubectl get ing
 ```
 Copy ADDRESS url for ALB an open in new browser tab.
 
-Please note that LLM model will take about 12 - 15 mins to load in memory before you can load this model dropdown as shown below and start chatting. Until this point, you will not see this model in the dropdown because model endpoint is not communicating with webui. 
+Please note that LLM model may take about 2 - 5 mins to load in memory before you can load this model dropdown as shown below and start chatting. Until this point, you will not see this model in the dropdown because model endpoint is not communicating with webui. 
 
 You can refresh page after sometime to see if its ready to serve the model, Once its available in dropdown, select mistral model and start chatting with our mistral model .. 
 
