@@ -45,7 +45,7 @@ metadata:
 spec:
   amiFamily: AL2
   amiSelectorTerms:
-   - id : ${GPU_AMI_ID}
+  - alias: al2@v20240917
   blockDeviceMappings:
     - deviceName: /dev/xvda
       ebs:
