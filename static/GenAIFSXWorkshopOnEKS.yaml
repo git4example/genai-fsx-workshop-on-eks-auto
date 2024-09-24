@@ -459,7 +459,18 @@ Resources:
             - echo '=== Install eks-node-viewer ==='
             - !Sub 'export NODEVIEWER_VERSION=${C9NodeViewerVersion}'
             - sudo -H -u ec2-user go install github.com/awslabs/eks-node-viewer/cmd/eks-node-viewer@${NODEVIEWER_VERSION}
+            # kubectl shortcuts
+            - sudo -H -u ec2-user echo "alias k=kubectl" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias ka=\"kubectl apply -f \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias ke=\"kubectl exec -it \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias kg=\"kubectl get \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias kd=\"kubectl describe \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias kdel=\"kubectl delete \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias ks=\"kubectl -n kube-system \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias ksg=\"kubectl -n kube-system get \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias ksd=\"kubectl -n kube-system describe \"" >> /home/ec2-user/.bashrc
             - sudo -H -u ec2-user echo "export PATH=/home/ec2-user/go/bin:$PATH" >> /home/ec2-user/.bashrc
+            - . /home/ec2-user/.bashrc
             - eks-node-viewer -v
             - echo '=== Install Terraform ==='
             - sudo yum install -y yum-utils
@@ -475,8 +486,6 @@ Resources:
             - sudo mv /tmp/eksctl /usr/local/bin
             - echo "eksctl version"
             - eksctl version
-            - echo '=== Create EKS Cluster ==='
-            - !Sub echo 'EKS Cluster version - ${EKSClusterVersion} will be created in region ${AWS::Region}'
             # - !Sub sudo -H -u ec2-user aws s3 sync ${Assets} /home/ec2-user/environment/ --delete
             - !Sub sudo -H -u ec2-user aws s3 sync ${Assets}eks /home/ec2-user/environment/eks --delete
             - !Sub sudo -H -u ec2-user aws s3 sync ${Assets}terraform /home/ec2-user/environment/terraform --delete
@@ -486,13 +495,10 @@ Resources:
             - cd /home/ec2-user/environment/terraform/
             - !Sub 'export CFN_RESPONSE_URL="${WaitForStackCreationHandle}"'
             - sudo -H -u ec2-user /usr/bin/terraform init
-            - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.vpc" -auto-approve 
-            - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.eks" -auto-approve
-            - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
-            # add sleep to allow ALB controler to start else in some cases this is failing
-            - sudo -H -u ec2-user sleep 60
-            - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
-            # copy model to fsx bucket
+            # Create bucket before copy 
+            - sudo -H -u ec2-user echo "Creating FSx Lustre Bucket"
+            - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.fsx-lustre-bucket" -auto-approve 
+            # Copy model to fsx bucket
             - export S3_BUCKET=$(aws s3 ls | grep fsx-lustre | grep -v fsx-lustre-2ndregion | awk '{print$3}')
             - sudo -H -u ec2-user echo "Bucket name:" ${S3_BUCKET}
              #Install c5cmd and push model to S3
@@ -510,6 +516,14 @@ Resources:
             - sudo -H -u ec2-user echo "Destination bucket object counts:"
             - sudo -H -u ec2-user aws s3 ls --summarize --human-readable --recursive s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2
             - sudo -H -u ec2-user echo "End model upload @ `date`"
+            - echo '=== Create EKS Cluster ==='
+            - !Sub echo 'EKS Cluster version - ${EKSClusterVersion} will be created in region ${AWS::Region}'
+            - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.vpc" -auto-approve 
+            - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.eks" -auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
+            # add sleep to allow ALB controler to start else in some cases this is failing
+            - sudo -H -u ec2-user sleep 60
+            - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve            
             # Delete pre-warming resources
             - sudo -H -u ec2-user echo "Delete pre-warm nodepool, pre-warming job, pv and pvc"
             - sudo -H -u ec2-user terraform destroy --target kubernetes_job.pre_warm_mistral --auto-approve

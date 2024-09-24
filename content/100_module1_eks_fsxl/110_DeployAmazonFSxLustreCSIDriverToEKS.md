@@ -47,11 +47,6 @@ Copy and paste the following lines in the CLI.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
-VPC_ID=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION --query "cluster.resourcesVpcConfig.vpcId" --output text)
-SUBNET_ID=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION --query "cluster.resourcesVpcConfig.subnetIds[0]" --output text)
-SECURITY_GROUP_ID=$(aws ec2 describe-security-groups --filters Name=vpc-id,Values=${VPC_ID} Name=group-name,Values="FSxLSecurityGroup01"  --query "SecurityGroups[*].GroupId" --output text)  
-S3_BUCKET=$(aws s3 ls | grep fsx-lustre | grep -v fsx-lustre-2ndregion | awk '{print$3}')
-S3_BUCKET_2NDREGION=$(aws s3 ls | grep fsx-lustre-2ndregion | awk '{print$3}')
 :::
 
 :::alert{header="Note" type="info"}

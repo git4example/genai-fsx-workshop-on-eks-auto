@@ -5,14 +5,14 @@ DO NOT FULL SYNC THIS ASSET BUCKET. WE HAVE "Mistral-7B-Instruct-v0.2" FOLDER ON
 USE FOLLOWING COMMANDs TO SYNC YOUR LOCAL TO S3 : 
 ```bash
 aws s3 sync ./assets/eks s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/eks --delete
-aws s3 sync ./assets/karpenter s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/karpenter --delete
 aws s3 sync ./assets/terraform s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/terraform --delete
+aws s3 sync ./assets/download s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/download --delete
+aws s3 cp ./assets/README.md s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/README.md
 ```
 
 USE FOLLOWING COMMANDs TO SYNC S3 TO LOCAL/CLOUD9 : 
 ```bash
 aws s3 sync s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/eks /home/ec2-user/environment/eks --delete
-aws s3 sync s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/karpenter /home/ec2-user/environment/karpenter --delete
 aws s3 sync s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/terraform /home/ec2-user/environment/terraform --delete
 ```
 
@@ -152,40 +152,21 @@ aws s3 ls s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20 --recurs
 ```
 
 
-Shortcuts 
+## Shortcuts 
 
 ```bash
 alias k=kubectl
 alias ka="kubectl apply -f "
-alias kc="kubectl create "
 alias ke="kubectl exec -it "
 alias kg="kubectl get "
-alias kgn="kubectl get node -o=custom-columns='Name:.metadata.name,InternalIP:.status.addresses[?(@.type==\"InternalIP\")].address,ExternalIP:.status.addresses[?(@.type==\"ExternalIP\")].address,ID:.spec.providerID'"
 alias kd="kubectl describe "
-alias kr="kubectl replace --force -f "
 alias kdel="kubectl delete "
-alias kex="kubectl explain --recursive "
+alias kl='kubectl -n karpenter logs -l app.kubernetes.io/name=karpenter --all-containers=true -f --tail=20'
 alias ks="kubectl -n kube-system "
 alias ksg="kubectl -n kube-system get "
 alias ksd="kubectl -n kube-system describe "
-alias kconf="k config set-context $(k config current-context) --namespace "
-alias kconfv="k config view"
 alias ktest="k run -it netshoot --image=nicolaka/netshoot /bin/bash"
-alias kl='kubectl -n karpenter logs -l app.kubernetes.io/name=karpenter --all-containers=true -f --tail=20'
-export dry="-o=yaml --dry-run=client"
-export w="-o=wide"
-export y="-o=yaml"
-export j="-o=json"
-export l="--show-labels"
-export c="-o=custom-columns"
 ```
-
-
-- Deploy EKS Job with FSxL PVC to provision FSxL and then deploy pod to pull model on the S3 bucket
-- This job should be successfully download model. Once this is successful then we can use this FSxL bucket to be mounted in Mistral pod in next module
-- Ask Eng Hwa to install huggingface_hub[hf_transfer] in his container to help pull model faster
-
-
 
 
 

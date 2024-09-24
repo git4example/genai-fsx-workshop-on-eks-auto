@@ -18,7 +18,7 @@ spec:
         app: netshoot
     spec:
       nodeSelector:
-        karpenter.sh/nodepool: download
+        karpenter.sh/nodepool: pre-warm
       containers:
       - image: nicolaka/netshoot
         name: netshoot

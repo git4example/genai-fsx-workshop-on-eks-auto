@@ -463,32 +463,23 @@ module "fsx-lustre-bucket" {
   }
 
   bucket_prefix="fsx-lustre-${random_string.random.id}"
-#   policy = jsonencode({
-#     "Version": "2012-10-17",
-#     "Statement": [
-#         {
-#             "Sid": "Example permissions",
-#             "Effect": "Allow",
-#             "Principal": {
-#                 "AWS": "arn:aws:iam::883594451245:root"
-#             },
-#             "Action": [
-#            "s3:DeleteObject",
-#                 "s3:DeleteObjectVersion",
-#                 "s3:GetObject",
-#                 "s3:GetObjectVersion",
-#                 "s3:ListBucket",
-#                 "s3:ListBucketVersions",
-#                 "s3:PutObject"
-#             ],
-#             "Resource": [
-#                 "arn:aws:s3:::${module.fsx-lustre-bucket.s3_bucket_id}",
-#                 "arn:aws:s3:::${module.fsx-lustre-bucket.s3_bucket_id}/*"
-#             ]
-#         }
-#     ]
-# })
+
 }
+
+# Region 1 Bucket
+module "fsx-lustre-test-bucket" {
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "4.1.2"
+  force_destroy = true
+
+  providers = {
+    aws = aws.region1
+  }
+
+  bucket_prefix="fsx-lustre-test-${random_string.random.id}"
+
+}
+
 
 # Region 2 Bucket
 module "fsx-lustre-bucket-2ndregion" {
@@ -995,7 +986,7 @@ resource "kubernetes_job" "pre_warm_mistral" {
   }
 }
 
-resource "kubectl_manifest" "pre_warm_pv" {
+resource "kubectl_manifest" "pre_warm_pvc" {
   yaml_body = <<-YAML
     apiVersion: v1
     kind: PersistentVolumeClaim
@@ -1017,7 +1008,7 @@ resource "kubectl_manifest" "pre_warm_pv" {
 }
 
 
-resource "kubectl_manifest" "pre_warm_pvc" {
+resource "kubectl_manifest" "pre_warm_pv" {
   yaml_body = <<-YAML
     apiVersion: v1
     kind: PersistentVolume

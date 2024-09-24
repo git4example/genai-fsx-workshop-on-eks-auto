@@ -9,7 +9,7 @@ spec:
         app: pre-warm-mistral
     spec:
       nodeSelector:
-        karpenter.sh/nodepool: download
+        karpenter.sh/nodepool: pre-warm
       restartPolicy: OnFailure
       initContainers:
       - name: copy

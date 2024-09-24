@@ -15,18 +15,107 @@ In this section you will define the storageclass variables and create the storag
 
 
 
-### Step 1: Define the storageclass
+### Static Provisioning
+In most cases EKS Cluster Adminstrators preprovision FSx Lustre fielsystem and create Persistent Volume for the developer teams to consume FSx Lustre storage, we are going to use this approach to speed up the process. If you like to experience Dynamic provisioning then you can follow steps in second half of this page.
 
-In the following steps you will be using the environment variables which was created in the previous section.
+```bash
+FSXL_VOLUME_ID=aws fsx describe-file-systems --query 'FileSystems[].FileSystemId' --output text
+DNS_NAME=aws fsx describe-file-systems --query 'FileSystems[].DNSName' --output text
+MOUNT_NAME=aws fsx describe-file-systems --query 'FileSystems[].LustreConfiguration.MountName' --output text 
+```
 
-1. We already set following variables in previous section, Run the below command to verify the values for these variables.
+#### Step 1: Create the PersistentVolume
+We are going to replace these values in the PersistentVolume below :
+
+:::code[]{language=yaml showLineNumbers=true showCopyAction=false}
+# fsxL-persistent-volume.yaml
+apiVersion: v1
+    kind: PersistentVolume
+    metadata:
+      name: fsx-pv
+    spec:
+      persistentVolumeReclaimPolicy: Retain
+      capacity:
+        storage: 1200Gi
+      volumeMode: Filesystem
+      accessModes:
+        - ReadWriteMany
+      mountOptions:
+        - flock
+      csi:
+        driver: fsx.csi.aws.com
+        volumeHandle: FSXL_VOLUME_ID
+        volumeAttributes:
+          dnsname: DNS_NAME
+          mountname: MOUNT_NAME
+:::
+
+Replace values : 
+
+```bash
+sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" fsxL-persistent-volume.yaml
+sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" fsxL-persistent-volume.yaml
+sed -i'' -e "s/MOUNT_NAME/$MOUNT_NAME/g" fsxL-persistent-volume.yaml
+```
+
+Verify replaced values are correct.
+
+```bash
+cat fsxL-persistent-volume.yaml
+```
+
+#### Step 2: Create the PersistentVolumeClaim
+
+We are using following PersistentVolumeClaim to bound with above PersistentVolume, Note that we are not using storage class name here and directly referencing pre-provisioned PersistentVolume.
+
+:::code[]{language=yaml showLineNumbers=true showCopyAction=false}
+# fsxL-claim.yaml
+ apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: fsx-lustre-claim
+    spec:
+      accessModes:
+        - ReadWriteMany
+      storageClassName: ""
+      resources:
+        requests:
+          storage: 1200Gi
+      volumeName: fsx-pv
+:::
+
+```bash
+kubectl apply -f fsxL-claim.yaml
+```
+
+We will be using this PersistentVolumeClaim in next module when we deploy mistral application.
+
+[ Now you can continue to next module to deploy mistral model and chat bot ]
+
+
+### Dynamic Provisioning 
+#### Step 1: Define the storageclass
+
+In the following steps you will be using the following environment variables.
+
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
+ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+VPC_ID=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION --query "cluster.resourcesVpcConfig.vpcId" --output text)
+SUBNET_ID=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION --query "cluster.resourcesVpcConfig.subnetIds[0]" --output text)
+SECURITY_GROUP_ID=$(aws ec2 describe-security-groups --filters Name=vpc-id,Values=${VPC_ID} Name=group-name,Values="FSxLSecurityGroup01"  --query "SecurityGroups[*].GroupId" --output text)  
+S3_TEST_BUCKET=$(aws s3 ls | grep fsx-lustre-test | awk '{print$3}')
+:::
+
+1. We already set following variables, Run the below command to verify the values for these variables.
+
+
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 echo $SUBNET_ID
 echo $SECURITY_GROUP_ID
-echo $S3_BUCKET
+echo $S3_TEST_BUCKET
 :::
 
-1. Go to the right working directory.
+2. Go to the right working directory.
 
 ::code[cd /home/ec2-user/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
@@ -34,8 +123,7 @@ echo $S3_BUCKET
 Below is the output of the `fsxL-storage-class.yaml` file. This file has the StorageClass definition that we will use with the CSI driver to dynamically provision a Persistent Volume Claim (PVC) from Amazon FSx for Lustre. Take a moment inspect the available parameters which you can configure for the FSx for Lustre Instance that will be provisioned by the CSI driver.
 
 :::code[]{language=yaml showLineNumbers=true showCopyAction=false}
-#fsxL-storage-class.yaml
----
+# fsxL-storage-class.yaml
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
@@ -44,21 +132,21 @@ provisioner: fsx.csi.aws.com
 parameters:
     subnetId: SUBNET_ID
     securityGroupIds: SECURITY_GROUP_ID
-    s3ImportPath: s3://S3_BUCKET
-    s3ExportPath: s3://S3_BUCKET/export
+    s3ImportPath: s3://S3_TEST_BUCKET
+    s3ExportPath: s3://S3_TEST_BUCKET/export
     autoImportPolicy: NEW_CHANGED_DELETED
-    deploymentType: PERSISTENT_1
-    perUnitStorageThroughput: "50"
+    deploymentType: SCRATCH_2
+    fileSystemTypeVersion: "2.15"
 mountOptions:
     - flock
 :::
 
- Run the below command, to replace the placeholder values in the `fsxL-storage-class.yaml` file for `SUBNET_ID`, `SECURITY_GROUP_ID` and `S3_BUCKET` with our actual environment values.
+ Run the below command, to replace the placeholder values in the `fsxL-storage-class.yaml` file for `SUBNET_ID`, `SECURITY_GROUP_ID` and `S3_TEST_BUCKET` with our actual environment values.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 sed -i'' -e "s/SUBNET_ID/$SUBNET_ID/g" fsxL-storage-class.yaml
 sed -i'' -e "s/SECURITY_GROUP_ID/$SECURITY_GROUP_ID/g" fsxL-storage-class.yaml
-sed -i'' -e "s/S3_BUCKET/$S3_BUCKET/g" fsxL-storage-class.yaml
+sed -i'' -e "s/S3_TEST_BUCKET/$S3_TEST_BUCKET/g" fsxL-storage-class.yaml
 :::
 
 3. Verify replaced values are correct.
@@ -87,7 +175,7 @@ sed -i'' -e "s/S3_BUCKET/$S3_BUCKET/g" fsxL-storage-class.yaml
 The Amazon S3 bucket for s3ImportPath and s3ExportPath must be the same, otherwise the driver cannot create the Amazon FSx for Lustre file system. The s3ImportPath can stand alone. A random path will be created automatically like s3://ml-training-data-000/FSxLustre20190308T012310Z. The s3ExportPath cannot be used without specifying a value for S3ImportPath.
 :::
 
-### Step 2: Create the storageclass
+#### Step 2: Create the storageclass
 
 Copy and run the below command to apply the defined settings from the step 1. This will create the storageclass.
 
@@ -107,17 +195,18 @@ fsx-lustre-sc          fsx.csi.aws.com         Delete          Immediate        
 
 ::::
 
-### Step 3. Create the persistent volume claim (PVC)
+#### Step 3. Create the persistent volume claim (PVC)
 
 In this step you will create the persistent volume claim for the defined storageclass.
 
 
 1. Run the below command and you will see the following output as shown below.
 
-::code[cat claim.yaml]{language=bash showLineNumbers=false showCopyAction=true}
+::code[cat fsxL-dynamic-claim.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 :::code[]{language=yaml showLineNumbers=true showCopyAction=false}
+# fsxL-dynamic-claim.yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -131,14 +220,14 @@ spec:
       storage: 1200Gi
 :::
 
-::alert[Observe the `claim.yaml`, which is referring to the `fsx-lustre-sc` storage class. You will use this file to provision the FSx for Lustre storage. you are configuring the 1200GiB PVC.]
+::alert[Observe the `fsxL-dynamic-claim.yaml`, which is referring to the `fsx-lustre-sc` storage class. You will use this file to provision the FSx for Lustre storage. you are configuring the 1200GiB PVC.]
 
 
 2. Deploy the storageclass.
 
 Copy and run the below command to apply and create the pvc.
 
-::code[kubectl apply -f claim.yaml]{language=bash showLineNumbers=false showCopyAction=true}
+::code[kubectl apply -f fsxL-dynamic-claim.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 3. To check the status of the pvc from the cli with the below command.
@@ -177,7 +266,7 @@ Warning ProvisioningFailed 4m45s fsx.csi.aws.com_XXXXXXXX failed to provision vo
 
 ![FSxL_provisioning](/static/images/FSxL_Provisioning.png)
 
-### Step 4: Confirm that the file system is provisioned
+#### Step 4: Confirm that the file system is provisioned
 
 Copy and run the below command to check the status of the pvc to confirm the status is "Bound".
 
