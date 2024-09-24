@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: fsx-lustre-claim
+  name: fsx-lustre-dynamic-claim
 spec:
   accessModes:
     - ReadWriteMany

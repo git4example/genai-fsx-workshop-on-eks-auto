@@ -210,7 +210,7 @@ In this step you will create the persistent volume claim for the defined storage
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: fsx-lustre-claim
+  name: fsx-lustre-dynamic-claim
 spec:
   accessModes:
     - ReadWriteMany
@@ -232,7 +232,7 @@ Copy and run the below command to apply and create the pvc.
 
 3. To check the status of the pvc from the cli with the below command.
 
-::code[kubectl describe pvc/fsx-lustre-claim]{language=bash showLineNumbers=false showCopyAction=true}
+::code[kubectl describe pvc/fsx-lustre-dynamic-claim]{language=bash showLineNumbers=false showCopyAction=true}
 
 ::::expand{header="If you see the below output, it means that your volume creation is not expected to have issues. Otherwise, there might be problems that you need to troubleshoot, click to expand"}
 
@@ -275,8 +275,8 @@ Copy and run the below command to check the status of the pvc to confirm the sta
 **Sample output**
 
 :::code[]{language=bash showLineNumbers=false showCopyAction=false}
-NAME               STATUS   VOLUME                                 CAPACITY   ACCESS MODES   STORAGECLASS          AGE
-fsx-lustre-claim   Bound    pvc-15dXXXXXX-11ea-a836-02468c18769e   1200Gi     RWX            fsx-lustre-sc         7m37s
+NAME                       STATUS   VOLUME                                 CAPACITY   ACCESS MODES   STORAGECLASS          AGE
+fsx-lustre-dynamic-claim   Bound    pvc-15dXXXXXX-11ea-a836-02468c18769e   1200Gi     RWX            fsx-lustre-sc         7m37s
 (...)
 :::
 
