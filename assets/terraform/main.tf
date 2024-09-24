@@ -376,7 +376,7 @@ resource "aws_eks_access_entry" "karpenter_node_access_entry" {
     ignore_changes =  all 
   }
   depends_on = [
-    module.eks
+    module.eks_blueprints_addons
   ]
 }
 
