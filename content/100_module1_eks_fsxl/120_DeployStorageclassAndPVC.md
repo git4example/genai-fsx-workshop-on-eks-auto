@@ -19,9 +19,9 @@ In this section you will define the storageclass variables and create the storag
 In most cases EKS Cluster Adminstrators preprovision FSx Lustre fielsystem and create Persistent Volume for the developer teams to consume FSx Lustre storage, we are going to use this approach to speed up the process. If you like to experience Dynamic provisioning then you can follow steps in second half of this page.
 
 ```bash
-FSXL_VOLUME_ID=aws fsx describe-file-systems --query 'FileSystems[].FileSystemId' --output text
-DNS_NAME=aws fsx describe-file-systems --query 'FileSystems[].DNSName' --output text
-MOUNT_NAME=aws fsx describe-file-systems --query 'FileSystems[].LustreConfiguration.MountName' --output text 
+FSXL_VOLUME_ID=$(aws fsx describe-file-systems --query 'FileSystems[].FileSystemId' --output text)
+DNS_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].DNSName' --output text)
+MOUNT_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].LustreConfiguration.MountName' --output text)
 ```
 
 #### Step 1: Create the PersistentVolume
