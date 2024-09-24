@@ -636,6 +636,9 @@ resource "helm_release" "fsx_csi_driver" {
     name  = "csi.enableFSxNInstances"
     value = true
   }
+  depends_on = [
+    module.eks
+  ]
 }
 
 
@@ -828,7 +831,7 @@ resource "kubectl_manifest" "nodepool_default" {
   YAML
 
   depends_on = [
-    module.eks
+    module.eks_blueprints_addons
   ]
 }
 
@@ -852,7 +855,7 @@ resource "kubectl_manifest" "ec2nodeclass_default" {
   YAML
 
   depends_on = [
-    module.eks
+    module.eks_blueprints_addons
   ]
 }
 
@@ -903,7 +906,7 @@ resource "kubectl_manifest" "nodepool_pre_warm" {
   YAML
 
   depends_on = [
-    module.eks
+    module.eks_blueprints_addons
   ]
 }
 
@@ -935,7 +938,7 @@ resource "kubectl_manifest" "ec2nodeclass_pre_warm" {
   YAML
 
   depends_on = [
-    module.eks
+    module.eks_blueprints_addons
   ]
 }
 
