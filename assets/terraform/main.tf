@@ -375,6 +375,9 @@ resource "aws_eks_access_entry" "karpenter_node_access_entry" {
   lifecycle {
     ignore_changes =  all 
   }
+  depends_on = [
+    module.eks
+  ]
 }
 
 module "ebs_csi_driver_irsa" {
@@ -617,6 +620,9 @@ resource "aws_fsx_lustre_file_system" "fsx_lustre" {
   storage_capacity = 1200
   subnet_ids       = [module.vpc.private_subnets[0]]
   security_group_ids = [aws_security_group.FSxLSecurityGroup01.id]
+  depends_on = [
+    module.fsx-lustre-bucket
+  ]
 }
 
 
@@ -984,6 +990,9 @@ resource "kubernetes_job" "pre_warm_mistral" {
   timeouts {
     create = "20m"
   }
+  depends_on = [
+    kubectl_manifest.pre_warm_pvc
+  ]
 }
 
 resource "kubectl_manifest" "pre_warm_pvc" {
@@ -1003,7 +1012,7 @@ resource "kubectl_manifest" "pre_warm_pvc" {
   YAML
 
   depends_on = [
-    module.eks
+    kubectl_manifest.pre_warm_pv
   ]
 }
 
@@ -1032,7 +1041,7 @@ resource "kubectl_manifest" "pre_warm_pv" {
   YAML
 
   depends_on = [
-    module.eks
+    aws_fsx_lustre_file_system.fsx_lustre
   ]
 }
 
