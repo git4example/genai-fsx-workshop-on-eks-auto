@@ -516,10 +516,11 @@ Resources:
             - sudo -H -u ec2-user echo "Destination bucket object counts:"
             - sudo -H -u ec2-user aws s3 ls --summarize --human-readable --recursive s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2
             - sudo -H -u ec2-user echo "End model upload @ `date`"
+            # Create EKS Cluster
             - echo '=== Create EKS Cluster ==='
             - !Sub echo 'EKS Cluster version - ${EKSClusterVersion} will be created in region ${AWS::Region}'
             - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.vpc" -auto-approve 
-            - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.eks" -auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.eks" -target="aws_fsx_lustre_file_system.fsx_lustre" -parallelism=2 -auto-approve
             - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
             # add sleep to allow ALB controler to start else in some cases this is failing
             - sudo -H -u ec2-user sleep 60

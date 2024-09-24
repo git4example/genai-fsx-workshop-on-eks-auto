@@ -277,6 +277,9 @@ module "eks_blueprints_addons" {
   }
 
   tags = local.tags
+  depends_on = [
+    module.eks
+  ]
 }
 
 #---------------------------------------------------------------
@@ -324,6 +327,9 @@ module "data_addons" {
     name    = "nvidia-device-plugin"
     values  = [file("${path.module}/helm-values/nvidia-values.yaml")]
   }
+  depends_on = [
+    module.eks
+  ]
 }
 
 #---------------------------------------------------------------
@@ -396,6 +402,9 @@ module "ebs_csi_driver_irsa" {
   }
 
   tags = local.tags
+  depends_on = [
+    module.eks
+  ]
 }
 
 ################################################################################
