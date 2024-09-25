@@ -26,7 +26,7 @@ Karpenter uses environment variables for configuration.
 Execute the following to checkout the Karpenter configuration:
 
 ```bash
-kubectl -n karpenter get deploy/karpenter -o yaml
+kubectl -n karpenter get deploy/karpenter -o yaml | grep -A 1 'CLUSTER_ENDPOINT\|INTERRUPTION_QUEUE'
 ```
 
 Inspecting the output for the Karpenter controller Pod you can see the following environment variables set:

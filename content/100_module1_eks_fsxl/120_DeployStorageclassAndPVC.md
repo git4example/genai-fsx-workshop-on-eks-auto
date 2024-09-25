@@ -30,24 +30,24 @@ We are going to replace these values in the PersistentVolume below :
 :::code[]{language=yaml showLineNumbers=true showCopyAction=false}
 # fsxL-persistent-volume.yaml
 apiVersion: v1
-    kind: PersistentVolume
-    metadata:
-      name: fsx-pv
-    spec:
-      persistentVolumeReclaimPolicy: Retain
-      capacity:
-        storage: 1200Gi
-      volumeMode: Filesystem
-      accessModes:
-        - ReadWriteMany
-      mountOptions:
-        - flock
-      csi:
-        driver: fsx.csi.aws.com
-        volumeHandle: FSXL_VOLUME_ID
-        volumeAttributes:
-          dnsname: DNS_NAME
-          mountname: MOUNT_NAME
+kind: PersistentVolume
+metadata:
+  name: fsx-pv
+spec:
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 1200Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  mountOptions:
+    - flock
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: FSXL_VOLUME_ID
+    volumeAttributes:
+      dnsname: DNS_NAME
+      mountname: MOUNT_NAME
 :::
 
 Replace values : 
@@ -64,25 +64,33 @@ Verify replaced values are correct.
 cat fsxL-persistent-volume.yaml
 ```
 
+Now lets deploy this updated PersistentVolume to the cluster: 
+
+```bash
+kubectl apply -f fsxL-persistent-volume.yaml
+```
+
 #### Step 2: Create the PersistentVolumeClaim
 
 We are using following PersistentVolumeClaim to bound with above PersistentVolume, Note that we are not using storage class name here and directly referencing pre-provisioned PersistentVolume.
 
 :::code[]{language=yaml showLineNumbers=true showCopyAction=false}
 # fsxL-claim.yaml
- apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata:
-      name: fsx-lustre-claim
-    spec:
-      accessModes:
-        - ReadWriteMany
-      storageClassName: ""
-      resources:
-        requests:
-          storage: 1200Gi
-      volumeName: fsx-pv
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fsx-lustre-claim
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 1200Gi
+  volumeName: fsx-pv
 :::
+
+Now lets deploy this PersistentVolumeClaim to the cluster: 
 
 ```bash
 kubectl apply -f fsxL-claim.yaml
@@ -203,7 +211,6 @@ In this step you will create the persistent volume claim for the defined storage
 1. Run the below command and you will see the following output as shown below.
 
 ::code[cat fsxL-dynamic-claim.yaml]{language=bash showLineNumbers=false showCopyAction=true}
-
 
 :::code[]{language=yaml showLineNumbers=true showCopyAction=false}
 # fsxL-dynamic-claim.yaml
