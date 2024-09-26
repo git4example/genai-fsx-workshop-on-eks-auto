@@ -971,7 +971,7 @@ resource "kubernetes_job" "pre_warm_mistral" {
           name    = "copy"
           image   = "nicolaka/netshoot"
           command = ["/bin/bash"]
-          args    = ["-c", "cp -r /work-dir/Mistral-7B-Instruct-v0.2 /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
+          args    = ["-c", "echo 'pre-warming started' >> /work-dir/pre-warm.txt `date` && cp -r /work-dir/Mistral-7B-Instruct-v0.2 /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
           volume_mount {
             name       = "persistent-storage"
             mount_path = "/work-dir"
@@ -981,7 +981,7 @@ resource "kubernetes_job" "pre_warm_mistral" {
           name    = "delete"
           image   = "nicolaka/netshoot"
           command = ["/bin/bash"]
-          args    = ["-c", "rm -rf /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
+          args    = ["-c", "echo 'pre-warming done' >> /work-dir/pre-warm.txt && rm -rf /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
           volume_mount {
             name       = "persistent-storage"
             mount_path = "/work-dir"
@@ -999,11 +999,12 @@ resource "kubernetes_job" "pre_warm_mistral" {
   }
   wait_for_completion = true 
   timeouts {
-    create = "20m"
+    create = "30m"
   }
   depends_on = [
     kubectl_manifest.pre_warm_pvc,
     module.eks_blueprints_addons
+    #testing again...
   ]
 }
 

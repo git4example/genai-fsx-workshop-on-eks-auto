@@ -96,6 +96,11 @@ Now lets deploy this PersistentVolumeClaim to the cluster:
 kubectl apply -f fsxL-claim.yaml
 ```
 
+Check PersistentVolume and PersistentVolumeClaim are bound to each other : 
+```bash
+kubectl get pv,pvc
+```
+
 We will be using this PersistentVolumeClaim in next module when we deploy mistral application.
 
 [ Now you can continue to next module to deploy mistral model and chat bot ]

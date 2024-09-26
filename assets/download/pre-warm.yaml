@@ -15,7 +15,7 @@ spec:
       - name: copy
         image: nicolaka/netshoot
         command: ["/bin/bash"]
-        args: ["-c","cp -r /work-dir/Mistral-7B-Instruct-v0.2 /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
+        args: ["-c","echo 'pre-warming started' >> /work-dir/pre-warm.txt `date` && "cp -r /work-dir/Mistral-7B-Instruct-v0.2 /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
         volumeMounts:
         - name:  persistent-storage
           mountPath: "/work-dir"
@@ -23,7 +23,7 @@ spec:
       - name: delete
         image: nicolaka/netshoot
         command: ["/bin/bash"]
-        args: ["-c","rm -rf /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
+        args: ["-c", "echo 'pre-warming done' >> /work-dir/pre-warm.txt `date` && rm -rf /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
         volumeMounts:
         - name:  persistent-storage
           mountPath: "/work-dir"
