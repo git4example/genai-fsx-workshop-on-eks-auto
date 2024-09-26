@@ -627,7 +627,7 @@ resource "aws_fsx_lustre_file_system" "fsx_lustre" {
   auto_import_policy = "NEW_CHANGED_DELETED"
   file_system_type_version = "2.15"
   storage_capacity = 1200
-  deployment_type = SCRATCH_2
+  deployment_type = "SCRATCH_2"
   subnet_ids       = [module.vpc.private_subnets[0]]
   security_group_ids = [aws_security_group.FSxLSecurityGroup01.id]
   depends_on = [
