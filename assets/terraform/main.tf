@@ -981,7 +981,7 @@ resource "kubernetes_job" "pre_warm_mistral" {
           name    = "delete"
           image   = "nicolaka/netshoot"
           command = ["/bin/bash"]
-          args    = ["-c", "echo 'pre-warming done' >> /work-dir/pre-warm.txt && rm -rf /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
+          args    = ["-c", "echo 'pre-warming done' >> /work-dir/pre-warm.txt `date` && rm -rf /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
           volume_mount {
             name       = "persistent-storage"
             mount_path = "/work-dir"
