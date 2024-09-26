@@ -523,8 +523,8 @@ Resources:
             - sudo -H -u ec2-user /usr/bin/terraform apply -target="aws_fsx_lustre_file_system.fsx_lustre" -target="module.eks" -auto-approve
             - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
             # add sleep to allow ALB controler to start else in some cases this is failing
-            # - sudo -H -u ec2-user sleep 60
-            # - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve            
+            - sudo -H -u ec2-user sleep 60
+            - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve            
             # Delete pre-warming resources
             - sudo -H -u ec2-user echo "Delete pre-warm nodepool, pre-warming job, pv and pvc"
             - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubernetes_job.pre_warm_mistral --target kubectl_manifest.pre_warm_pvc --target kubectl_manifest.pre_warm_pv --target kubectl_manifest.nodepool_pre_warm --target kubectl_manifest.ec2nodeclass_pre_warm --target helm_release.fsx_csi_driver --auto-approve
