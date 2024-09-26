@@ -584,35 +584,31 @@ resource "aws_security_group" "FSxLSecurityGroup01" {
   provider    = aws.region1
   description = "Security Group for FSx for Lustre Storage Access"
   vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    description = "Allow Lustre traffic between FSx for Lustre file servers"
+    from_port        = 988
+    to_port          = 988
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
   }
 
+  ingress {
+    description = "Allows Lustre traffic between FSx for Lustre file servers"
+    from_port        = 1018
+    to_port          = 1023
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
 
-resource "aws_vpc_security_group_ingress_rule" "allow988" {
-  provider    = aws.region1
-  description = "Allow Lustre traffic between FSx for Lustre file servers"
-  security_group_id = aws_security_group.FSxLSecurityGroup01.id
-  cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 988
-  ip_protocol       = "tcp"
-  to_port           = 988
-}
+  egress {
+    description = "Allows Lustre traffic between FSx for Lustre file servers"
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+  }
 
-resource "aws_vpc_security_group_ingress_rule" "allow1018-23" {
-  provider    = aws.region1
-  description = "Allows Lustre traffic between FSx for Lustre file servers"
-  security_group_id = aws_security_group.FSxLSecurityGroup01.id
-  cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 1018
-  ip_protocol       = "tcp"
-  to_port           = 1023
-}
-
-resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
-  provider    = aws.region1
-  description = "Allows Lustre traffic between FSx for Lustre file servers"
-  security_group_id = aws_security_group.FSxLSecurityGroup01.id
-  cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = "-1" # semantically equivalent to all ports
 }
 
 
@@ -622,6 +618,7 @@ resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
 ################################################################################
 
 resource "aws_fsx_lustre_file_system" "fsx_lustre" {
+  provider    = aws.region1
   import_path      = "s3://${module.fsx-lustre-bucket.s3_bucket_id}"
   export_path      = "s3://${module.fsx-lustre-bucket.s3_bucket_id}/export"
   auto_import_policy = "NEW_CHANGED_DELETED"
@@ -631,7 +628,8 @@ resource "aws_fsx_lustre_file_system" "fsx_lustre" {
   subnet_ids       = [module.vpc.private_subnets[0]]
   security_group_ids = [aws_security_group.FSxLSecurityGroup01.id]
   depends_on = [
-    module.fsx-lustre-bucket
+    module.fsx-lustre-bucket,
+    aws_security_group.FSxLSecurityGroup01
   ]
 }
 
@@ -1004,7 +1002,8 @@ resource "kubernetes_job" "pre_warm_mistral" {
     create = "20m"
   }
   depends_on = [
-    kubectl_manifest.pre_warm_pvc
+    kubectl_manifest.pre_warm_pvc,
+    module.eks_blueprints_addons
   ]
 }
 
