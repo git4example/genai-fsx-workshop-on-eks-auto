@@ -1,6 +1,7 @@
 ---
 title : "Explore EKS and Karpenter"
 weight : 31
+hidden : true
 ---
 
 ## Automation used for the creation of this Amazon EKS Cluster
@@ -26,7 +27,7 @@ Karpenter uses environment variables for configuration.
 Execute the following to checkout the Karpenter configuration:
 
 ```bash
-kubectl -n karpenter get deploy/karpenter -o yaml | grep -A 1 'CLUSTER_ENDPOINT\|INTERRUPTION_QUEUE'
+kubectl -n karpenter get deploy/karpenter -o yaml
 ```
 
 Inspecting the output for the Karpenter controller Pod you can see the following environment variables set:

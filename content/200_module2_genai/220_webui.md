@@ -13,11 +13,17 @@ This will take upto 2 - 5 mins for the application load balancer to be ready to 
 ```bash
 kubectl get ing
 ```
-Copy ADDRESS url for ALB an open in new browser tab.
+Copy ADDRESS URL that is displayed for ALB, then open a web browser and enter that URL to open a client.
 
-Please note that LLM model may take about 2 - 5 mins to load in memory before you can load this model dropdown as shown below and start chatting. Until this point, you will not see this model in the dropdown because model endpoint is not communicating with webui. 
+![WebUI_url](/static/images/WebUI_url.png)
 
-You can refresh page after sometime to see if its ready to serve the model, Once its available in dropdown, select mistral model and start chatting with our mistral model .. 
+Please note that LLM model may take about 2mins to load in memory before you can load this model dropdown as shown below and start chatting. Until this point, you will not see this model in the dropdown because model endpoint is not communicating with WebUI.
+
+You can refresh the page until you can select mistral model from the top drop-down menu. Once you have selected the model, you can start chatting with the model.
+
 
 ![Open WebUI](/static/images/OpenWebUI.png)
 
+
+
+You have now successfully deploy a Generative AI Chatbot as a containerized application running on Amazon EKS, with the model data stored in Amazon FSx Lustre, and powered by AWS Inferentia Accelerators.

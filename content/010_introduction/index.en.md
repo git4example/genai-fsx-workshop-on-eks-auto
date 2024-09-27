@@ -5,59 +5,68 @@ weight: 10
 
 Copyright Amazon Web Services, Inc. and its affiliates. All rights reserved. This sample code is made available under the MIT-0 license. See the [LICENSE](./LICENSE.en.md) file.
 
-Errors or corrections? Contact ppariksh@amazon.com and ameenamz@amazon.com
+Errors or corrections? Contact ppariksh@amazon.com, akbariw@amazon.com and ameenamz@amazon.com
 
 -------------------------------------------------------------
-
-Lab Guide: Architecture of EKS Hosted LLM
-
-## Introduction to Large Language Models (LLMs)
-Large Language Models (LLMs) are a type of machine learning model that is trained on vast amounts of text data to learn the patterns and structure of natural language. These models can then be used for a wide range of natural language processing tasks, such as text generation, question answering, and language translation. In this lab we are going to use the Mistral-7B model.
-
-
-## Mistral-7B-Instruct
-Mistral-7B-Instruct is a specific LLM model with 7 billion parameters. The "Instruct" in the name refers to the fact that this model has been trained to follow instructions and perform a wide variety of tasks, beyond just generating text. This is suitable for chat applications.
-
-## What is VLLM?
-VLLM, https://github.com/vllm-project/vllm, is a framework that allows LLM models like Mistral-7B-Instruct to be deployed that provide text generation inference. VLLM provides an API that is compatible with the OpenAI API, making it easy to integrate LLM applications.
-
-## Deploying Mistral-7B-Instruct on EKS
-To provide text generation inference with an OpenAI-compatible endpoint, we will deploy the Mistral-7B-Instruct model using the VLLM framework on Amazon Elastic Kubernetes Service (EKS). Karpenter will spin up the inferentia2 EC2 node, and it will launch a VLLM pod.
-
-## Consuming the Inference Service
-The "Open WebUI" application is designed to consume the OpenAI-compatible endpoint provided by the VLLM-hosted Mistral-7B-Instruct model. This allows users to interact with the LLM model through a chat-based interface.
-To use the Open WebUI application, simply connect to the provided URL and start chatting with the LLM model.  You need to register and create a username (use any email address, it will not mail you). The application will handle the communication with the VLLM-hosted Mistral-7B-Instruct model, providing a seamless user experience.
+## Workshop Objective
+In this workshop, you will learn how you can:
+1. Easily deploy a Generative AI chatbot application on Kubernetes by hosting a vLLM & WebUI Pod on Amazon EKS, and storing and accessing the Mistral-7B model using Amazon FSx for Lustre, and Amazon S3
+2. Use Karpenter for scaling your node tasks within Amazon EKS, for scale and operational efficiency
+3. Use AWS Inferentia Accelerated Compute in your Amazon EKS clusters, as a new nodepool to power your Generative AI applications
+4. Configure Amazon FSx for Lustre and Amazon S3, as your performant and scalable data layer, to host your models and data
+5. Achieve operational efficiency at the data layer: accessing the same model data across container Pods without storing multiple copies, and seamlessly sharing your data across regions, for scenario's such as distributed access and sharing, to DR.
 
 
-****Reword this****
 
-Generative Artificial Intelligence is transforming the way businesses function and is accelerating the pace of innovation. In general, the AI field is changing the way businesses utilize technology. Generative AI technology involves tuning and deploying Large Language Models (LLM), and gives developers access to those models to execute prompts and conversations. Platform teams who standardize on Kubernetes can tune and deploy the LLMs on Amazon Elastic Kubernetes Service (https://aws.amazon.com/eks/ ). Amazon EKS is a managed Kubernetes service that makes it easier to deploy, manage, and scale containerized applications using Kubernetes on AWS. One of the core strengths of Amazon EKS is its scalability; the data plane can dynamically expand, which ensues that as the AI models demand more computational power, Amazon EKS can seamlessly accommodate. For instance, Amazon EKS clusters can scale to support tens of thousands of active containers, which makes it ideal for intensive AI workloads. Beyond scalability, Amazon EKS offers a high degree of customization, that allows users to fine-tune configurations to match specific requirements. Amazon EKS incorporates robust built-in safeguards to protect both your AI models and the data.
+****Target Audience****: DevOps engineers, Machine Learning Scientists/Engineers, Container & Storage engineers, Cloud Architects
 
-Generative AI models represent a significant breakthrough in the field of Artificial Intelligence/Machine Learning, due to its wide ranging applicability along with easy accessibility for non-AI experts. Traditionally, utilizing AI meant creation of a specialized model for each specific use-case, which required a huge amount of compute and human resources each time. Generative AI models overcome this bottleneck by creating Foundation Models (FM). FMs allow reuse by providing ability to fine-tune them to be utilized for multiple use-cases without having to build models from the ground up repeatedly. The most popularly used foundational models today utilize transformers (text generation)/diffusers (i.e., image generation) to achieve this adaptability. These models have potential applicability across a wide range of use-cases and industry verticals ranging from chatbots and virtual assistants to generating videos completely via text prompts for marketing.
+****Prerequisites****: Recommended to have an fundamental understanding of AWS containers, and AWS Cloud
 
-LLMs comprise of billions of parameters which require large amount of resources for high performance training as well as low latency inference. Amazon EKS serves as an effective orchestrator to help achieve rapid scale out and scale in needed for these generative AI workloads while providing tools to meet enterprise governance and control. Amazon EKS not only simplifies management but also offers a wide variety of open-source tools to tackle unique ML challenges. Amazon EKS empowers you with full control over your environments, which ensures optimal cost efficiency.
-
+****Duration****: Approximately take 2 hours.
 
 ![lab-image](/static/images/lab-image.png)
 
-## Workshop Objective
-In this workshop, you will learn how you can:
-1. Easily deploy a Generative AI chatbot application on kubernetes with Amazon EKS
-2. Use Karpenter for scaling your Pod tasks within Amazon EKS, for scale and operational efficiency
-3. Use AWS Inferentia Accelerated Compute and its Neuron device plugin & scheduler in your Amazon EKS clusters, as a new nodepool for your Generative AI applications
-4. Configure Amazon FSx for Lustre and Amazon S3 bucket, as your performant and scalable data layer, to host your models and data
-6. Achieve operational efficiency at the data layer, and share the same foundation model and data with other container Pods without storing multiple copies, and how you can seamlessly share your data across AWS accounts & regions, for scenario's such as distributed access and sharing, to DR.
+-----
+
+## Generative AI and Machine Learning
+Generative AI and Machine Learning (ML) is helping businesses transform the way they operate and innovate. Generative AI refers to a class of Artificial Intelligence that leverages Large Language Models (LLM) in order to generate new content from a prompt, content such as text, images, audio, and software code.
+
+## What is a Large Language Model (LLM)
+Large Language Models (LLMs) are a type of machine learning model that is trained on vast amounts of text data to learn the patterns and structure of natural language. These models can then be used for a wide range of natural language processing tasks, such as text generation, question answering, and language translation. In this lab we are going to use the open-source Mistral-7B-Instruct model.
+
+
+**Mistral-7B-Instruct** is a specific LLM model with 7 billion parameters. The "Instruct" in the name refers to the fact that this model has been trained to follow instructions and perform a wide variety of tasks, beyond just generating text, i.e. it is suitable for chat applications. You will be using this open source LLM model in this workshop.
+
+
+## What is vLLM
+[**vLLM (Virtual Large Language Model)**](https://github.com/vllm-project/vllm), , is a framework that allows LLM models such as Mistral-7B-Instruct, to be deployed to provide text generation inference. vLLM provides an API that is compatible with OpenAI API, making it easy to integrate LLM applications.
+
+## Deploying Mistral-7B-Instruct using a vLLM on Amazon EKS
+To provide text generation inference capability with an OpenAI-compatible endpoint, we will deploy the Mistral-7B-Instruct model using the vLLM framework on Amazon Elastic Kubernetes Service (EKS). We will use Karpenter to spin up the AWS inferentia2 EC2 node (Accelerated Compute designed for Generative AI), where it will launch a vLLM Pod from an container image.
+
+## What is Amazon EKS (Elastic Kubernetes Service)
+[**Amazon EKS**](https://aws.amazon.com/eks/), is a managed service that makes it easy for you to deploy, run, manage and scale container based apps using Kubernetes on AWS, without installing and operating your own Kubernetes control plane or worker nodes. Amazon EKS clusters can scale to support thousands of containers, which makes it ideal for Generative AI and ML workloads, where you can tune and deploy LLMs on Amazon EKS. Amazon EKS serves as an effective orchestrator to help achieve rapid scale out and scale in that is required for Generative AI and ML workloads, optimal cost efficiency.
+
+## How to consume the Inference Service
+You can connect to the Inference Service using the **"Open WebUI"** application, which is designed to consume the OpenAI-compatible endpoint provided by the vLLM-hosted Mistral-7B-Instruct model that you will deploy in the workshop. The Open WebUI application allows users to interact with the LLM model through a chat-based interface. To use the Open WebUI application, simply deploy the application container, and connect to the WebUI URL that is provided and start chatting with the LLM model. The WebUI application will handle the communication with the VLLM-hosted Mistral-7B-Instruct model, providing a seamless user experience
+
+
+## Storing and accessing your model and training data
+In this workshop the **Mistral-7B-Instruct** model is stored in an Amazon S3 bucket [**Amazon S3**](https://aws.amazon.com/s3/), which is liked to an  [**Amazon FSx for Lustre File system S3**](https://aws.amazon.com/fsx/lustre/). The vLLM container will consume the Mistral model data via the mounted Amazon FSx for Lustre instance for the Generative AI Chat application. Amazon FSx for Lustre is a fully managed service that provides a high-performance scalable file system, for workloads where speed matters, providing sub-millisecond latency, and scaling to TB/s of throughput and millions of IOPS. Amazon FSx also integrates with Amazon S3 (highly durable, available and scalable object store), making it easy for you to store, access and process vast amounts of cloud data with the Lustre high-performance file system.
+
+## Accelerating your Compute
+ [**AWS Inferentia accelerators**](https://aws.amazon.com/machine-learning/inferentia/) are designed by AWS to deliver high performance at the lowest cost in Amazon EC2 for your deep learning (DL) and generative AI inference applications, where Inferentia2-based Amazon EC2 Inf2 instances are optimized to deploy increasingly complex models, such as large language models (LLM). The [**AWS Neuron SDK**](https://aws.amazon.com/machine-learning/neuron/) helps developers deploy models on the AWS Inferentia accelerators, where it integrates natively with popular frameworks, such as PyTorch and TensorFlow, so that you can continue to use your existing code and workflows and run on Inferentia accelerators.
 
 
 
-****Target Audience****
-DevOps engineers, Machine Learning Scientists/Engineers, Containers engineers, Storage engineers, Cloud Architects, and technical Founders.
 
-****Prerequisites****
-It is recommended to have an fundamental understanding of containers, and AWS Cloud and using the AWS Console.
 
-****Duration****
-Completing all the modules in this workshop will approximately take 2 hours.
+
+
+
+
+
+
 
 
 
