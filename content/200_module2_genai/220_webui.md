@@ -1,29 +1,31 @@
 ---
-title : "Deploy webui chat application"
+title : "Deploy WebUI chat application to interact with model"
 weight : 220
 ---
 
-Now lets deploy chatboot to interact with our mistral model we deployed in previous step.
+Now lets deploy the chatbot Pod, so we can interact with the Mistral model we deployed in previous step.
 
 ```bash
 kubectl apply -f open-webui.yaml
 ````
 
-This will take upto 2 - 5 mins for the application load balancer to be ready to serve chatbot.
+The above step will also deploy an application load balancer, which will serve the chatbot WebUI.
+
+Now lets get the URL address of the ChatBot application by running the below commands
+
 ```bash
 kubectl get ing
 ```
-Copy ADDRESS URL that is displayed for ALB, then open a web browser and enter that URL to open a client.
+Copy the URL ADDRESS, and paste it into a web browser. This will open a WebUI client.
 
 ![WebUI_url](/static/images/WebUI_url.png)
 
-Please note that LLM model may take about 2mins to load in memory before you can load this model dropdown as shown below and start chatting. Until this point, you will not see this model in the dropdown because model endpoint is not communicating with WebUI.
+In the WebUI client you will see a drop down in the top menu bar, to select your model. Please note that Mistral-7B model (approx 29GB) will take approx. 2mins to load into the vLLM's memory, and you will not see the Mistral-7B model in the dropdown option until the memory load is complete (where model endpoint is communicating with WebUI).
 
-You can refresh the page until you can select mistral model from the top drop-down menu. Once you have selected the model, you can start chatting with the model.
+You can refresh the page until you can see and select the Mistral model from the top drop-down menu. Once you have selected the model, you can start chatting with the model.
 
 
 ![Open WebUI](/static/images/OpenWebUI.png)
-
 
 
 You have now successfully deploy a Generative AI Chatbot as a containerized application running on Amazon EKS, with the model data stored in Amazon FSx Lustre, and powered by AWS Inferentia Accelerators.

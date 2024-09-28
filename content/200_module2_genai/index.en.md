@@ -1,5 +1,5 @@
 ---
-title : "Module 2 - Deploy GenAI model and chatbot"
+title : "Deploy Generative AI Chatbot application"
 weight : 200
 ---
 -------------------------------------------------------------

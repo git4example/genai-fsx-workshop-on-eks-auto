@@ -1,115 +1,14 @@
 ---
-title : "Deploy storage class and persistent volume claim"
-weight : 120
+title : "Use Dynamic Provisioning to deploy a new PV and FSx Lustre instance for testing"
+weight : 122
 ---
--------------------------------------------------------------
-In this section you will define the storageclass variables and create the storageclass for Amazon FSx for Lustre. Later you will create the persistent volume claim (PVC) and deploy the storage class. Observe the FSx for lustre file system is being auto provisioned. Kindly follow the below steps.
 
-### Two modes for persistent storage
-* STatic Provisioning -  Storeage/Eks admin controls the lifecycle of the persistent volume and its data. The admin creates a PV (i.e. creates a FSxL instance and configures the PV details on EKS), and then provides these details for the DevOPS so they can make a claim for this PV in their PoD using PVC.
-* Dynamic Provisioning - the DevOps requests for the creation of the PV (new FSx instance) and PVC in one flow. Doesnt require separate process for STorage/EKS admin to create for them. They control the lifecycle of the Persistent volume data.
-  **XYZ
-
-* In this workshop we have already provisioned a configured a PV using Static provisioning (this is )  Follow the below instructions to learn how you can create a PV (which will create a new FSxL instance) and request a PVC (for your Pod to use) all in one flow using Dynamic provisioning. 
+In this section you will use the CSI driver and Dynamic Provisioning to deploy a new PersistentVolume and its associated FSx Lustre instance (linked to an S3 bucket), which you will use for testing in this lab section. You will create the definitions for the StorageClass, PersistentVolume and PersistentVolumeClaims, to highlight the difference between Static and Dynamic provisioning.
 
 
+#### Step 1: Define the StorageClass
 
-
-### Static Provisioning
-In most cases EKS Cluster Adminstrators preprovision FSx Lustre fielsystem and create Persistent Volume for the developer teams to consume FSx Lustre storage, we are going to use this approach to speed up the process. If you like to experience Dynamic provisioning then you can follow steps in second half of this page.
-
-```bash
-FSXL_VOLUME_ID=$(aws fsx describe-file-systems --query 'FileSystems[].FileSystemId' --output text)
-DNS_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].DNSName' --output text)
-MOUNT_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].LustreConfiguration.MountName' --output text)
-```
-
-#### Step 1: Create the PersistentVolume
-We are going to replace these values in the PersistentVolume below :
-
-:::code[]{language=yaml showLineNumbers=true showCopyAction=false}
-# fsxL-persistent-volume.yaml
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: fsx-pv
-spec:
-  persistentVolumeReclaimPolicy: Retain
-  capacity:
-    storage: 1200Gi
-  volumeMode: Filesystem
-  accessModes:
-    - ReadWriteMany
-  mountOptions:
-    - flock
-  csi:
-    driver: fsx.csi.aws.com
-    volumeHandle: FSXL_VOLUME_ID
-    volumeAttributes:
-      dnsname: DNS_NAME
-      mountname: MOUNT_NAME
-:::
-
-Replace values : 
-
-```bash
-sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" fsxL-persistent-volume.yaml
-sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" fsxL-persistent-volume.yaml
-sed -i'' -e "s/MOUNT_NAME/$MOUNT_NAME/g" fsxL-persistent-volume.yaml
-```
-
-Verify replaced values are correct.
-
-```bash
-cat fsxL-persistent-volume.yaml
-```
-
-Now lets deploy this updated PersistentVolume to the cluster: 
-
-```bash
-kubectl apply -f fsxL-persistent-volume.yaml
-```
-
-#### Step 2: Create the PersistentVolumeClaim
-
-We are using following PersistentVolumeClaim to bound with above PersistentVolume, Note that we are not using storage class name here and directly referencing pre-provisioned PersistentVolume.
-
-:::code[]{language=yaml showLineNumbers=true showCopyAction=false}
-# fsxL-claim.yaml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: fsx-lustre-claim
-spec:
-  accessModes:
-    - ReadWriteMany
-  storageClassName: ""
-  resources:
-    requests:
-      storage: 1200Gi
-  volumeName: fsx-pv
-:::
-
-Now lets deploy this PersistentVolumeClaim to the cluster: 
-
-```bash
-kubectl apply -f fsxL-claim.yaml
-```
-
-Check PersistentVolume and PersistentVolumeClaim are bound to each other : 
-```bash
-kubectl get pv,pvc
-```
-
-We will be using this PersistentVolumeClaim in next module when we deploy mistral application.
-
-[ Now you can continue to next module to deploy mistral model and chat bot ]
-
-
-### Dynamic Provisioning 
-#### Step 1: Define the storageclass
-
-In the following steps you will be using the following environment variables.
+In the following steps you will be using the below environment variables,so lets set them. Copy and paste the below into your Cloud9 Terminal.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
@@ -119,7 +18,7 @@ SECURITY_GROUP_ID=$(aws ec2 describe-security-groups --filters Name=vpc-id,Value
 S3_TEST_BUCKET=$(aws s3 ls | grep fsx-lustre-test | awk '{print$3}')
 :::
 
-1. We already set following variables, Run the below command to verify the values for these variables.
+1. Let's see the outputs of a few of these variables. Here you can see the S3 bucket we are going to link to the new FSx for Lustre Instance that we will deploy using Dynamic Provisioning.
 
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
@@ -128,12 +27,14 @@ echo $SECURITY_GROUP_ID
 echo $S3_TEST_BUCKET
 :::
 
-2. Go to the right working directory.
+2. Change to the right working directory so the lab commands work.
 
 ::code[cd /home/ec2-user/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
 
-Below is the output of the `fsxL-storage-class.yaml` file. This file has the StorageClass definition that we will use with the CSI driver to dynamically provision a Persistent Volume Claim (PVC) from Amazon FSx for Lustre. Take a moment inspect the available parameters which you can configure for the FSx for Lustre Instance that will be provisioned by the CSI driver.
+Below is the output of the `fsxL-storage-class.yaml` file. This file has the StorageClass definition that we will use with the CSI driver to dynamically provision a Persistent Volume Claim (PVC) from FSx for Lustre. Take a moment inspect the parameters shown, which you can configure an FSx for Lustre Instance that will be provisioned by the CSI driver.
+
+**Note:** Did you notice there is no **storage** capacity value here, or **accessModes**? You will actually define how much storage capacity you need in your subsequent PersistentVolumeClaim request, along with your access mode required by the PoD for the Persistent Volume.
 
 :::code[]{language=yaml showLineNumbers=true showCopyAction=false}
 # fsxL-storage-class.yaml
@@ -162,11 +63,11 @@ sed -i'' -e "s/SECURITY_GROUP_ID/$SECURITY_GROUP_ID/g" fsxL-storage-class.yaml
 sed -i'' -e "s/S3_TEST_BUCKET/$S3_TEST_BUCKET/g" fsxL-storage-class.yaml
 :::
 
-3. Verify replaced values are correct.
+3. Lets inspect the fsxL-storage-class.yaml file, to verify the replaced values are correct.
 
 ::code[cat fsxL-storage-class.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
-::::expand{header="Click to expand the section to understand the settings defined in the fsxL-storage-class.yaml file"}
+::::expand{header="Click to expand - Understanding the value fields in the fsxL-storage-class.yaml file"}
 
 * **subnetId** – The subnet ID that the Amazon FSx for Lustre file system should be created in. Amazon FSx for Lustre is not supported in all Availability Zones. Open the Amazon FSx for Lustre console at `https://console.aws.amazon.com/fsx/` to confirm that the subnet that you want to use is in a supported Availability Zone. The subnet can include your nodes, or can be a different subnet or VPC. If the subnet that you specify is not the same subnet that you have nodes in, then your VPCs must be connected, and you must ensure that you have the necessary ports open in your security groups.
 
@@ -188,13 +89,13 @@ sed -i'' -e "s/S3_TEST_BUCKET/$S3_TEST_BUCKET/g" fsxL-storage-class.yaml
 The Amazon S3 bucket for s3ImportPath and s3ExportPath must be the same, otherwise the driver cannot create the Amazon FSx for Lustre file system. The s3ImportPath can stand alone. A random path will be created automatically like s3://ml-training-data-000/FSxLustre20190308T012310Z. The s3ExportPath cannot be used without specifying a value for S3ImportPath.
 :::
 
-#### Step 2: Create the storageclass
+#### Step 2: Create the StorageClass
 
 Copy and run the below command to apply the defined settings from the step 1. This will create the storageclass.
 
 ::code[kubectl apply -f fsxL-storage-class.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
-Copy and run the below command to verify the storageclass is created.
+Copy and run the below command to verify the StorageClass was created.
 
 ::code[kubectl get sc]{language=bash showLineNumbers=false showCopyAction=true}
 
@@ -208,10 +109,9 @@ fsx-lustre-sc          fsx.csi.aws.com         Delete          Immediate        
 
 ::::
 
-#### Step 3. Create the persistent volume claim (PVC)
+#### Step 3. Create the Persistent Volume Claim (PVC)
 
-In this step you will create the persistent volume claim for the defined storageclass.
-
+In this step you will create the persistent volume claim for the storageclass you defined earlier.
 
 1. Run the below command and you will see the following output as shown below.
 
@@ -232,19 +132,49 @@ spec:
       storage: 1200Gi
 :::
 
-::alert[Observe the `fsxL-dynamic-claim.yaml`, which is referring to the `fsx-lustre-sc` storage class. You will use this file to provision the FSx for Lustre storage. you are configuring the 1200GiB PVC.]
+::alert[Observe the `fsxL-dynamic-claim.yaml`, is referring to the `fsx-lustre-sc` storage class that you created. You will use this file to provision the claim for FSx for Lustre storage, where you are request a 1200GiB PVC of **storage**, which will create a 1200GiB FSx for Lustre Instance for your using Dynamic Provisioning.]
 
 
-2. Deploy the storageclass.
+2. Create the PersistentVolumeClaim (PVC) request.
 
-Copy and run the below command to apply and create the pvc.
+Copy and run the below command to apply and create the PVC.
 
 ::code[kubectl apply -f fsxL-dynamic-claim.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 
-3. To check the status of the pvc from the cli with the below command.
+3. To check the status of the PVC from the cli with the below command.
 
 ::code[kubectl describe pvc/fsx-lustre-dynamic-claim]{language=bash showLineNumbers=false showCopyAction=true}
+
+4. Lets check that status of the PVC request. You can see the PVC claim you just requested for "fsx-lustre-dynamic-claim" is in a pending state, where it is bound to the fsx-lustre-sc StorageClass you created earlier.
+
+::code[kubectl get pvc]{language=bash showLineNumbers=false showCopyAction=true}
+
+
+![dynamic_provisioning_pvc](/static/images/dynamic_provisioning_pvc) dynamic_provisioning_pvc
+
+
+::alert[The Dynamic Provisioning operation to create a new FSx for Lustre instance and PV will take approx. 15 mins. The STATUS may show as Pending for up to 15 minutes, before changing to Bound. DO NOT continue to the next module of performance testing until the STATUS is Bound.]{header="Note:" type="info"}
+
+
+#### Step 4: Confirm that the FSx Lustre instance has been provisioned, and PVC is bound
+
+After waiting approx. 15 mins, copy and run the below command to check the status of the PVC to confirm the status is "Bound".
+
+::code[kubectl get pvc]{language=bash showLineNumbers=false showCopyAction=true}
+
+
+![dynamic_provisioning_pvc](/static/images/dynamic_provisioning_pvc.png)
+
+**Sample output**
+
+:::code[]{language=bash showLineNumbers=false showCopyAction=false}
+NAME                       STATUS   VOLUME                                 CAPACITY   ACCESS MODES   STORAGECLASS          AGE
+fsx-lustre-dynamic-claim   Bound    pvc-15dXXXXXX-11ea-a836-02468c18769e   1200Gi     RWX            fsx-lustre-sc         7m37s
+(...)
+:::
+
+
 
 ::::expand{header="If you see the below output, it means that your volume creation is not expected to have issues. Otherwise, there might be problems that you need to troubleshoot, click to expand"}
 
@@ -264,7 +194,7 @@ Labels:        <none>
 
 ::::
 
-::alert[The STATUS may show as Pending for up to 15 minutes, before changing to Bound. Don’t continue with the next step until the STATUS is Bound.]{header="Note:" type="info"}
+
 
 
 :::alert[If you see some warning under Events like below, this is because FSx for Lustre filesystem is getting created.]{header="Note:" type="info"}
@@ -274,30 +204,14 @@ Warning ProvisioningFailed 4m45s fsx.csi.aws.com_XXXXXXXX failed to provision vo
 ```
 :::
 
-4. You can also check the status of the Amazon FSx for lustre filesystem from the AWS Console. Click the [link](https://console.aws.amazon.com/fsx/)
+-  You can also check the status and details of the Amazon FSx for lustre filesystem by navigating to the [Amazon FSx console](https://console.aws.amazon.com/fsx/).
+
+Below is an image form the Amazon FSx console, showing an FSx instance and its details. Note that the Status will change from Creating to Available when its ready for use.
 
 ![FSxL_provisioning](/static/images/FSxL_Provisioning.png)
 
-#### Step 4: Confirm that the file system is provisioned
 
-Copy and run the below command to check the status of the pvc to confirm the status is "Bound".
-
-::code[kubectl get pvc]{language=bash showLineNumbers=false showCopyAction=true}
-
-**Sample output**
-
-:::code[]{language=bash showLineNumbers=false showCopyAction=false}
-NAME                       STATUS   VOLUME                                 CAPACITY   ACCESS MODES   STORAGECLASS          AGE
-fsx-lustre-dynamic-claim   Bound    pvc-15dXXXXXX-11ea-a836-02468c18769e   1200Gi     RWX            fsx-lustre-sc         7m37s
-(...)
-:::
-
-
-Once it is successfully created, you can see a new FSx for Lustre is displayed from [AWS FSx console](https://console.aws.amazon.com/fsx/) as below screenshot.
-
-![FSxL_01](/static/images/FSxL_01.png)
 
 
 ## Summary
-
-In this section you have successfully completed defining the storage class for Amazon FSx for Lustre file system with the deployment type and Amazon S3 bucket as the data repository for the file system. Created the storageclass and created the persistent volume claim which deployed the FSx for lustre filesystem with auto provisioning of volume. In the next section you will continue with the performance testing on the filesystem.
+In this section you have successfully used Dynamic Provisioning to create a new PV and its associated FSx for Lustre file that is linked to an Amazon S3 bucket. You have created a StoragClass definition to use FSx for Lustre for your Persistent Volumes, and created a Persistent Volume Claim to enable a Pod to access to your created Persistent Volume. In the next lab section, you will use this PV with a new Pod that you will deploy for performance testing of the FSx Lustre Instance.

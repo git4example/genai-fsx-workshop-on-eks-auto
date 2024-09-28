@@ -3,6 +3,6 @@ title : "Getting Started"
 weight : 20
 ---
 
-To start the workshop, follow one of the following depending on whether you are...
+To start the hands-on workshop, click on one of the below methods...
 
 ::children

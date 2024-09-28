@@ -1,62 +1,27 @@
 ---
-title : "Deploy Amazon FSx for Lustre CSI Driver to EKS cluster"
+title : "Deploy the Amazon FSx for Lustre CSI Driver to EKS cluster"
 weight : 110
 ---
--------------------------------------------------------------
 
-In this section, the following steps will guide you to deploy CSI Driver of Amazon FSx for Lustre. As a prerequisite step you will have to set the environment variables, create a service account & IAM poilcy with role ARN. Then proceed with the CSI driver deployment for FSx for lustre filesystem.
-
-## Describe what the CSI driver is used for? and is it required for Static provisioned PVs which are claimed through PVC?
-
-Below steps to ensure that you are operating from the right AWS region and in the right working directory with the access to the EKS cluster.
+In this section, the following steps will guide you to set the required environmental variables, create a service account, and  create/attach an IAM policy for use with your EKS cluster, allowing you to then deploy the CSI driver for FSx for Lustre.
 
 
-::alert[As mentioned in the previous session, you should have run the following commands to be able to run `kubectl` to connect to your EKS cluster. But if you missed it, please run the following commands]
+### Step 1: Prerequisite - setting the account-id environmental variable
 
-::::expand{header="Confirm your access to the EKS cluster, Only run these commands if you have not yet done so in the previous steps."}
-
-- Check if region and cluster names are set correctly, if not then follow one of the suitable page for your situation under **[Getting Started ](/020-setup)** to setup these variables.
-
-:::code[]{language=bash showLineNumbers=true showCopyAction=true}
-echo $AWS_REGION
-echo $CLUSTER_NAME
-:::
-
-- Next update kubeconfig file to point it to EKS cluster in that region.
-
-::code[aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION]{language=bash showLineNumbers=false showCopyAction=true}
-
-- Run kubectl command to confirm your access to the EKS cluster
-
-::code[kubectl get nodes]{language=bash showLineNumbers=false showCopyAction=true}
-
-::::
-
-
-1. Go to the right working directory.
-
-
-::code[cd /home/ec2-user/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
-
-
-The below steps will guide you to set the environmental variables, create a service account, create and attach an IAM policy and deploy the CSI driver for Amazon FSx for Lustre.
-
-### Step 1: Prerequisite - setting the required environmental variable
-
-Copy and paste the following lines in the CLI.
+Copy and paste the following lines in your Cloud9 terminal.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
 :::
 
 :::alert{header="Note" type="info"}
-Note: For AWS Sponsored Workshop, Security Group and S3 Bucket have been pre-created for you. If you are running the self-paced labs, please expand the below to create your security groups and S3 bucket.
+For an AWS Sponsored Workshop, the Security Group and S3 Bucket have been pre-created for you.
 :::
 
 For more information about what rule is required for the FSx Lustre Security Group, please refer to the [official document](https://docs.aws.amazon.com/fsx/latest/LustreGuide/limit-access-security-groups.html).
 
 
-### Step 2: Create an IAM policy and service account that allows the driver to make the AWS API calls on your behalf
+### Step 2: Create an IAM policy, and service account, that allows the CSI driver to make the AWS API calls on your behalf
 
 Copy and run the below command to create the fsx-csi-driver.json file.
 
@@ -139,7 +104,7 @@ eksctl create iamserviceaccount \
 
 ::::
 
-### Step 5: Save the Role ARN that was created via CloudFormation into a variable
+### Step 5: Save the Role ARN that was created into a variable
 
 Copy and run the below command to save the role ARN.
 
@@ -152,12 +117,12 @@ echo $ROLE_ARN
 
 ### Step 6: Deploy the CSI driver of FSx for Lustre
 
-Copy and the run the following command to deploy the CSI driver.
+Copy and the run the following command to deploy the CSI driver for FSx for Lustre
 
 ::code[kubectl apply -k "github.com/kubernetes-sigs/aws-fsx-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.2"]{language=bash showLineNumbers=false showCopyAction=true}
 
 
-Verify whether the CSI driver has been installed successfully with the following command.
+Verify that the CSI driver has been installed successfully with the following command.
 
 ::code[kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-fsx-csi-driver]{language=bash showLineNumbers=false showCopyAction=true}
 
@@ -182,7 +147,7 @@ kubectl annotate serviceaccount -n kube-system fsx-csi-controller-sa \
  eks.amazonaws.com/role-arn=$ROLE_ARN --overwrite=true
 :::
 
-You can verify checking the service account contents
+You can verify this was successful by checking the service account contents
 
 ::code[kubectl get sa/fsx-csi-controller-sa -n kube-system -o yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
@@ -208,4 +173,4 @@ secrets:
 
 ## Summary
 
-In this section you have completed the pre-requisite tasks of creating environmental variables, creating service account with the right IAM policy and role ARN. Post which you have deployed the CSI driver of FSx for Lustre and verified the service account contents.  In the next section you will create the storage class and the persistent volume claim (PVC) for FSx for Lustre file system.
+In this section you have completed the pre-requisite tasks of creating environmental variables, creating a service account with the right IAM policy and role ARN, and deployed the CSI driver of FSx for Lustre. In the next sections you will create the Persistent Volume (PV), Persistent Volume Claim (PVC), and StorageClass for FSx for Lustre.

@@ -1,5 +1,5 @@
 ---
-title : "Deploy GenAI workloads on Inferentia nodes"
+title : "Deploy vLLM on AWS Inferentia nodes for model Inference"
 weight : 210
 ---
 
@@ -18,7 +18,7 @@ Let's deploy a Karpenter NodePool with the following configuration:
 
 
 ```bash
-kubectl apply -f inferentia_nodepool.yaml 
+kubectl apply -f inferentia_nodepool.yaml
 ```
 
 
