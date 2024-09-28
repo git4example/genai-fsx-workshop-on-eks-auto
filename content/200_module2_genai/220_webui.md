@@ -3,15 +3,13 @@ title : "Deploy WebUI chat application to interact with model"
 weight : 220
 ---
 
-Now lets deploy the chatbot Pod, so we can interact with the Mistral model we deployed in previous step.
+Now lets deploy the chatbot Pod, so we can interact with the Mistral model we deployed in previous step. This will also deploy an application load balancer, which will serve the chatbot WebUI.
 
 ```bash
 kubectl apply -f open-webui.yaml
 ````
 
-The above step will also deploy an application load balancer, which will serve the chatbot WebUI.
-
-Now lets get the URL address of the ChatBot application by running the below commands
+Now lets get the URL address of the ChatBot application by running the below command
 
 ```bash
 kubectl get ing
@@ -28,4 +26,4 @@ You can refresh the page until you can see and select the Mistral model from the
 ![Open WebUI](/static/images/OpenWebUI.png)
 
 
-You have now successfully deploy a Generative AI Chatbot as a containerized application running on Amazon EKS, with the model data stored in Amazon FSx Lustre, and powered by AWS Inferentia Accelerators.
+You have now successfully deployed a Generative AI Chatbot as a containerized application running on Amazon EKS, with the cached model data hosted in Amazon FSx Lustre, and powered by AWS Inferentia Accelerators.
