@@ -1,9 +1,8 @@
 ---
-title : "Replicate data between the regions"
+title : "Generate test files in EKS Pod, to replicate data between AWS Regions"
 weight : 330
----
--------------------------------------------------------------
 
+---
 
 ### IN THIS SECTION - we will show customers how they can replicate data using S3 replication, and view it at their target S3bucket. We will not get them to deploy another FSxL file system and Pod to access it,  (not good use of time).. we will state they can achieve sharing data or DR in a different region, by follow the instructions from module 1 (deploy FSxL) & 2 (deploy GenAI app) along with deploying their EKS cluster.
 
@@ -12,86 +11,64 @@ In this section, you will be performing a cross region replication of data betwe
 
 ### Step 1: Deploy the pod for the experiment in the EKS cluster in your current region
 
-::::expand{header="Confirm your access to the EKS cluster, Only run these commands if you have not yet done so in the previous steps."}
-
 - Check if region and cluster names are set correctly, if not then follow one of the suitable page for your situation under **[Getting Started ](/020-setup)** to setup these variables.
 
-:::code[]{language=bash showLineNumbers=true showCopyAction=true}
-echo $AWS_REGION
-echo $CLUSTER_NAME
-:::
-
-- Next update kubeconfig file to point it to EKS cluster in that region.
-
-::code[aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION]{language=bash showLineNumbers=false showCopyAction=true}
-
-- Run kubectl command to confirm your access to the EKS cluster
-
-::code[kubectl get nodes]{language=bash showLineNumbers=false showCopyAction=true}
-
-::::
 
 
 Go to the right working directory.
 
 ::code[cd /home/ec2-user/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
+now lets log into the vLLM Pod, first we need to get the pod name by running the following command
 
-Copy and run the below command to deploy the `pod.yaml`
+::code[Kubectl get pods]{language=bash showLineNumbers=false showCopyAction=true}
 
-::code[kubectl apply -f pod.yaml]{language=bash showLineNumbers=false showCopyAction=true}
+From the output copy the name shown in your environment that starts with **vllm**
 
+![vllm_name](/static/images/vllm_name.png)
 
-Let us have a look at the `pod.yaml`. You can see that the pod mounts the PVC created in the previous section, and write the `date` command to `/data/out.txt` every 5 seconds.
+Replace the **<YOUR-vLLM-POD-NAME>** value with the value you just copied, and run the below command to log into your vLLM pod.
 
-:::code[]{language=yaml showLineNumbers=false showCopyAction=false}
-apiVersion: v1
-kind: Pod
-metadata:
-  name: fsx-app
-spec:
-  containers:
-  - name: app
-    image: amazonlinux:2023
-    command: ["/bin/sh"]
-    securityContext:
-      privileged: true
-    args: ["-c", "while true; do echo $(date -u) >> /data/out.txt; sleep 5; done"]
-    lifecycle:
-      postStart:
-        exec:
-          command: ["dnf", "install", "lustre-client", "-y"]
-    volumeMounts:
-    - name: persistent-storage
-      mountPath: /data
-  volumes:
-  - name: persistent-storage
-    persistentVolumeClaim:
-      claimName: fsx-lustre-claim
+::code[kubectl exec -it <YOUR-vLLM-POD-NAME> -- bash]{language=bash showLineNumbers=false showCopyAction=true}
+
+Run the following commands
+
+:::code{showCopyAction=true showLineNumbers=true language=bash}
+rm /work-dir/pre-warm.txt
+df -h
 :::
 
-::alert[This example uses lifecycle hook to install lustre client for demonstration purpose, a normal approach will be building a container image with lustre client]
+the **work-dir** is the location that mount location of your Persistent Volume Claim.
+![vllm_02](/static/images/vllm_02.png)
 
-### Step 2: Login to the container and manually sync the changes to S3 bucket
+Lets inspect whats in this volumes
 
-Copy and run the below command to login to the container
-
-::code[kubectl exec -it fsx-app -- bash]{language=bash showLineNumbers=false showCopyAction=true}
-
-Archive the data from the FSx for Luster file system into the linked S3 bucket. Run the below commands to manually export the file to the linked S3 bucket
-
-::alert[lfs is a helper utility to administrate lustre cluster]
-
-::code[lfs hsm_archive /data/out.txt]{language=bash showLineNumbers=false showCopyAction=true}
-
-Type "exit" to exit the container
-::code[exit]{language=bash showLineNumbers=false showCopyAction=true}
-
-:::alert{header="Note:" type="info"}
-New created files won't be synced back to S3 automatically. In order to sync files to s3ExportPath, you need to install lustre client in your container image and manually run following command to force sync up using `lfs hsm_archive`. And the container should run in `privileged` mode with `CAP_SYS_ADMIN capability`.**
+:::code{showCopyAction=true showLineNumbers=true language=bash}
+cd /work-dir/
+ls -ll
 :::
 
-### Step 3: Check both the Source S3 bucket and the Destination S3 Bucket
+You can see the Mistral Model is stored here. Lets have a look at what the model data structure looks like.
+
+:::code{showCopyAction=true showLineNumbers=true language=bash}
+cd Mistral-7B-Instruct-v0.2/
+ls -ll
+:::
+
+Next we will create a test file on the Persistent Volume (backed by FSx for lustre). Here you will see the FSx for Lustre auto-export of new/changed files to Amazon S3 capability, and also the S3 bucket to S3 bucket replication, where the file you create in your vLLM pod will seamlessly get copied to to your target S3 bucket in us-east-2. Where you could then use that data as part of an existing environment, or have the data there for a DR scenario, where you can spin up an Amazon EKS cluster, its Pods and FSx Lustre Instances to consume the replciated data in an automated manner.
+
+Lets create the test file we want to trigger the export and replication.
+
+:::code{showCopyAction=true showLineNumbers=true language=bash}
+cd /work-dir
+mkdir test
+cd test
+cp /work-dir/Mistral-7B-Instruct-v0.2/README.md /work-dir/test/testfile
+:::
+
+
+
+### Check both the Source S3 bucket and the Destination S3 Bucket
 
 Copy and run the below command from the cli to Look for the s3 bucket name
 
@@ -104,9 +81,7 @@ aws s3 ls s3://$S3_BUCKET/export/
 aws s3 ls s3://$S3_BUCKET_2NDREGION/export/
 :::
 
-You should be able to see that both S3 buckets have the `out.txt` file
-
-::alert[This could take upto 10 minutes (???? NEED TO FIGURE OUT TIME HERE ???) for both buckets to show, because we also have Mistral model stored on the bucket which will take increased time to replicate for first time]
+You should be able to see that both S3 buckets have the `testfile` file
 
 
 # [ We need to remove following steps 4 - 7 as we dont have EKS cluster in 2nd region for this workshop ]
