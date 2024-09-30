@@ -478,20 +478,6 @@ module "fsx-lustre-bucket" {
 
 }
 
-# Region 1 Bucket
-module "fsx-lustre-test-bucket" {
-  source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "4.1.2"
-  force_destroy = true
-
-  providers = {
-    aws = aws.region1
-  }
-
-  bucket_prefix="fsx-lustre-test-${random_string.random.id}"
-
-}
-
 
 # Region 2 Bucket
 module "fsx-lustre-bucket-2ndregion" {
@@ -619,18 +605,36 @@ resource "aws_security_group" "FSxLSecurityGroup01" {
 
 resource "aws_fsx_lustre_file_system" "fsx_lustre" {
   provider    = aws.region1
-  import_path      = "s3://${module.fsx-lustre-bucket.s3_bucket_id}"
-  export_path      = "s3://${module.fsx-lustre-bucket.s3_bucket_id}/export"
-  auto_import_policy = "NEW_CHANGED_DELETED"
+  # import_path      = "s3://${module.fsx-lustre-bucket.s3_bucket_id}"
+  # export_path      = "s3://${module.fsx-lustre-bucket.s3_bucket_id}/export"
+  # auto_import_policy = "NEW_CHANGED_DELETED"
   file_system_type_version = "2.15"
   storage_capacity = 1200
-  deployment_type = "SCRATCH_2"
+  deployment_type = "PERSISTENT_2"
+  per_unit_storage_throughput = 250
   subnet_ids       = [module.vpc.private_subnets[0]]
   security_group_ids = [aws_security_group.FSxLSecurityGroup01.id]
   depends_on = [
     module.fsx-lustre-bucket,
     aws_security_group.FSxLSecurityGroup01
   ]
+}
+
+
+resource "aws_fsx_data_repository_association" "fsx_lustre_association" {
+  file_system_id       = aws_fsx_lustre_file_system.fsx_lustre.id
+  data_repository_path = "s3://${module.fsx-lustre-bucket.s3_bucket_id}"
+  file_system_path     = "/work-dir"
+
+  s3 {
+    auto_export_policy {
+      events = ["NEW", "CHANGED", "DELETED"]
+    }
+
+    auto_import_policy {
+      events = ["NEW", "CHANGED", "DELETED"]
+    }
+  }
 }
 
 
@@ -648,6 +652,18 @@ resource "helm_release" "fsx_csi_driver" {
     module.eks
   ]
 }
+
+
+
+# resource "aws_fsx_lustre_file_system" "example" {
+#   storage_capacity = 1200
+#   subnet_ids       = [aws_subnet.example.id]
+#   deployment_type  = "PERSISTENT_2"
+
+#   per_unit_storage_throughput = 250
+# }
+
+
 
 
 ################################################################################

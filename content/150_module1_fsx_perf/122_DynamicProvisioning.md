@@ -11,11 +11,9 @@ In the previous module you learnt how you can use Static Provisioning with an ex
 In the following steps you will be using the below environment variables,so lets set them. Copy and paste the below into your Cloud9 Terminal.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
-ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
 VPC_ID=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION --query "cluster.resourcesVpcConfig.vpcId" --output text)
 SUBNET_ID=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION --query "cluster.resourcesVpcConfig.subnetIds[0]" --output text)
 SECURITY_GROUP_ID=$(aws ec2 describe-security-groups --filters Name=vpc-id,Values=${VPC_ID} Name=group-name,Values="FSxLSecurityGroup01"  --query "SecurityGroups[*].GroupId" --output text)  
-S3_TEST_BUCKET=$(aws s3 ls | grep fsx-lustre-test | awk '{print$3}')
 :::
 
 1. Let's see the outputs of a few of these variables. Here you can see the S3 bucket we are going to link to the new FSx for Lustre Instance that we will deploy using Dynamic Provisioning.
@@ -24,7 +22,6 @@ S3_TEST_BUCKET=$(aws s3 ls | grep fsx-lustre-test | awk '{print$3}')
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 echo $SUBNET_ID
 echo $SECURITY_GROUP_ID
-echo $S3_TEST_BUCKET
 :::
 
 2. Change to the right working directory so the lab commands work.
@@ -44,23 +41,19 @@ metadata:
     name: fsx-lustre-sc
 provisioner: fsx.csi.aws.com
 parameters:
-    subnetId: SUBNET_ID
-    securityGroupIds: SECURITY_GROUP_ID
-    s3ImportPath: s3://S3_TEST_BUCKET
-    s3ExportPath: s3://S3_TEST_BUCKET/export
-    autoImportPolicy: NEW_CHANGED_DELETED
-    deploymentType: SCRATCH_2
-    fileSystemTypeVersion: "2.15"
+  subnetId: SUBNET_ID
+  securityGroupIds: SECURITY_GROUP_ID
+  deploymentType: SCRATCH_2
+  fileSystemTypeVersion: "2.15"
 mountOptions:
-    - flock
+  - flock
 :::
 
- Run the below command, to replace the placeholder values in the `fsxL-storage-class.yaml` file for `SUBNET_ID`, `SECURITY_GROUP_ID` and `S3_TEST_BUCKET` with our actual environment values.
+ Run the below command, to replace the placeholder values in the `fsxL-storage-class.yaml` file for `SUBNET_ID` and `SECURITY_GROUP_ID` with our actual environment values.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 sed -i'' -e "s/SUBNET_ID/$SUBNET_ID/g" fsxL-storage-class.yaml
 sed -i'' -e "s/SECURITY_GROUP_ID/$SECURITY_GROUP_ID/g" fsxL-storage-class.yaml
-sed -i'' -e "s/S3_TEST_BUCKET/$S3_TEST_BUCKET/g" fsxL-storage-class.yaml
 :::
 
 3. Lets inspect the fsxL-storage-class.yaml file, to verify the replaced values are correct.

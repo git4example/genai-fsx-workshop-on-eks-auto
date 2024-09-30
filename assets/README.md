@@ -1,19 +1,32 @@
 
 DO NOT FULL SYNC THIS ASSET BUCKET. WE HAVE "Mistral-7B-Instruct-v0.2" FOLDER ON THIS BUCKET "s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20" WITH 27 GB OF MODEL WHICH WILL BE DELETED IF YOU FULL SYNC
 
+### Download install/clearn up script on cloud9
+```bash
+ASSET_BUCKET=$(aws cloudformation describe-stacks --stack-name genaifsxworkshoponeks --query "Stacks[0].Parameters[?ParameterKey=='Assets'].ParameterValue" --output text)
+cd /home/ec2-user/environment/
+aws s3 sync ${ASSET_BUCKET}scripts/ ./scripts    
+cd /home/ec2-user/environment/scripts
+```
 
-USE FOLLOWING COMMANDs TO SYNC YOUR LOCAL TO S3 : 
+
+### USE FOLLOWING COMMANDs TO SYNC YOUR LOCAL TO S3 : 
 ```bash
 aws s3 sync ./assets/eks s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/eks --delete
 aws s3 sync ./assets/terraform s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/terraform --delete
+# Following are only required for testing
 aws s3 sync ./assets/download s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/download --delete
+aws s3 sync ./assets/scripts s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/scripts --delete
 aws s3 cp ./assets/README.md s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/README.md
 ```
 
-USE FOLLOWING COMMANDs TO SYNC S3 TO LOCAL/CLOUD9 : 
+### USE FOLLOWING COMMANDs TO SYNC S3 TO LOCAL/CLOUD9 : 
 ```bash
 aws s3 sync s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/eks /home/ec2-user/environment/eks --delete
 aws s3 sync s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/terraform /home/ec2-user/environment/terraform --delete
+# Following are only required for testing
+aws s3 sync s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/download /home/ec2-user/environment/download --delete
+aws s3 sync s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/scripts /home/ec2-user/environment/scripts --delete
 ```
 
 ## DOWNLOAD AND UPLOAD MODEL TO ASSET BUCKET
@@ -65,7 +78,6 @@ aws s3 ls --summarize --human-readable --recursive s3://<bucket-name>/
 ```
 
 Step 7 : Terminate your cloud9 if not required. 
-
 
 
 
@@ -168,25 +180,7 @@ alias ksd="kubectl -n kube-system describe "
 alias ktest="k run -it netshoot --image=nicolaka/netshoot /bin/bash"
 ```
 
-
-
 ### Pre-warm time : 
-```
-WSParticipantRole:~/environment/eks/genai $ kg po -w
-NAME                                            READY   STATUS              RESTARTS   AGE
-kube-ops-view-5d9d967b77-tcjh9                  1/1     Running             0          78m
-vllm-mistral-inf2-deployment-7d886c8cc8-bl95v   0/1     ContainerCreating   0          4s
-open-webui-deployment-5d7ff94bc9-s8klb          0/1     Pending             0          0s
-open-webui-deployment-5d7ff94bc9-s8klb          0/1     Pending             0          0s
-open-webui-deployment-5d7ff94bc9-s8klb          0/1     ContainerCreating   0          0s
-open-webui-deployment-5d7ff94bc9-s8klb          1/1     Running             0          59s
-vllm-mistral-inf2-deployment-7d886c8cc8-bl95v   1/1     Running             0          4m43s
-```
-
-
-
-
-
 ```
 WSParticipantRole:~/environment/eks/download $ kg po -w
 NAME                             READY   STATUS    RESTARTS   AGE
@@ -202,6 +196,7 @@ pre-warm-mistral-smzj5           0/1     Completed         0          3m55s
 ```
 
 ## Model loaded in 2.5 mins
+
 ```
 WSParticipantRole:~/environment/eks/genai $ kg po -w
 NAME                                            READY   STATUS    RESTARTS   AGE

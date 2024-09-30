@@ -1,3 +1,10 @@
+# FSXL_VOLUME_ID=$(aws fsx describe-file-systems --query 'FileSystems[].FileSystemId' --output text)
+# DNS_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].DNSName' --output text)
+# MOUNT_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].LustreConfiguration.MountName' --output text)
+# sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" pre-warm.yaml
+# sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" pre-warm.yaml
+# sed -i'' -e "s/MOUNT_NAME/$MOUNT_NAME/g" pre-warm.yaml
+
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -15,7 +22,7 @@ spec:
       - name: copy
         image: nicolaka/netshoot
         command: ["/bin/bash"]
-        args: ["-c","echo 'pre-warming started' >> /work-dir/pre-warm.txt `date` && "cp -r /work-dir/Mistral-7B-Instruct-v0.2 /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
+        args: ["-c","echo 'pre-warming started' >> /work-dir/pre-warm.txt `date` && cp -r /work-dir/Mistral-7B-Instruct-v0.2 /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
         volumeMounts:
         - name:  persistent-storage
           mountPath: "/work-dir"
@@ -60,8 +67,8 @@ spec:
     - flock
   csi:
     driver: fsx.csi.aws.com
-    volumeHandle: fs-0cf6b54e819111009
+    volumeHandle: FSXL_VOLUME_ID
     volumeAttributes:
-      dnsname: fs-0cf6b54e819111009.fsx.ap-southeast-2.amazonaws.com
-      mountname: fsx
+      dnsname: DNS_NAME
+      mountname: MOUNT_NAME
 
