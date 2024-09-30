@@ -1,5 +1,5 @@
 ---
-title : "Performance test with FIO and IOping"
+title : "Performance testing"
 weight : 130
 ---
 -------------------------------------------------------------
@@ -16,7 +16,7 @@ Go to the correct working directory.
 ::code[cd /home/ec2-user/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
 
-Run the below command and Write down the output shown for availability zone of the FSx for Lustre Instance (i.e. "us-west-2c")
+Run the below command and write down the output shown for availability zone of the FSx for Lustre Instance (i.e. "us-west-2c")
 
 ::code[aws ec2 describe-subnets --subnet-id $SUBNET_ID --region $AWS_REGION | jq .Subnets[0].AvailabilityZone]{language=bash showLineNumbers=false showCopyAction=true}
 
@@ -106,4 +106,4 @@ The specific amount of throughput and IOPS that your workload can drive on your 
 
 ## Summary
 
-You have successfully completed this section on performance testing of Amazon FSx for Lustre filesystem using FIO and IOping tool. You observed the different performance metrics with EKS pod running the load on the FSx for Lustre with high throughput and sub-millisecond latency. 
+You have successfully completed this section on performance testing of Amazon FSx for Lustre filesystem using FIO and IOping tool. You observed the different performance metrics with EKS pod running the load on the FSx for Lustre with high throughput and sub-millisecond latency.

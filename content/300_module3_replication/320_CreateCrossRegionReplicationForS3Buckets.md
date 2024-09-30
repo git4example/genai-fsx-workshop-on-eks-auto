@@ -1,5 +1,5 @@
 ---
-title : "Configure S3 Cross Region Replication for S3-linked FSx for Lustre Instance"
+title : "Configure S3 Cross-Region Replication for your S3-linked FSx for Lustre Instance"
 weight : 320
 ---
 -------------------------------------------------------------

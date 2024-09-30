@@ -1,5 +1,5 @@
 ---
-title : "Create a Persistent Volume, and Claim using Static Provisioning"
+title : "Create Persistent Volume on EKS Cluster"
 weight : 120
 ---
 -------------------------------------------------------------
@@ -22,7 +22,7 @@ MOUNT_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].LustreConfigur
 ```
 
 #### Step 1: Create the Persistent Volume
-Lets take a look at a Persistent Volume yaml file definition that has our placeholder variables in it
+Lets take a look at a Persistent Volume yaml file definition (fsxL-persistent-volume.yaml) that has our placeholder variables in it
 
 :::code[]{language=yaml showLineNumbers=true showCopyAction=false}
 # fsxL-persistent-volume.yaml

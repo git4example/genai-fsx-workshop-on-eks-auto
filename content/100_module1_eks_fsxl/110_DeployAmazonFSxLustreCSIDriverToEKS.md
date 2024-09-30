@@ -1,5 +1,5 @@
 ---
-title : "Deploy the Amazon FSx for Lustre CSI Driver to EKS cluster"
+title : "Deploy CSI Driver"
 weight : 110
 ---
 

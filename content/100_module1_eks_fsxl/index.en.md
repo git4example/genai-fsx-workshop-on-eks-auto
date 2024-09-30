@@ -1,5 +1,5 @@
 ---
-title : "Configure storage - host model data on Amazon FSx for Lustre"
+title : "Configure storage - Host model data on Amazon FSx for Lustre"
 weight : 100
 ---
 

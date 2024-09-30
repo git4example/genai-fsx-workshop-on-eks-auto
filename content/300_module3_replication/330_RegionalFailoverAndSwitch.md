@@ -1,25 +1,17 @@
 ---
-title : "Generate test files in EKS Pod, to replicate data between AWS Regions"
+title : "Generate test files in EKS Pod, to share & replicate data between AWS Regions"
 weight : 330
 
 ---
+In this section, you will log-in to a Pod, inspect the Mistral-7B  model data, and generate a test file which will be shared and replicated.
 
-### IN THIS SECTION - we will show customers how they can replicate data using S3 replication, and view it at their target S3bucket. We will not get them to deploy another FSxL file system and Pod to access it,  (not good use of time).. we will state they can achieve sharing data or DR in a different region, by follow the instructions from module 1 (deploy FSxL) & 2 (deploy GenAI app) along with deploying their EKS cluster.
+### Log-in to Pod, inspect model data, and create a test file to replicate
 
-
-In this section, you will be performing a cross region replication of data between the Amazon S3 bucket. Which will enable the data movement from one EKS cluster to the other EKS cluster in `us-east-2`. To complete this section you will deploy the pod in the current region and sync the data between the regions. Deploy the pod to read the replicated data from the persistent storage layer of Amazon FSx for Lustre file system running in `us-east-2`. Let's start
-
-### Step 1: Deploy the pod for the experiment in the EKS cluster in your current region
-
-- Check if region and cluster names are set correctly, if not then follow one of the suitable page for your situation under **[Getting Started ](/020-setup)** to setup these variables.
-
-
-
-Go to the right working directory.
+Navigate to the correct working directory.
 
 ::code[cd /home/ec2-user/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
-now lets log into the vLLM Pod, first we need to get the pod name by running the following command
+Now lets log into the vLLM Pod, first we need to get the pod name by running the following command
 
 ::code[Kubectl get pods]{language=bash showLineNumbers=false showCopyAction=true}
 
@@ -41,14 +33,14 @@ df -h
 the **work-dir** is the location that mount location of your Persistent Volume Claim.
 ![vllm_02](/static/images/vllm_02.png)
 
-Lets inspect whats in this volumes
+Lets inspect what's stored in this Persistent Volume
 
 :::code{showCopyAction=true showLineNumbers=true language=bash}
 cd /work-dir/
 ls -ll
 :::
 
-You can see the Mistral Model is stored here. Lets have a look at what the model data structure looks like.
+You can see the Mistral-7B Model is stored here. Lets have a look at what the model data structure looks like.
 
 :::code{showCopyAction=true showLineNumbers=true language=bash}
 cd Mistral-7B-Instruct-v0.2/
@@ -57,7 +49,7 @@ ls -ll
 
 Next we will create a test file on the Persistent Volume (backed by FSx for lustre). Here you will see the FSx for Lustre auto-export of new/changed files to Amazon S3 capability, and also the S3 bucket to S3 bucket replication, where the file you create in your vLLM pod will seamlessly get copied to to your target S3 bucket in us-east-2. Where you could then use that data as part of an existing environment, or have the data there for a DR scenario, where you can spin up an Amazon EKS cluster, its Pods and FSx Lustre Instances to consume the replciated data in an automated manner.
 
-Lets create the test file we want to trigger the export and replication.
+Lets create the test file, which will trigger an export of the test file to the S3 bucket linked to this FSx instance, and also trigger the replication of the test file to the target S3 bucket (us-east-2) .
 
 :::code{showCopyAction=true showLineNumbers=true language=bash}
 cd /work-dir
@@ -68,84 +60,36 @@ cp /work-dir/Mistral-7B-Instruct-v0.2/README.md /work-dir/test/testfile
 
 
 
-### Check both the Source S3 bucket and the Destination S3 Bucket
+### Verify data in Amazon S3 buckets
 
-Copy and run the below command from the cli to Look for the s3 bucket name
+Navigate to the Amazon S3 Console page:  [Amazon S3 console](https://s3.console.aws.amazon.com)
 
-::code[aws s3 ls]{language=bash showLineNumbers=false showCopyAction=true}
+Click on the S3 bucket that looks like below (which is linked to your FSx instance), which was created in your region (don't click on the one that has **2ndregion** in its name )
 
-Copy and run the below command to Check the out.txt are in both s3 buckets.
+![S3_console_1](/static/images/s3_console_1.png)
 
-:::code[]{language=bash showLineNumbers=true showCopyAction=true}
-aws s3 ls s3://$S3_BUCKET/export/
-aws s3 ls s3://$S3_BUCKET_2NDREGION/export/
+Notice that there is a **test** folder there, Click on the **test** folder. You will now see that the **testfile** you created on the Persistent Volume in your Pod has also been automatically exported from the FSx for Lustre file system, to your S3 bucket.
+
+![testfile](/static/images/testfile.png)
+
+Now lets go and check out your target S3 bucket in the different AWS Region (us-east-2), to verify this testfile has also been automatically replicated there.
+
+Now click on the **Buckets** hyperlink at the top of the window
+
+![buckets](/static/images/buckets.png)
+
+
+Now click on the S3 bucket which has **2ndregion** in its name, which is located in us-east-2. You will notice that the **test** folder, and **testfile** have also been automatically replicated by S3 Replication.
+
+![target_bucket](/static/images/target_bucket.png)
+
+
+### Summary
+
+In this section, you have observed how you can share & replicate generated data within a Pod, using FSx for Lustre, and its auto import/export to Amazon S3 capability. You have observed how you can also seamlessly replicate generated data between S3 buckets using S3 Replication. This is useful for scenario's such as distributed data requirements to DR scenarios, where you may have an existing EKS cluster in a secondary region (i.e. DR), and can then leverage the replicated data stored in your S3 buckets, by creating an FSx for Lustre instance (linked to the S3 bucket), create an associated Persistent Volume (using the FSx instance), and then spin up your application Pod's to seamlessly consume this data in the different AWS Region.
+
+This is the end of the workshop.
+
+:::alert{header="Information" type="info"}
+Imagine the scenario where you need to host many AI models, or vast amounts of training data-sets, which will be accessed by hundreds of Pods in your workload. You can store this data on a single Persistent Volume (PV) backed by FSx for Lustre. This will allow you to have a centralized high-performance model/data cache location to service your application Pods, instead of having creating many individual local storage volumes attached to each of your Pods, where you could have duplicate data, and also  wait time associated with copying the data to each of the local volumes before your Pod can access it.
 :::
-
-You should be able to see that both S3 buckets have the `testfile` file
-
-
-# [ We need to remove following steps 4 - 7 as we dont have EKS cluster in 2nd region for this workshop ]
-
-
-### Step 4: Check the file is synced in the new EKS cluster in 2nd region
-
-Run the below command to switch your kube config to the EKS Cluster in region 2nd Region (i.e. `us-east-2`)
-
-::code[aws eks update-kubeconfig --name $CLUSTER_NAME_2 --region $REGION_2]{language=bash showLineNumbers=false showCopyAction=true}
-
-Check your nodes are running on the cluster
-
-::code[kubectl get nodes]{language=bash showLineNumbers=false showCopyAction=true}
-
-### Step 5: Validate the PVC
-
-:::alert{header="Note" type="info"}
-For AWS Sponsored Workshop, the second region PVC **fsx-lustre-claim** is pre-created for you
-:::
-
-Run the below command to check the pvc status
-
-::code[kubectl get pvc]{language=bash showLineNumbers=false showCopyAction=true}
-
-::::expand{header="You should see the results as below, click to expand"}
-
-:::code[]{language=bash showLineNumbers=false showCopyAction=false}
-NAME        STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-fsx-lustre-claim   Bound    pvc-CCCCCC----02468c18769e   1200Gi     RWX            fsx-lustre-sc         7m37s
-:::
-
-::::
-
-You can see the new filesystem is displayed from AWS FSx console
-
-::alert[This should be in the **us-east-2** region in the AWS Console]
-
-![FSxL_01](/static/images/FSxL_01.png)
-
-### Step 6: Now let's deploy the pod
-
-Copy and run the below command to deploy the pod.
-
-::code[kubectl apply -f pod.yaml]{language=bash showLineNumbers=false showCopyAction=true}
-
-### Step 7. Logon to the container to see the `out.txt` is it available for use.
-
-Run the below command to Logon to the container.
-
-::code[kubectl exec -it fsx-app -- bash]{language=bash showLineNumbers=false showCopyAction=true}
-
-Run the below command to verify that the file is available and all the contents are correct.
-
-:::code[]{language=bash showLineNumbers=true showCopyAction=true}
-ls -ltr /data/export/
-tail -f /data/export/out.txt
-:::
-
-Type `ctrl+c` to exit the "tail" command
-
-Type "exit" to exit the container
-::code[exit]{language=bash showLineNumbers=false showCopyAction=true}
-
-## Summary
-
-In this section, you manged to validate the cross region replication of data available for two different EKS clusters in less than a minute. Congratulations, You have sucessfully completed this module.
