@@ -1020,7 +1020,6 @@ resource "kubernetes_job" "pre_warm_mistral" {
   depends_on = [
     kubectl_manifest.pre_warm_pvc,
     module.eks_blueprints_addons
-    #testing again...
   ]
 }
 
