@@ -622,6 +622,7 @@ resource "aws_fsx_data_repository_association" "fsx_lustre_association" {
   file_system_id       = aws_fsx_lustre_file_system.fsx_lustre.id
   data_repository_path = "s3://${module.fsx-lustre-bucket.s3_bucket_id}"
   file_system_path     = "/"
+  batch_import_meta_data_on_create = true
 
   s3 {
     auto_export_policy {
