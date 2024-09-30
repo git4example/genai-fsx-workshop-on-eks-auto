@@ -42,4 +42,6 @@ Note that this is a **Scratch_2** deployment type instance with 1200GiB of stora
 
 ![FSxL_console_3](/static/images/fsx_console_3.png)
 
-10. You have now completed this module, and understand the different FSx for Lustre deployment options available, where you can also increase the storage, throughput capacity, and Metadata IOPS performance capability of an existing FSx instance, online.
+
+## Summary
+You have now completed this module. Through this module you have learnt about the different FSx for Lustre deployment options available, where you can also increase the storage, throughput capacity, and Metadata IOPS performance capability of an existing FSx instance, online.

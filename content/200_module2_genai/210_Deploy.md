@@ -39,21 +39,22 @@ ec2nodeclass.karpenter.k8s.aws/inferentia   True    6s
 
 ### Install Neuron device plugin & scheduler
 
-#### What is Neuron, talk about how we have already pre-compiled the Mistral model into Neuron format (to save them time), so that the model can be run on AWS Inferentia accelerators, which are going to be managed by karpenter
+To save you time in the lab, the Mistral-7B model has already been compiled using the AWS Neuron SDK, so that you can deploy it on the AWS Inferentia accelerated computes notes for this workshoip.
 
-Now that we verified the pre-requisites, lets install Neuron Device Plugin and Neuron Scheduler with is required by the AWS Inferentia Accelerator YXYZ
+Now we need to install the Neuron Device Plugin and Neuron Scheduler on the EKS cluster.
 
 ###### Neuron Device plugin
-A neuron device plugin exposes Neuron cores & devices to Kubernetes as a resource.
-
-###### Neuron Scheduler
-The Neuron scheduler extension is required for scheduling pods that require more than one Neuron core or device resource. Neuron scheduler extension filter out nodes with non-contiguous core/device ids and enforces allocation of contiguous core/device ids for the PODs requiring it.
+A Neuron device plugin exposes Neuron cores & devices to Kubernetes as a resource.
 
 1. Run the following commands to Install the Neuron device plugin:
 :::code{showCopyAction=true showLineNumbers=true language=bash}
 kubectl apply -f https://raw.githubusercontent.com/aws-neuron/aws-neuron-sdk/master/src/k8/k8s-neuron-device-plugin-rbac.yml
 kubectl apply -f https://raw.githubusercontent.com/aws-neuron/aws-neuron-sdk/master/src/k8/k8s-neuron-device-plugin.yml
 :::
+
+###### Neuron Scheduler
+The Neuron scheduler extension is required for scheduling pods that require more than one Neuron core or device resource. Neuron scheduler extension filter out nodes with non-contiguous core/device ids and enforces allocation of contiguous core/device ids for the PODs requiring it.
+
 
 2. Run the below commands to install the Neuron Scheduler:
 :::code{showCopyAction=true showLineNumbers=true language=bash}
@@ -64,17 +65,23 @@ kubectl apply -f https://raw.githubusercontent.com/aws-neuron/aws-neuron-sdk/mas
 
 ### Deploy the vLLM application Pod
 
-**You will deploy a vLLM pod, from ECR image, and configure it to use the PVC you previously created, where this has the inference server config details... etc.. feel free to cat the mistral-fsxl.yaml**
+You will now deploy the vLLM pod which will provide you with model serving capability, and inference endpoint. Once the vLLM Pod is online, it will load the Mistral-7B model (29GB) into its memory from your FSx for Lustre based Persistent Volume, then it will be ready to use.
 
-1. Run the below command to deploy your vLLM Pod. Once the vLLM Pod is online, it will load the Mistral-7B model (29GB) into its memory from your FSx for Lustre based Persistent Volume.
+1. Run the below command to deploy your vLLM Pod.
 
 ```bash
 kubectl apply -f mistral-fsxl.yaml
 ```
 
-2. The above deployment will take approx. 7-8 minutes. (**You can continue to the next steps, and don't need to wait for this step to complete**).
+2. The vLLM deployment will take approx. 7-8 minutes. (**You can continue to the next steps, and don't need to wait for this step to complete**).
 
-3. You can monitor the vLLM pod creation by running the following command periodically, until you see it transitioning to `Running`
+3. Take a moment to inspect the vLLM's mistral-fsxl.yaml deployment file.
+
+```bash
+cat mistral-fsxl.yaml
+```
+
+4. You can monitor the vLLM pod creation by running the following command periodically, until you see it transitioning to `Running`
 
 ```bash
 kubectl get pod
