@@ -90,7 +90,7 @@ kubectl get pv,pvc
 
 
 ASSET_BUCKET=$(aws cloudformation describe-stacks --stack-name genaifsxworkshoponeks --query "Stacks[0].Parameters[?ParameterKey=='Assets'].ParameterValue" --output text)
-cd /home/ec2-user/environment/eks/
+cd /home/ec2-user/environment/eks
 aws s3 sync ${ASSET_BUCKET}download/ ./download    
 cd /home/ec2-user/environment/eks/download
 sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" check.yaml

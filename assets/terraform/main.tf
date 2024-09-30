@@ -605,9 +605,6 @@ resource "aws_security_group" "FSxLSecurityGroup01" {
 
 resource "aws_fsx_lustre_file_system" "fsx_lustre" {
   provider    = aws.region1
-  # import_path      = "s3://${module.fsx-lustre-bucket.s3_bucket_id}"
-  # export_path      = "s3://${module.fsx-lustre-bucket.s3_bucket_id}/export"
-  # auto_import_policy = "NEW_CHANGED_DELETED"
   file_system_type_version = "2.15"
   storage_capacity = 1200
   deployment_type = "PERSISTENT_2"
@@ -624,7 +621,7 @@ resource "aws_fsx_lustre_file_system" "fsx_lustre" {
 resource "aws_fsx_data_repository_association" "fsx_lustre_association" {
   file_system_id       = aws_fsx_lustre_file_system.fsx_lustre.id
   data_repository_path = "s3://${module.fsx-lustre-bucket.s3_bucket_id}"
-  file_system_path     = "/work-dir"
+  file_system_path     = "/"
 
   s3 {
     auto_export_policy {
@@ -652,18 +649,6 @@ resource "helm_release" "fsx_csi_driver" {
     module.eks
   ]
 }
-
-
-
-# resource "aws_fsx_lustre_file_system" "example" {
-#   storage_capacity = 1200
-#   subnet_ids       = [aws_subnet.example.id]
-#   deployment_type  = "PERSISTENT_2"
-
-#   per_unit_storage_throughput = 250
-# }
-
-
 
 
 ################################################################################
