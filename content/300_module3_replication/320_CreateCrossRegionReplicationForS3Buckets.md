@@ -7,7 +7,7 @@ weight : 320
 ## Configure S3 Cross Region Replication configuration between the Amazon S3 buckets
 
 :::alert{header="Note" type="info"}
-For the AWS Sponsored Workshop, the S3 bucket for FSx for lustre has pre-created with a name as **fsx-lustre-bucket-2ndregion-xxxx**
+For the AWS Sponsored Workshop, we have created two Amazon S3 buckets for your. The first is in your selected region, and a target Amazon S3 bucket in **us-east-2** with a name of **fsx-lustre-bucket-2ndregion-xxxx**
 :::
 
 
@@ -16,7 +16,7 @@ For the AWS Sponsored Workshop, the S3 bucket for FSx for lustre has pre-created
 Open the [Amazon S3 console](https://s3.console.aws.amazon.com)
 
 
-2. Click on the S3 bucket that looks like below, which is created in your region (dont click on the one that has 2ndregion in its name )
+2. Click on the S3 bucket that looks like below, which is created in your region (DO NOT click on the S3 bucket name that has **2ndregion**)
 
 ![S3_console_1](/static/images/s3_console_1.png)
 
@@ -30,7 +30,7 @@ Open the [Amazon S3 console](https://s3.console.aws.amazon.com)
 
 5. Under *Source bucket* ,  select *Apply to all objects in the bucket*
 
-6. Under *Destination*, select the target S3 bucket we have created for you in us-east-2, which will have name such as **fsx-lustre-bucket-2ndregion-xxxx**, then click on **Choose path**.
+6. Under *Destination*, click on **Browse S3**, and select the target S3 bucket we have created for you in us-east-2, which will have name such as **fsx-lustre-bucket-2ndregion-xxxx**, then click on **Choose path**.
 
 7. Click on **Enable Bucket Versioning** in the red pop-up box.
 

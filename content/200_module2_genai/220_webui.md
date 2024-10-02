@@ -19,7 +19,7 @@ kubectl apply -f open-webui.yaml
 kubectl get ing
 ```
 
-3. Copy the URL ADDRESS, and paste it into a web browser. This will open a Open WebUI chat client interface.
+3. Now wait 1-2 minutes (for the OpenWeb UI to deploy) then copy above the URL ADDRESS, and paste it into a web browser. This will open a Open WebUI chat client interface.
 
 ![WebUI_url](/static/images/WebUI_url.png)
 

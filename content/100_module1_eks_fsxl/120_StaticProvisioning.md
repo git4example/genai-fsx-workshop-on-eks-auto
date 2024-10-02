@@ -13,6 +13,13 @@ weight : 120
 
 In this lab section, we will use the **Static Provisioning** method for Persistent Volumes (PV), where we have already provisioned and FSx for Lustre Instance for you to use, which is linked to an Amazon S3 bucket, which is storing the Mistral-7B model. You will create the Persistent Volume definition and create a Persistent Volume Claim, so that you can use this storage volume in your vLLM Pod to access the Mistral-7B model data.
 
+
+Run the below command to change to the correct working directly, so you can run the commands for this exercise
+
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
+cd /home/ec2-user/environment/eks/FSxL
+:::
+
 Run the below commands in your Cloud9 terminal to populated the variables with the FSx Lustre Instance details (that we have pre-created for you)
 
 ```bash
@@ -22,6 +29,9 @@ MOUNT_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].LustreConfigur
 ```
 
 #### Step 1: Create the Persistent Volume
+
+
+
 Lets take a look at a Persistent Volume yaml file definition (fsxL-persistent-volume.yaml) that has our placeholder variables in it
 
 :::code[]{language=yaml showLineNumbers=true showCopyAction=false}
