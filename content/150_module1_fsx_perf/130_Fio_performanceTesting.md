@@ -1,6 +1,7 @@
 ---
 title : "Performance testing"
 weight : 130
+hidden : true
 ---
 -------------------------------------------------------------
 

@@ -28,7 +28,9 @@ Open the [Amazon S3 console](https://s3.console.aws.amazon.com)
 
 ![S3_02](/static/images/S3_02.png)
 
-5. Under *Source bucket* ,  select *Apply to all objects in the bucket*
+5. Under *Source bucket* ,  select **limit the scope of this rule using one or more filters**, and then enter */test* as the value to filter by.
+
+![s3_prefix](/static/images/s3_prefix.png)
 
 6. Under *Destination*, click on **Browse S3**, and select the target S3 bucket we have created for you in us-east-2, which will have name such as **fsx-lustre-bucket-2ndregion-xxxx**, then click on **Choose path**.
 

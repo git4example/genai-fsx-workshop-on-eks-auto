@@ -50,7 +50,7 @@ ls -ll
 
 Next we will create a test file on the Persistent Volume (backed by FSx for lustre). Here you will see the FSx for Lustre auto-export of new/changed files to Amazon S3 capability, and also the S3 bucket to S3 bucket replication, where the file you create in your vLLM pod will seamlessly get copied to to your target S3 bucket in us-east-2. Where you could then use that data as part of an existing environment, or have the data there for a DR scenario, where you can spin up an Amazon EKS cluster, its Pods and FSx Lustre Instances to consume the replciated data in an automated manner.
 
-Lets create the test file called **testfile** under a new folder called **test**, which will trigger an export of the test file to the S3 bucket linked to this FSx instance, and subsequently trigger the replication of the testfile to the target S3 bucket (us-east-2) .
+Lets create the test file called **testfile** under a new folder called **test**, which will trigger an export of the test file to the S3 bucket linked to this FSx instance, and subsequently trigger the S3 Replication of the testfile between S3 buckets to the target S3 bucket (us-east-2 region) .
 
 :::code{showCopyAction=true showLineNumbers=true language=bash}
 cd /work-dir

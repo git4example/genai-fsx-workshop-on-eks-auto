@@ -1,6 +1,7 @@
 ---
 title : "Connect multiple PODs to same PV/PVC"
 weight : 140
+hidden : true
 ---
 -------------------------------------------------------------
 
