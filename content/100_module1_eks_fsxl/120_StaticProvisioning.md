@@ -28,11 +28,11 @@ DNS_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].DNSName' --outpu
 MOUNT_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].LustreConfiguration.MountName' --output text)
 ```
 
-#### Step 1: Create the Persistent Volume
+##### Step 1: Create the Persistent Volume
 
 
 
-Lets take a look at a Persistent Volume yaml file definition (fsxL-persistent-volume.yaml) that has our placeholder variables in it
+Lets take a look at a Persistent Volume (PV) yaml file definition (fsxL-persistent-volume.yaml) that has our placeholder variables in it. We have already created a 1200GiB FSx for Lustre instance for this workshop.So in this Persistent Volume definition, you will simply configure that 1200GiB FSx for Lustre instance to register as an EKS Cluster resource using a name of 'fsx-pv'. 
 
 :::code[]{language=yaml showLineNumbers=true showCopyAction=false}
 # fsxL-persistent-volume.yaml
@@ -86,7 +86,7 @@ kubectl get pv
 
 
 
-#### Step 2: Create the PersistentVolumeClaim
+##### Step 2: Create the PersistentVolumeClaim
 
 We will now create a PersistentVolumeClaim (PVC) to bind with the PersistentVolume that we defined in the previous step. Note that we are directly referencing pre-provisioned PersistentVolume using the **volumeName** value of **fsx-pv**:
 

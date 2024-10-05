@@ -1,11 +1,11 @@
 ---
-title : "Inspect Mistral-7B data, Generate test files in EKS Pod, to share & replicate data between AWS Regions"
+title : "Inspect Mistral-7B data, generate test file in Pod to enable auto-export and replication of data"
 weight : 330
 
 ---
 In this section, you will log-in to a Pod, inspect the Mistral-7B  model data, and generate a test file which will be shared and replicated.
 
-### Log-in to Pod, inspect model data, and create a test file to replicate
+##### Step 1: Login to Pod, inspect model data, and create a test file to replicate
 
 Navigate to back to your Cloud9 terminal and change to your working directory.
 
@@ -13,7 +13,7 @@ Navigate to back to your Cloud9 terminal and change to your working directory.
 
 Now lets log into the vLLM Pod, first we need to get the pod name by running the following command
 
-::code[Kubectl get pods]{language=bash showLineNumbers=false showCopyAction=true}
+::code[kubectl get pods]{language=bash showLineNumbers=false showCopyAction=true}
 
 From the output copy the name shown in your environment that starts with **vllm**
 
@@ -48,7 +48,7 @@ cd Mistral-7B-Instruct-v0.2/
 ls -ll
 :::
 
-Next we will create a test file on the Persistent Volume (backed by FSx for lustre). Here you will see the FSx for Lustre auto-export of new/changed files to Amazon S3 capability, and also the S3 bucket to S3 bucket replication, where the file you create in your vLLM pod will seamlessly get copied to to your target S3 bucket in us-east-2. Where you could then use that data as part of an existing environment, or have the data there for a DR scenario, where you can spin up an Amazon EKS cluster, its Pods and FSx Lustre Instances to consume the replciated data in an automated manner.
+Next we will create a test file on the Persistent Volume (backed by FSx for lustre). Here you will see the FSx for Lustre auto-export of new/changed files to Amazon S3 capability, and also the S3 bucket to S3 bucket replication, where the file you create in your vLLM pod will seamlessly get copied to to your target S3 bucket in us-east-2. Where you could then use that data as part of an existing environment, or have the data there for a DR scenario, where you can spin up an Amazon EKS cluster, its Pods and FSx Lustre Instances to consume the replicated data in an automated manner.
 
 Lets create the test file called **testfile** under a new folder called **test**, which will trigger an export of the test file to the S3 bucket linked to this FSx instance, and subsequently trigger the S3 Replication of the testfile between S3 buckets to the target S3 bucket (us-east-2 region) .
 
@@ -62,7 +62,7 @@ ls -ll /work-dir/test
 
 
 
-### Verify data exported to S3 bucket and replicated across regions
+##### Step 2: Verify data exported to S3 bucket and replicated across regions
 
 Navigate to the Amazon S3 Console page:  [Amazon S3 console](https://s3.console.aws.amazon.com)
 
@@ -85,7 +85,7 @@ Now click on the S3 bucket which has **2ndregion** in its name, which is located
 ![target_bucket](/static/images/target_bucket.png)
 
 
-### Summary
+## Summary
 
 In this section, you have observed how you can share & replicate generated data within a Pod, using FSx for Lustre, and its auto import/export to Amazon S3 capability. You have observed how you can also seamlessly replicate generated data between S3 buckets using S3 Replication. This is useful for scenario's such as distributed data requirements to DR scenarios, where you may have an existing EKS cluster in a secondary region (i.e. DR), and can then leverage the replicated data stored in your S3 buckets, by creating an FSx for Lustre instance (linked to the S3 bucket), create an associated Persistent Volume (using the FSx instance), and then spin up your application Pod's to seamlessly consume this data in the different AWS Region.
 

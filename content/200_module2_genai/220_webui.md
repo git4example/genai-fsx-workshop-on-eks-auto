@@ -2,7 +2,7 @@
 title : "Deploy WebUI chat application to interact with model"
 weight : 220
 ---
-## How to consume the Inference Service
+### How to consume the Inference Service
 You can connect to the Inference Service using the **"Open WebUI"** application, which is designed to consume the OpenAI-compatible endpoint provided by the vLLM-hosted Mistral-7B-Instruct model that you will deploy in the workshop. The Open WebUI application allows users to interact with the LLM model through a chat-based interface. To use the Open WebUI application, simply deploy the application container, and connect to the WebUI URL that is provided and start chatting with the LLM model. The WebUI application will handle the communication with the VLLM-hosted Mistral-7B-Instruct model, providing a seamless user experience.
 
 ### Deploy the Open WebUI pod and load balance.

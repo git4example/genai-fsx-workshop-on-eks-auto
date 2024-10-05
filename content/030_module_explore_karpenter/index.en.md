@@ -3,16 +3,16 @@ title : "Explore workshop environment"
 weight : 30
 ---
 
-## Automation used for the creation of this Amazon EKS Cluster
+## Automation used for the creation of your lab Amazon EKS Cluster
 
-The Amazon EKS cluster in this workshop was created with [**Terraform**](https://www.terraform.io/) using the [**EKS Blueprints for Terraform**](https://github.com/aws-ia/terraform-aws-eks-blueprints). You can explore the blueprint by looking into the `~/environment/eksworkshop` folder on your Cloud9 instance, to learn how it could be used in a your environment.
+The Amazon Elastic Kubernetes Service (EKS) cluster in this workshop was created with [**Terraform**](https://www.terraform.io/) using the [**EKS Blueprints for Terraform**](https://github.com/aws-ia/terraform-aws-eks-blueprints). You can explore the blueprint by looking into the `~/environment/eksworkshop` folder on your Cloud9 instance, to learn how it could be used in a your environment.
 
 **Terraform** is an infrastructure as code tool that lets you build, change, and version infrastructure efficiently in AWS.
 
 **EKS Blueprints for Terraform** helps you compose complete EKS clusters that are fully bootstrapped with the operational software that is needed to deploy and operate workloads. With EKS Blueprints, you describe the configuration for the desired state of your EKS environment, such as the control plane, worker nodes, and Kubernetes add-ons, as an IaC blueprint. Once a blueprint is configured, you can use it to create consistent environments across multiple AWS accounts and Regions using continuous deployment automation.
 
-:::alert{header="Important" type="info"}
-Explore the Amazon Elastic Kubernetes Service (Amazon EKS) section in the AWS Console and the properties of the newly created Amazon EKS cluster.
+:::alert{header="Note" type="info"}
+Take a moment to explore the  [Amazon EKS cluster via the AWS Console](https://console.aws.amazon.com/eks),  to view the cluster configuration, and the 2 worker nodes.
 :::
 
 ## Explore the Karpenter installation
@@ -44,4 +44,28 @@ You should see an output similar to the one below.
 NAME                         READY   STATUS    RESTARTS   AGE
 karpenter-75f6596894-pgrsd   1/1     Running   0          48s
 karpenter-75f6596894-t4mrx   1/1     Running   0          48s
+```
+
+
+### Displaying Karpenter Logs
+
+:::alert{header="Important" type="info"}
+You can create a new terminal window within Cloud9 and leave the command below running so you can come back to that terminal every time you want to look for what Karpenter is doing.
+:::
+
+To read karpenter logs set-up the following alias to stream logs from all of the Karpenter controller logs:
+
+```bash
+alias kl='kubectl -n karpenter logs -l app.kubernetes.io/name=karpenter --all-containers=true -f --tail=20'
+```
+
+From now on to invoke the alias and get the logs we can just use to see if karpenter is launching inferentia node for our mistral pod.
+
+```bash
+kl
+```
+
+Hit `control + c` to exit
+```bash
+^C
 ```

@@ -28,7 +28,7 @@ Open the [Amazon S3 console](https://s3.console.aws.amazon.com)
 
 ![S3_02](/static/images/S3_02.png)
 
-5. Under *Source bucket* ,  select **limit the scope of this rule using one or more filters**, and then enter */test* as the value to filter by.
+5. Under *Source bucket* ,  select **limit the scope of this rule using one or more filters**, and then enter *test/* as the value to filter by.
 
 ![s3_prefix](/static/images/s3_prefix.png)
 
@@ -38,7 +38,7 @@ Open the [Amazon S3 console](https://s3.console.aws.amazon.com)
 
 ![S3_03](/static/images/S3_03.png)
 
-8. Now lets set-up an AWS Identity and Access Management (IAM) role that Amazon S3 can assume to replicate S3 objects on your behalf, between S3 buckets. Choose the existing role that has been pre-created for you (the name starts with **s3-cross-region-replication-role** )
+8. Now set-up an AWS Identity and Access Management (IAM) role that Amazon S3 can assume to replicate S3 objects on your behalf, between S3 buckets. Choose the existing role that has been pre-created for you (the name starts with **s3-cross-region-replication-role** )
 
 ![S3_04](/static/images/S3_04.png)
 

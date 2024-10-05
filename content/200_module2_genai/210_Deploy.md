@@ -3,7 +3,7 @@ title : "Deploy vLLM on AWS Inferentia nodes for model Inference"
 weight : 210
 ---
 
-### Create Karpenter NodePool and EC2NodeClass
+#####  Step 1: Create Karpenter NodePool and EC2 NodeClass for AWS Inferentia Accelerators
 
 Karpenter configuration comes in the form of a NodePool Custom Resource (CR). The NodePool sets constraints on the nodes that can be created by Karpenter and the pods that can run on those nodes. The NodePool can be set to do things like limiting node creation to certain computer architectures or be flexible to use multiple. A single Karpenter NodePool is capable of handling many different pod shapes. Karpenter makes scheduling and provisioning decisions based on pod attributes such as labels and affinity. A cluster may have more than one NodePool, but for the moment we will declare additional one: the inferentia NodePool.
 
@@ -16,7 +16,13 @@ Karpenter configuration comes in the form of a NodePool Custom Resource (CR). Th
 cd /home/ec2-user/environment/eks/genai
 ```
 
-3. Let's deploy a Karpenter NodePool with the following configuration:
+3. Lets take a look at the Karpenter NodePool definition that we will deploy. It will create a new nodepool for AWS Inferentia INF2 Accelerated Compute nodes that we will use to power our Generative AI application (vLLM pod)
+
+```bash
+cat inferentia_nodepool.yaml
+```
+
+4. Let's deploy the Karpenter NodePool definition for AWS Inferentia INF2 Accelerated Compute nodes
 
 
 ```bash
@@ -24,7 +30,7 @@ kubectl apply -f inferentia_nodepool.yaml
 ```
 
 
-4. Verify NodePool and EC2NodeClass:
+5. Verify NodePool and EC2NodeClass:
 :::code{showCopyAction=true showLineNumbers=true language=bash}
 kubectl get nodepool,ec2nodeclass inferentia
 :::
@@ -37,16 +43,19 @@ NAME                                        READY   AGE
 ec2nodeclass.karpenter.k8s.aws/inferentia   True    6s
 ```
 
-### Install Neuron device plugin & scheduler
+##### Step 2: Install Neuron device plugin & scheduler
 
-To save you time in the lab, the Mistral-7B model has already been compiled using the AWS Neuron SDK, so that you can deploy it on the AWS Inferentia accelerated computes notes for this workshoip.
+:::alert{header="Important" type="info"}
+To save you time in the lab, the Mistral-7B model has already been downloaded & compiled using the AWS Neuron SDK, so that you can deploy it on the AWS Inferentia Accelerated Computes nodes for this workshop.
+:::
+
 
 Now we need to install the Neuron Device Plugin and Neuron Scheduler on the EKS cluster.
 
 ###### Neuron Device plugin
 A Neuron device plugin exposes Neuron cores & devices to Kubernetes as a resource.
 
-1. Run the following commands to Install the Neuron device plugin:
+1. Run the following commands to Install the Neuron device plugin (ignore any kubectl warnings):
 :::code{showCopyAction=true showLineNumbers=true language=bash}
 kubectl apply -f https://raw.githubusercontent.com/aws-neuron/aws-neuron-sdk/master/src/k8/k8s-neuron-device-plugin-rbac.yml
 kubectl apply -f https://raw.githubusercontent.com/aws-neuron/aws-neuron-sdk/master/src/k8/k8s-neuron-device-plugin.yml
@@ -63,7 +72,7 @@ kubectl apply -f https://raw.githubusercontent.com/aws-neuron/aws-neuron-sdk/mas
 :::
 
 
-### Deploy the vLLM application Pod
+##### Step 3: Deploy the vLLM application Pod
 
 You will now deploy the vLLM pod which will provide you with model serving capability, and inference endpoint. Once the vLLM Pod is online, it will load the Mistral-7B model (29GB) into its memory from your FSx for Lustre based Persistent Volume, then it will be ready to use.
 
@@ -75,7 +84,12 @@ kubectl apply -f mistral-fsxl.yaml
 
 2. The vLLM deployment will take approx. 7-8 minutes. (**You can continue to the next steps, and don't need to wait for this step to complete**).
 
-3. Take a moment to inspect the vLLM's mistral-fsxl.yaml deployment file.
+3. Run the below command to inspect the vLLM's mistral-fsxl.yaml deployment file.
+
+:::alert{header="Note" type="info"}
+You will notice a single pod deployment request, with a request for AWS Inferentia Neuron core, persistent storage using the PVC you created previously, using FSx for Lustre (fsx-lustre-claim), and also some model parameters.  
+:::
+
 
 ```bash
 cat mistral-fsxl.yaml
@@ -90,25 +104,16 @@ kubectl get pod
 ![vllm_pod](/static/images/vllm_pod_1.png)
 
 
-### Displaying Karpenter Logs
+5. Navigate to the [Amazon EKS cluster Console](https://console.aws.amazon.com/eks)
 
-:::alert{header="Important" type="info"}
-You can create a new terminal window within Cloud9 and leave the command below running so you can come back to that terminal every time you want to look for what Karpenter is doing.
-:::
+6. Click on your cluster name (i.e. eksworkshop)
 
-To read karpenter logs set-up the following alias to stream logs from all of the Karpenter controller logs:
+7. Click on the   **Compute** tab, you will see there is now a new AWS Inferentia **inf2.xlarge** compute node
 
-```bash
-alias kl='kubectl -n karpenter logs -l app.kubernetes.io/name=karpenter --all-containers=true -f --tail=20'
-```
+![inf2_node](/static/images/inf2_node.png)
 
-From now on to invoke the alias and get the logs we can just use to see if karpenter is launching inferentia node for our mistral pod.
+8. Click on the **Node name**, where it will show you the capacity allocation and Pod details relating to the inf2.xlarge compute node
 
-```bash
-kl
-```
 
-Hit `control + c` to exit
-```bash
-^C
-```
+### Summary
+You have now deployed the vLLM Pod. Continue to the next lab section to deploy the WebUI Pod, so you can interact with the Mistral-7B model through the vLLM (model serving and inferencing).
