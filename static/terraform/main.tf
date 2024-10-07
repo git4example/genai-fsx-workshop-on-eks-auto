@@ -983,7 +983,7 @@ resource "kubernetes_job" "sysprep" {
           name    = "validate"
           image   = "public.ecr.aws/parikshit/lustre-client:latest"
           command = ["/bin/bash"]
-          args    = ["-c","echo 'sysprep-validation started' >> /work-dir/sysprep-validation `date` && find /work-dir/Mistral-7B-Instruct-v0.2 -type f -print0 | xargs -0 -n 1 -P 8 lfs hsm_action >> /work-dir/sysprep-validation && echo 'sysprep-validation done' >> /work-dir/sysprep-validation `date`"]
+          args    = ["-c","echo 'sysprep-validation started' >> /work-dir/sysprep `date` && find /work-dir/Mistral-7B-Instruct-v0.2 -type f -print0 | xargs -0 -n 1 -P 8 lfs hsm_action >> /work-dir/sysprep && echo 'sysprep-validation done' >> /work-dir/sysprep `date`"]
           volume_mount {
             name       = "persistent-storage"
             mount_path = "/work-dir"
