@@ -1,32 +1,25 @@
 
 DO NOT FULL SYNC THIS ASSET BUCKET. WE HAVE "Mistral-7B-Instruct-v0.2" FOLDER ON THIS BUCKET "s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20" WITH 27 GB OF MODEL WHICH WILL BE DELETED IF YOU FULL SYNC
 
-### Download install/clearn up script on cloud9
+### Download install/clean up script on cloud9 in Participant/event account
 ```bash
 ASSET_BUCKET=$(aws cloudformation describe-stacks --stack-name genaifsxworkshoponeks --query "Stacks[0].Parameters[?ParameterKey=='Assets'].ParameterValue" --output text)
+ASSET_BUCKET=$(echo $ASSET_BUCKET | sed 's/\/assets\///')    
+ASSET_BUCKET=$ASSET_BUCKET/static
 cd /home/ec2-user/environment/
-aws s3 sync ${ASSET_BUCKET}scripts/ ./scripts    
+aws s3 sync $ASSET_BUCKET/scripts ./scripts    
 cd /home/ec2-user/environment/scripts
 ```
 
 
-### USE FOLLOWING COMMANDs TO SYNC YOUR LOCAL TO S3 : 
-```bash
-aws s3 sync ./assets/eks s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/eks --delete
-aws s3 sync ./assets/terraform s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/terraform --delete
-# Following are only required for testing
-aws s3 sync ./assets/download s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/download --delete
-aws s3 sync ./assets/scripts s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/scripts --delete
-aws s3 cp ./assets/README.md s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/README.md
-```
-
 ### USE FOLLOWING COMMANDs TO SYNC S3 TO LOCAL/CLOUD9 : 
 ```bash
-aws s3 sync s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/eks /home/ec2-user/environment/eks --delete
-aws s3 sync s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/terraform /home/ec2-user/environment/terraform --delete
+ASSET_BUCKET=<asset bucket>
+aws s3 sync $ASSET_BUCKET/eks /home/ec2-user/environment/eks --delete
+aws s3 sync $ASSET_BUCKET/terraform /home/ec2-user/environment/terraform --delete
 # Following are only required for testing
-aws s3 sync s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/download /home/ec2-user/environment/download --delete
-aws s3 sync s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/scripts /home/ec2-user/environment/scripts --delete
+aws s3 sync $ASSET_BUCKET/download /home/ec2-user/environment/download --delete
+aws s3 sync $ASSET_BUCKET/scripts /home/ec2-user/environment/scripts --delete
 ```
 
 ## DOWNLOAD AND UPLOAD MODEL TO ASSET BUCKET

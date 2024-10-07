@@ -90,9 +90,10 @@ kubectl get pv,pvc
 
 
 ASSET_BUCKET=$(aws cloudformation describe-stacks --stack-name genaifsxworkshoponeks --query "Stacks[0].Parameters[?ParameterKey=='Assets'].ParameterValue" --output text)
-cd /home/ec2-user/environment/eks/
-aws s3 sync ${ASSET_BUCKET}download/ ./download    
-cd /home/ec2-user/environment/eks/download
+ASSET_BUCKET=$(echo $ASSET_BUCKET | sed 's/\/assets\///')    
+ASSET_BUCKET=$ASSET_BUCKET/static
+aws s3 sync $ASSET_BUCKET/download/ /home/ec2-user/environment/download    
+cd /home/ec2-user/environment/download
 
 sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" pre-warm.yaml
 sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" pre-warm.yaml

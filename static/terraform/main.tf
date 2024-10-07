@@ -873,16 +873,16 @@ resource "kubectl_manifest" "ec2nodeclass_default" {
 
 
 ################################################################################
-# Pre-warming FSx Lustre filesystem with Mistral model
+# loading FSx Lustre filesystem with Mistral model
 ################################################################################
 
 
-resource "kubectl_manifest" "nodepool_pre_warm" {
+resource "kubectl_manifest" "nodepool_sysprep" {
   yaml_body = <<-YAML
     apiVersion: karpenter.sh/v1
     kind: NodePool
     metadata:
-      name: pre-warm
+      name: sysprep
     spec:
       template:
         spec:
@@ -905,7 +905,7 @@ resource "kubectl_manifest" "nodepool_pre_warm" {
           nodeClassRef:
             group: karpenter.k8s.aws
             kind: EC2NodeClass
-            name: pre-warm
+            name: sysprep
       limits:
         cpu: 1000
       disruption:
@@ -920,12 +920,12 @@ resource "kubectl_manifest" "nodepool_pre_warm" {
   ]
 }
 
-resource "kubectl_manifest" "ec2nodeclass_pre_warm" {
+resource "kubectl_manifest" "ec2nodeclass_sysprep" {
   yaml_body = <<-YAML
     apiVersion: karpenter.k8s.aws/v1
     kind: EC2NodeClass
     metadata:
-      name: pre-warm
+      name: sysprep
     spec:
       amiFamily: AL2 # Amazon Linux 2
       blockDeviceMappings:
@@ -953,37 +953,37 @@ resource "kubectl_manifest" "ec2nodeclass_pre_warm" {
 }
 
 
-resource "kubernetes_job" "pre_warm_mistral" {
+resource "kubernetes_job" "sysprep" {
   metadata {
-    name = "pre-warm-mistral"
+    name = "sysprep"
   }
   spec {
     template {
       metadata {
         labels = {
-          app = "pre-warm-mistral"
+          app = "sysprep"
         }
       }
       spec {
         node_selector = {
-          "karpenter.sh/nodepool" = "pre-warm"
+          "karpenter.sh/nodepool" = "sysprep"
         }
         restart_policy = "OnFailure"
         init_container {
-          name    = "copy"
-          image   = "nicolaka/netshoot"
+          name    = "sysprep"
+          image   = "public.ecr.aws/parikshit/lustre-client:latest"
           command = ["/bin/bash"]
-          args    = ["-c", "echo 'pre-warming started' >> /work-dir/pre-warm.txt `date` && cp -r /work-dir/Mistral-7B-Instruct-v0.2 /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
+          args    = ["-c","echo 'sysprep started' >> /work-dir/sysprep `date` && find /work-dir/Mistral-7B-Instruct-v0.2 -type f -print0 | xargs -0 -n 1 -P 8 lfs hsm_restore && echo 'sysprep done' >> /work-dir/sysprep `date`"]
           volume_mount {
             name       = "persistent-storage"
             mount_path = "/work-dir"
           }
         }
         container {
-          name    = "delete"
-          image   = "nicolaka/netshoot"
+          name    = "validate"
+          image   = "public.ecr.aws/parikshit/lustre-client:latest"
           command = ["/bin/bash"]
-          args    = ["-c", "echo 'pre-warming done' >> /work-dir/pre-warm.txt `date` && rm -rf /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
+          args    = ["-c","echo 'sysprep-validation started' >> /work-dir/sysprep-validation `date` && find /work-dir/Mistral-7B-Instruct-v0.2 -type f -print0 | xargs -0 -n 1 -P 8 lfs hsm_action >> /work-dir/sysprep-validation && echo 'sysprep-validation done' >> /work-dir/sysprep-validation `date`"]
           volume_mount {
             name       = "persistent-storage"
             mount_path = "/work-dir"
@@ -992,7 +992,7 @@ resource "kubernetes_job" "pre_warm_mistral" {
         volume {
           name = "persistent-storage"
           persistent_volume_claim {
-            claim_name = "fsx-lustre-claim-pre-warm"
+            claim_name = "fsx-lustre-claim-sysprep"
           }
         }
       }
@@ -1004,17 +1004,17 @@ resource "kubernetes_job" "pre_warm_mistral" {
     create = "30m"
   }
   depends_on = [
-    kubectl_manifest.pre_warm_pvc,
+    kubectl_manifest.sysprep_pvc,
     module.eks_blueprints_addons
   ]
 }
 
-resource "kubectl_manifest" "pre_warm_pvc" {
+resource "kubectl_manifest" "sysprep_pvc" {
   yaml_body = <<-YAML
     apiVersion: v1
     kind: PersistentVolumeClaim
     metadata:
-      name: fsx-lustre-claim-pre-warm
+      name: fsx-lustre-claim-sysprep
     spec:
       accessModes:
         - ReadWriteMany
@@ -1022,21 +1022,21 @@ resource "kubectl_manifest" "pre_warm_pvc" {
       resources:
         requests:
           storage: 1200Gi
-      volumeName: fsx-pv-pre-warm
+      volumeName: fsx-pv-sysprep
   YAML
 
   depends_on = [
-    kubectl_manifest.pre_warm_pv
+    kubectl_manifest.sysprep_pv
   ]
 }
 
 
-resource "kubectl_manifest" "pre_warm_pv" {
+resource "kubectl_manifest" "sysprep_pv" {
   yaml_body = <<-YAML
     apiVersion: v1
     kind: PersistentVolume
     metadata:
-      name: fsx-pv-pre-warm
+      name: fsx-pv-sysprep
     spec:
       persistentVolumeReclaimPolicy: Retain
       capacity:

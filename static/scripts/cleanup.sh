@@ -32,7 +32,7 @@ kubectl delete sa fsx-csi-controller-sa
 kubectl delete -f fsxL-claim.yaml
 kubectl delete -f fsxL-persistent-volume.yaml
 
-cd /home/ec2-user/environment/eks/download
+cd /home/ec2-user/environment/download
 kubectl delete -f check.yaml
 kubeclt delete deploy netshoot
 kubectl delete pvc fsx-lustre-claim-check 

@@ -1,9 +1,9 @@
-# fs-0a9893e241202fa28=$(aws fsx describe-file-systems --query 'FileSystems[].FileSystemId' --output text)
-# fs-0a9893e241202fa28.fsx.ap-southeast-2.amazonaws.com=$(aws fsx describe-file-systems --query 'FileSystems[].DNSName' --output text)
-# 6hitjbev=$(aws fsx describe-file-systems --query 'FileSystems[].LustreConfiguration.MountName' --output text)
-# sed -i'' -e "s/fs-0a9893e241202fa28/$fs-0a9893e241202fa28/g" pre-warm.yaml
-# sed -i'' -e "s/fs-0a9893e241202fa28.fsx.ap-southeast-2.amazonaws.com/$fs-0a9893e241202fa28.fsx.ap-southeast-2.amazonaws.com/g" pre-warm.yaml
-# sed -i'' -e "s/6hitjbev/$6hitjbev/g" pre-warm.yaml
+# FSXL_VOLUME_ID=$(aws fsx describe-file-systems --query 'FileSystems[].FileSystemId' --output text)
+# DNS_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].DNSName' --output text)
+# MOUNT_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].LustreConfiguration.MountName' --output text)
+# sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" pre-warm-new.yaml
+# sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" pre-warm-new.yaml
+# sed -i'' -e "s/MOUNT_NAME/$MOUNT_NAME/g" pre-warm-new.yaml
 
 apiVersion: batch/v1
 kind: Job
