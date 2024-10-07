@@ -98,7 +98,7 @@ sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" check.yaml
 sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" check.yaml
 sed -i'' -e "s/MOUNT_NAME/$MOUNT_NAME/g" check.yaml
 
-kubectl apply -f pre-warm-nodepool.yaml
+kubectl apply -f sysprep-nodepool.yaml
 kubectl apply -f check.yaml
 
 cd /home/ec2-user/environment/eks/genai

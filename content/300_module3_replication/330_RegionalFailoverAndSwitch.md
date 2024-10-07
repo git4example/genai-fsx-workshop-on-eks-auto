@@ -23,10 +23,9 @@ Replace the **<YOUR-vLLM-POD-NAME>** value with the value you just copied, and r
 
 ::code[kubectl exec -it <YOUR-vLLM-POD-NAME> -- bash]{language=bash showLineNumbers=false showCopyAction=true}
 
-Run the following commands
+Run the following command
 
 :::code{showCopyAction=true showLineNumbers=true language=bash}
-rm /work-dir/pre-warm.txt
 df -h
 :::
 

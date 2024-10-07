@@ -95,12 +95,12 @@ ASSET_BUCKET=$ASSET_BUCKET/static
 aws s3 sync $ASSET_BUCKET/download/ /home/ec2-user/environment/download    
 cd /home/ec2-user/environment/download
 
-sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" pre-warm.yaml
-sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" pre-warm.yaml
-sed -i'' -e "s/MOUNT_NAME/$MOUNT_NAME/g" pre-warm.yaml
+sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" sysprep-new.yaml
+sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" sysprep-new.yaml
+sed -i'' -e "s/MOUNT_NAME/$MOUNT_NAME/g" sysprep-new.yaml
 
-kubectl apply -f pre-warm-nodepool.yaml
-kubectl apply -f pre-warm.yaml
+kubectl apply -f sysprep-nodepool.yaml
+kubectl apply -f sysprep-new.yaml
 
 sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" check.yaml
 sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" check.yaml

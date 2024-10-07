@@ -532,7 +532,7 @@ Resources:
             - sudo -H -u ec2-user sleep 60
             - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve            
             # Delete FSx Lustre sysprep resources
-            - sudo -H -u ec2-user echo "Delete sysprep nodepool, syspreping job, pv and pvc"
+            - sudo -H -u ec2-user echo "Delete sysprep nodepool, sysprep job, pv and pvc"
             # - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubernetes_job.sysprep --target kubectl_manifest.sysprep_pvc --target kubectl_manifest.sysprep_pv --target kubectl_manifest.nodepool_sysprep --target kubectl_manifest.ec2nodeclass_sysprep --target helm_release.fsx_csi_driver --auto-approve
             - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubernetes_job.sysprep --auto-approve
             - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubectl_manifest.sysprep_pvc --auto-approve

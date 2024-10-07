@@ -38,12 +38,12 @@ kubeclt delete deploy netshoot
 kubectl delete pvc fsx-lustre-claim-check 
 kubectl delete pv fsx-pv-check 
 
-kubectl delete -f pre-warm.yaml
-kubectl delete job pre-warm-mistral
-kubectl delete pvc fsx-lustre-claim-pre-warm 
-kubectl delete pv fsx-pv-pre-warm 
+kubectl delete -f sysprep.yaml
+kubectl delete job sysprep
+kubectl delete pvc fsx-lustre-claim-sysprep 
+kubectl delete pv fsx-pv-sysprep 
 
-kubectl delete -f pre-warm-nodepool.yaml
+kubectl delete -f sysprep-nodepool.yaml
 
 kubectl get pv,pvc
 kubectl delete -k "github.com/kubernetes-sigs/aws-fsx-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.2"

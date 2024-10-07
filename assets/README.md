@@ -11,7 +11,8 @@ aws s3 sync $ASSET_BUCKET/scripts ./scripts
 cd /home/ec2-user/environment/scripts
 ```
 
-
+<!-- 
+WE DONT NEED THIS:
 ### USE FOLLOWING COMMANDs TO SYNC S3 TO LOCAL/CLOUD9 : 
 ```bash
 ASSET_BUCKET=<asset bucket>
@@ -20,7 +21,7 @@ aws s3 sync $ASSET_BUCKET/terraform /home/ec2-user/environment/terraform --delet
 # Following are only required for testing
 aws s3 sync $ASSET_BUCKET/download /home/ec2-user/environment/download --delete
 aws s3 sync $ASSET_BUCKET/scripts /home/ec2-user/environment/scripts --delete
-```
+``` -->
 
 ## DOWNLOAD AND UPLOAD MODEL TO ASSET BUCKET
 Step 1 : Spin up Cloud 9 environment in your account
@@ -171,21 +172,6 @@ alias ks="kubectl -n kube-system "
 alias ksg="kubectl -n kube-system get "
 alias ksd="kubectl -n kube-system describe "
 alias ktest="k run -it netshoot --image=nicolaka/netshoot /bin/bash"
-```
-
-### Pre-warm time : 
-```
-WSParticipantRole:~/environment/eks/download $ kg po -w
-NAME                             READY   STATUS    RESTARTS   AGE
-kube-ops-view-5d9d967b77-vqdnb   1/1     Running   0          5h22m
-netshoot-69d5ccd9dc-nv9bx        1/1     Running   0          40m
-pre-warm-mistral-smzj5           0/1     Pending   0          17s
-pre-warm-mistral-smzj5           0/1     Pending   0          29s
-pre-warm-mistral-smzj5           0/1     Init:0/1   0          29s
-pre-warm-mistral-smzj5           0/1     Init:0/1   0          58s
-pre-warm-mistral-smzj5           0/1     PodInitializing   0          3m51s
-pre-warm-mistral-smzj5           1/1     Running           0          3m53s
-pre-warm-mistral-smzj5           0/1     Completed         0          3m55s
 ```
 
 ## Model loaded in 2.5 mins

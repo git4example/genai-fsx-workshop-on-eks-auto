@@ -1,49 +1,48 @@
 # FSXL_VOLUME_ID=$(aws fsx describe-file-systems --query 'FileSystems[].FileSystemId' --output text)
 # DNS_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].DNSName' --output text)
 # MOUNT_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].LustreConfiguration.MountName' --output text)
-# sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" check.yaml
-# sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" check.yaml
-# sed -i'' -e "s/MOUNT_NAME/$MOUNT_NAME/g" check.yaml
+# sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" sysprep.yaml
+# sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" sysprep.yaml
+# sed -i'' -e "s/MOUNT_NAME/$MOUNT_NAME/g" sysprep.yaml
 
-
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: Job
 metadata:
-  creationTimestamp: null
-  labels:
-    app: netshoot
-  name: netshoot
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: netshoot
-  strategy: {}
+  name: sysprep
+spec:  
   template:
     metadata:
-      creationTimestamp: null
       labels:
-        app: netshoot
+        app: sysprep
     spec:
       nodeSelector:
         karpenter.sh/nodepool: sysprep
-      containers:
-      - image: nicolaka/netshoot
-        name: netshoot
+      restartPolicy: OnFailure
+      initContainers:
+      - name: copy
+        image: nicolaka/netshoot
         command: ["/bin/bash"]
-        args: ["-c","sleep infinity"]
+        args: ["-c","echo 'sysprep started' >> /work-dir/sysprep `date` && cp -r /work-dir/Mistral-7B-Instruct-v0.2 /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
+        volumeMounts:
+        - name:  persistent-storage
+          mountPath: "/work-dir"
+      containers:
+      - name: delete
+        image: nicolaka/netshoot
+        command: ["/bin/bash"]
+        args: ["-c", "echo 'sysprep done' >> /work-dir/sysprep `date` && rm -rf /work-dir/Temp-Mistral-7B-Instruct-v0.2"]
         volumeMounts:
         - name:  persistent-storage
           mountPath: "/work-dir"
       volumes:
       - name: persistent-storage
         persistentVolumeClaim:
-          claimName: fsx-lustre-claim-check
+          claimName: fsx-lustre-claim-sysprep
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: fsx-lustre-claim-check
+  name: fsx-lustre-claim-sysprep
 spec:
   accessModes:
     - ReadWriteMany
@@ -51,12 +50,12 @@ spec:
   resources:
     requests:
       storage: 1200Gi
-  volumeName: fsx-pv-check
+  volumeName: fsx-pv-sysprep
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: fsx-pv-check
+  name: fsx-pv-sysprep
 spec:
   persistentVolumeReclaimPolicy: Retain
   capacity:
@@ -72,3 +71,4 @@ spec:
     volumeAttributes:
       dnsname: DNS_NAME
       mountname: MOUNT_NAME
+
