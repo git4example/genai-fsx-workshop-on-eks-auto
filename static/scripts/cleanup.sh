@@ -34,7 +34,7 @@ kubectl delete -f fsxL-persistent-volume.yaml
 
 cd /home/ec2-user/environment/download
 kubectl delete -f check.yaml
-kubeclt delete deploy netshoot
+kubeclt delete deploy sysprep-check
 kubectl delete pvc fsx-lustre-claim-check 
 kubectl delete pv fsx-pv-check 
 
