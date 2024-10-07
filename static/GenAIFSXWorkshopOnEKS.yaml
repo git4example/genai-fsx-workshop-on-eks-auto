@@ -493,8 +493,8 @@ Resources:
             - export ASSET_BUCKET=$ASSET_BUCKET/static
             - sudo -H -u ec2-user aws s3 sync $ASSET_BUCKET/terraform /home/ec2-user/environment/terraform --delete
             - sudo -H -u ec2-user aws s3 sync $ASSET_BUCKET/eks /home/ec2-user/environment/eks --delete
-            - sudo -H -u ec2-user aws s3 sync $ASSET_BUCKET/download /home/ec2-user/environment/download --delete
-            - sudo -H -u ec2-user aws s3 sync $ASSET_BUCKET/scripts /home/ec2-user/environment/scripts --delete
+            # - sudo -H -u ec2-user aws s3 sync $ASSET_BUCKET/download /home/ec2-user/environment/download --delete
+            # - sudo -H -u ec2-user aws s3 sync $ASSET_BUCKET/scripts /home/ec2-user/environment/scripts --delete
             # Replace region and eks version
             - !Sub sed -i.bak -e 's/--AWS_REGION--/${AWS::Region}/' /home/ec2-user/environment/terraform/main.tf
             - !Sub sed -i.bak -e 's/--EKS_VERSION--/${EKSClusterVersion}/' /home/ec2-user/environment/terraform/main.tf

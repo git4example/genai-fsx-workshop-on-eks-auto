@@ -11,25 +11,25 @@ kind: Deployment
 metadata:
   creationTimestamp: null
   labels:
-    app: netshoot
-  name: netshoot
+    app: sysprep-check
+  name: sysprep-check
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: netshoot
+      app: sysprep-check
   strategy: {}
   template:
     metadata:
       creationTimestamp: null
       labels:
-        app: netshoot
+        app: sysprep-check
     spec:
       nodeSelector:
         karpenter.sh/nodepool: sysprep
       containers:
-      - image: nicolaka/netshoot
-        name: netshoot
+      - image: public.ecr.aws/parikshit/lustre-client:latest
+        name: sysprep-check
         command: ["/bin/bash"]
         args: ["-c","sleep infinity"]
         volumeMounts:
