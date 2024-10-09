@@ -11,7 +11,7 @@ Errors or corrections? Contact ppariksh@amazon.com, akbariw@amazon.com and ameen
 ## Workshop Objective
 In this workshop, you will learn how you can:
 1. Deploy a Generative AI chatbot application on Kubernetes by deploying a vLLM and a WebUI Pod on an Amazon EKS cluster, store and access the Mistral-7B model using Amazon FSx for Lustre and  Amazon S3, and leverage Accelerate Compute for your Generative AI workload using AWS Inferentia Accelerator.
-2. Use Karpenter for scaling your node tasks within Amazon EKS, for scale and operational efficiency.
+2. Use Karpenter to scale the number of EKS nodes, when there are additional Pod requests that require additional nodes, to enable scale and operational efficiency.
 3. Use AWS Inferentia Accelerated Compute in your Amazon EKS clusters, as a new nodepool to power your Generative AI applications.
 4. Configure Amazon FSx for Lustre and Amazon S3, as your performant and scalable data layer, which will host your model and data
 5. Achieve operational efficiency at the data layer: accessing the same model data across container Pods without storing multiple copies, and seamlessly sharing your data across regions, for scenario's such as distributed access and sharing, to DR.

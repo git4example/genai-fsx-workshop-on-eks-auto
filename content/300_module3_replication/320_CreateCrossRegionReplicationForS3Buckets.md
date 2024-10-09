@@ -20,15 +20,15 @@ Open the [Amazon S3 console](https://s3.console.aws.amazon.com)
 
 ![S3_console_1](/static/images/s3_console_1.png)
 
-3. Select the **Management** tab, scroll down to *Replication rules*, and then select *Create replication rule*
+3. Select the **Management** tab, scroll down to **Replication rules**, and then select **Create replication rule**
 
 ![S3_01](/static/images/S3_01.png)
 
-4. At the top of the screen, in the red pop-up box, click on **Enable Bucket Versioning", Then under *Rule name*, enter a name for your rule to help identify the rule later. Under *Status*, see that *Enabled* is selected by default
+4. At the top of the screen, in the red pop-up box, click on **Enable Bucket Versioning**, Then under *Rule name*, enter a name for your rule to help identify the rule later. Under *Status*, see that *Enabled* is selected by default
 
 ![S3_02](/static/images/S3_02.png)
 
-5. Under *Source bucket* ,  select **limit the scope of this rule using one or more filters**, and then enter *test/* as the value to filter by.
+5. Under *Source bucket* ,  select **limit the scope of this rule using one or more filters**, and then enter **test/** as the value to filter by.
 
 ![s3_prefix](/static/images/s3_prefix.png)
 
