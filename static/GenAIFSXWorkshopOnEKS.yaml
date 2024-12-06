@@ -279,7 +279,7 @@ Resources:
                   - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${VSCodeSSMDoc}
                   - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${InfraSSMDocument}
                   - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${DownloadWorkshopAssetsSSMDocument}
-                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${SetupFSxLSSMDocument}
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${SetupFSxLBucketSSMDocument}
                   - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${CreateVPCandFSxLSSMDocument}
                   - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${CreateEKSClusterSSMDocument}
                   - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${InfraDeleteSSMDocument}
@@ -984,8 +984,8 @@ Resources:
                     sudo -u ${VSCodeUser} git -C /home/${VSCodeUser}/${HomeFolder} branch
                     ls -la /home/${VSCodeUser}/${HomeFolder}
                   fi
-          ## ------------ INFRA -------------------------
-  
+          
+ ## ------------ INFRA ------------------------- 
   RunInfraSSMDocument:
     DependsOn: [RunVSCodeSSMDoc]
     Type: Custom::RunSSMDocLambda
@@ -1213,22 +1213,22 @@ Resources:
               - echo "Verify s5cmd installation"
               - !Sub sudo -u ${VSCodeUser} --login s5cmd help
   
-  RunSetupFSxLSSMDocument:
+  RunSetupFSxLBucketSSMDocument:
     DependsOn: [RunInfraSSMDocument]
     Type: Custom::RunSSMDocLambda
     Properties:
       ServiceToken: !GetAtt RunSSMDocLambda.Arn
       ServiceTimeout: 900
       InstanceId: !Ref VSCodeInstance
-      DocumentName: !Ref SetupFSxLSSMDocument
+      DocumentName: !Ref SetupFSxLBucketSSMDocument
       DeleteDocumentName: !Ref InfraDeleteSSMDocument
       MonitoringSQSQueue: !GetAtt SSMCommandMonitorQueue.QueueUrl
       LambdaArn: !GetAtt RunSSMDocLambda.Arn
-      CloudWatchLogGroupName: !Sub /aws/ssm/${SetupFSxLSSMDocument}
+      CloudWatchLogGroupName: !Sub /aws/ssm/${SetupFSxLBucketSSMDocument}
       VSCodePassword: !GetAtt SecretPlaintext.password
       LinuxFlavor: !If [IsAL2023, 'al2023', 'ubuntu']
 
-  SetupFSxLSSMDocument:
+  SetupFSxLBucketSSMDocument:
     Type: AWS::SSM::Document
     Properties:
       DocumentType: Command
@@ -1332,7 +1332,7 @@ Resources:
               - echo "End model upload @ `date`"
   
   RunCreateVPCandFSxLSSMDocumentSSMDocument:
-    DependsOn: [RunSetupFSxLSSMDocument]
+    DependsOn: [RunSetupFSxLBucketSSMDocument]
     Type: Custom::RunSSMDocLambda
     Properties:
       ServiceToken: !GetAtt RunSSMDocLambda.Arn
