@@ -53,7 +53,7 @@ sudo resize2fs /dev/nvme0n1p1
 
 Step 4 : Download model 
 ```bash
-docker run -v ./work-dir/:/work-dir/ --entrypoint huggingface-cli public.ecr.aws/parikshit/huggingface-cli download "enghwa/neuron-mistral7bv0.2" --local-dir /work-dir/Mistral-7B-Instruct-v0.2
+docker run -v ./work-dir/:/work-dir/ --entrypoint huggingface-cli public.ecr.aws/parikshit/huggingface-cli:slim download "enghwa/neuron-mistral7bv0.2" --local-dir /work-dir/Mistral-7B-Instruct-v0.2
 ```
 
 Step 5 : Upload model to asset bucket. In following command replace credentials from the workshop studio to allow access to assets bucket.
@@ -63,7 +63,7 @@ docker run -e AWS_DEFAULT_REGION="region" \
   -e AWS_ACCESS_KEY_ID="<access-id>>" \
   -e AWS_SECRET_ACCESS_KEY="<access-key>" \
   -e AWS_SESSION_TOKEN="<session-token>" \
-  -v ./work-dir/:/work-dir/  public.ecr.aws/parikshit/s5cmd cp /work-dir/Mistral-7B-Instruct-v0.2/ s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20/Mistral-7B-Instruct-v0.2/
+  -v ./work-dir/:/work-dir/  public.ecr.aws/parikshit/s5cmd cp /work-dir/Mistral-7B-Instruct-v0.2/ s3://<your-bucket>/Mistral-7B-Instruct-v0.2/
 ```
 
 Step 6 : Check object sizes on bucket

@@ -1,6 +1,6 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: AWS CloudFormation template to create a VSCode environment, EKS Cluster, FSxL setup with eksctl,kubectl and Terraform.
+Description: AWS CloudFormation template to create a Cloud9 environment setup with kubectl and Terraform.
 Metadata:
   Author:
     Description: Parikshit Patel <ppariksh@amazon.com>
@@ -60,7 +60,6 @@ Metadata:
         default: Folder file S3 path
 
 Parameters:
-
   C9KubectlVersion:
     Description: Cloud9 instance kubectl version
     Type: String
@@ -100,7 +99,7 @@ Parameters:
     Type: String
   
   Assets:
-    Description: "S3 Bucket location for Assets ex. s3://<s3-bucket-name>/<sub-folder-path>/assets/"
+    Description: "S3 Bucket location for Assets ex. s3://<s3-bucket-name>/<assets-folder-path>/"
     # Default: "s3://ws-event-064e131b-cd4-ap-southeast-2/17e62541-8ca1-47a6-8b79-c48000056abe/assets/"
     Type: String
 
@@ -131,7 +130,7 @@ Parameters:
   HomeFolder:
     Type: String
     Description: Folder to open in VS Code server
-    Default: environment
+    Default: /Workshop
   DevServerBasePath:
     Type: String
     Description: Base path for the application to be added to Nginx sites-available list
@@ -222,6 +221,7 @@ Mappings:
     us-west-2:
       PrefixList: pl-82a045eb
 
+
 Resources:
 ### VSCode Resources
   SecretPlaintextLambdaRole:
@@ -248,54 +248,6 @@ Resources:
                 Action:
                   - secretsmanager:GetSecretValue
                 Resource: !Ref VSCodeSecret
-
-  RunSSMDocLambdaRole:
-    Type: AWS::IAM::Role
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-          - id: W11
-            reason: The Amazon EC2 ec2:Describe* API actions do not support resource-level permissions, so you cannot control which individual resources users can view in the console. Therefore, the * wildcard is necessary in the Resource element. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-policies-ec2-console.html
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      Policies:
-        - PolicyName: RunSSMDocOnEC2
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ssm:SendCommand
-                  - sqs:sendmessage
-                Resource:
-                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${VSCodeSSMDoc}
-                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${InfraSSMDocument}
-                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${DownloadWorkshopAssetsSSMDocument}
-                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${SetupFSxLSSMDocument}
-                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${CreateVPCandFSxLSSMDocument}
-                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${CreateEKSClusterSSMDocument}
-                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${InfraDeleteSSMDocument}
-                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/AmazonCloudWatch-ManageAgent
-                  - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${VSCodeInstance}
-                  - !GetAtt SSMCommandMonitorQueue.Arn
-        - PolicyName: ChekcSSMDocCompletionOnEC2
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ssm:GetCommandInvocation
-                  - ssm:ListCommandInvocations
-                Resource:
-                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:*
 
   SecretPlaintextLambda:
     Type: AWS::Lambda::Function
@@ -363,15 +315,412 @@ Resources:
     Type: Custom::RunSSMDocLambda
     Properties:
       ServiceToken: !GetAtt RunSSMDocLambda.Arn
-      ServiceTimeout: 900
+      ServiceTimeout: 305
       InstanceId: !Ref VSCodeInstance
       DocumentName: !Ref VSCodeSSMDoc
-      DeleteDocumentName: ""
-      MonitoringSQSQueue: !GetAtt SSMCommandMonitorQueue.QueueUrl
-      LambdaArn: !GetAtt RunSSMDocLambda.Arn
       CloudWatchLogGroupName: !Sub /aws/ssm/${VSCodeSSMDoc}
       VSCodePassword: !GetAtt SecretPlaintext.password
       LinuxFlavor: !If [IsAL2023, 'al2023', 'ubuntu']
+
+  RunInfraSSMDocument:
+    DependsOn: [RunVSCodeSSMDoc]
+    Type: Custom::RunSSMDocLambda
+    Properties:
+      ServiceToken: !GetAtt RunSSMDocLambda.Arn
+      ServiceTimeout: 3600
+      InstanceId: !Ref VSCodeInstance
+      DocumentName: !Ref InfraSSMDocument
+      CloudWatchLogGroupName: !Sub /aws/ssm/${InfraSSMDocument}
+      VSCodePassword: !GetAtt SecretPlaintext.password
+      LinuxFlavor: !If [IsAL2023, 'al2023', 'ubuntu']
+
+
+  InfraSSMDocument:
+    Type: AWS::SSM::Document
+    Properties:
+      Tags:
+        - Key: Environment
+          Value: AWS Example
+      DocumentType: Command
+      Content:
+        schemaVersion: '2.2'
+        description: Bootstrap Cloud9 Instance
+        parameters:
+          LinuxFlavor:
+            type: String
+            default: 'al2023'
+          VSCodePassword:
+            type: String
+            default: !Ref AWS::StackId
+          NodeVersion:
+            type: String
+            default: '20'
+            allowedValues:
+              - '22'
+              - '20'
+              - '18'
+          DotNetVersion:
+            type: String
+            default: '8.0'
+            allowedValues:
+              - '8.0'
+              - '7.0'
+        mainSteps:
+        - action: aws:runShellScript
+          name: InstallKubectl
+          precondition:
+            StringEquals:
+              - '{{ LinuxFlavor }}'
+              - al2023          
+          inputs:
+            timeoutSeconds: '3600'
+            runCommand:
+            - "#!/bin/bash"
+            - date
+            - . /home/ec2-user/.bashrc
+            - whoami
+            - !Sub 'echo "export KUBECTL_VERSION=${C9KubectlVersion}"'
+            - sudo -H -u ec2-user aws sts get-caller-identity
+            - echo '=== INSTALL kubectl ==='
+            - !Sub 'export KUBECTL_VERSION=${C9KubectlVersion}'
+            - sudo curl --silent --location -o /usr/local/bin/kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/${KUBECTL_VERSION}/2024-07-12/bin/linux/arm64/kubectl
+            - sudo chmod +x /usr/local/bin/kubectl
+            - sudo /usr/local/bin/kubectl version --client
+        - action: aws:runShellScript
+          name: ConfigureAWSCLI
+          precondition:
+            StringEquals:
+              - '{{ LinuxFlavor }}'
+              - al2023          
+          inputs:
+            timeoutSeconds: '3600'
+            runCommand:
+            - "#!/bin/bash"
+            - sudo -H -u ec2-user aws --version
+            - echo '=== setup AWS configs ==='            
+            # - rm -vf /home/ec2-user/.aws/credentials
+            # - export ACCOUNT_ID=$(aws sts get-caller-identity --output text --query Account)
+            # - |
+            #   export AWS_REGION=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s 169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')
+            # - echo "export ACCOUNT_ID=${ACCOUNT_ID}" >> /home/ec2-user/.bash_profile
+            # - echo "export AWS_REGION=${AWS_REGION}" >> /home/ec2-user/.bash_profile
+            - sudo -H -u ec2-user aws configure set default.region ${AWS_REGION}
+            - sudo -H -u ec2-user aws configure get default.region
+            - sudo -H -u ec2-user aws sts get-caller-identity
+        - action: aws:runShellScript
+          name: InstallNodeViewer
+          precondition:
+            StringEquals:
+              - '{{ LinuxFlavor }}'
+              - al2023          
+          inputs:
+            timeoutSeconds: '3600'
+            runCommand:
+            - "#!/bin/bash"            
+            - echo '=== Install eks-node-viewer ==='
+            - !Sub 'export NODEVIEWER_VERSION=${C9NodeViewerVersion}'
+            - sudo -H -u ec2-user go install github.com/awslabs/eks-node-viewer/cmd/eks-node-viewer@${NODEVIEWER_VERSION}
+            - eks-node-viewer -v
+        - action: aws:runShellScript
+          name: CreteKubectlShortcuts
+          precondition:
+            StringEquals:
+              - '{{ LinuxFlavor }}'
+              - al2023          
+          inputs:
+            timeoutSeconds: '3600'
+            runCommand:
+            - "#!/bin/bash"               
+            # kubectl shortcuts
+            - sudo -H -u ec2-user echo "alias k=kubectl" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias ka=\"kubectl apply -f \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias ke=\"kubectl exec -it \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias kg=\"kubectl get \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias kd=\"kubectl describe \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias kdel=\"kubectl delete \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias ks=\"kubectl -n kube-system \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias ksg=\"kubectl -n kube-system get \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias ksd=\"kubectl -n kube-system describe \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "export PATH=/home/ec2-user/go/bin:$PATH" >> /home/ec2-user/.bashrc
+            - . /home/ec2-user/.bashrc
+        # - action: aws:runShellScript
+        #   name: InstallTerraform
+        #   precondition:
+        #     StringEquals:
+        #       - '{{ LinuxFlavor }}'
+        #       - al2023          
+        #   inputs:
+        #     timeoutSeconds: '3600'
+        #     runCommand:
+        #     - "#!/bin/bash"               
+        #     - echo '=== Install Terraform ==='
+        #     - sudo yum install -y yum-utils
+        #     - sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+        #     - !Sub 'export TERRAFORM_VERSION=${C9TerraformVersion}'
+        #     - sudo yum -y install terraform-${TERRAFORM_VERSION} 
+        #     - terraform -v
+        - action: aws:runShellScript
+          name: Installeksctl
+          precondition:
+            StringEquals:
+              - '{{ LinuxFlavor }}'
+              - al2023          
+          inputs:
+            timeoutSeconds: '3600'
+            runCommand:
+            - "#!/bin/bash"   
+            - echo "=== Install eksctl ==="
+            - export ARCH=arm64
+            - export PLATFORM=$(uname -s)_$ARCH
+            - curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
+            - sudo tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp && rm -f eksctl_$PLATFORM.tar.gz
+            - sudo mv /tmp/eksctl /usr/local/bin
+            - echo "eksctl version"
+            - eksctl version
+        - action: aws:runShellScript
+          name: DownloadAssets
+          precondition:
+            StringEquals:
+              - '{{ LinuxFlavor }}'
+              - al2023          
+          inputs:
+            timeoutSeconds: '3600'
+            runCommand:
+            - "#!/bin/bash"              
+            # Download static assests from asset bucket
+            # - !Sub sudo -H -u ec2-user aws s3 sync ${Assets} /home/ec2-user/environment/ --delete
+            - !Sub 'export ASSET_BUCKET=${Assets}'
+            - export ASSET_BUCKET=$(echo $ASSET_BUCKET | sed 's/\/assets\///')     
+            - export ASSET_BUCKET=$ASSET_BUCKET/static
+            - sudo -H -u ec2-user aws s3 sync $ASSET_BUCKET/terraform /home/ec2-user/environment/terraform --delete
+            - sudo -H -u ec2-user aws s3 sync $ASSET_BUCKET/eks /home/ec2-user/environment/eks --delete
+            # - sudo -H -u ec2-user aws s3 sync $ASSET_BUCKET/download /home/ec2-user/environment/download --delete
+            # - sudo -H -u ec2-user aws s3 sync $ASSET_BUCKET/scripts /home/ec2-user/environment/scripts --delete
+            # Replace region and eks version
+        - action: aws:runShellScript
+          name: InitializeFSxL
+          precondition:
+            StringEquals:
+              - '{{ LinuxFlavor }}'
+              - al2023          
+          inputs:
+            timeoutSeconds: '3600'
+            runCommand:
+            - "#!/bin/bash"              
+            - !Sub sed -i.bak -e 's/--AWS_REGION--/${AWS::Region}/' /home/ec2-user/environment/terraform/main.tf
+            - !Sub sed -i.bak -e 's/--EKS_VERSION--/${EKSClusterVersion}/' /home/ec2-user/environment/terraform/main.tf
+            - cd /home/ec2-user/environment/terraform/
+            - sudo -H -u ec2-user /usr/bin/terraform init
+            # Create bucket before copy 
+            - sudo -H -u ec2-user echo "Creating FSx Lustre Bucket"
+            - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.fsx-lustre-bucket" -auto-approve 
+            # Copy model to fsx bucket
+            - export S3_BUCKET=$(aws s3 ls | grep fsx-lustre | grep -v fsx-lustre-2ndregion | awk '{print$3}')
+            - sudo -H -u ec2-user echo "Bucket name:" ${S3_BUCKET}
+             #Install c5cmd and push model to S3
+            - sudo -H -u ec2-user echo "Install s5cmd"            
+            - sudo -H -u ec2-user go install github.com/peak/s5cmd/v2@master
+            - sudo -H -u ec2-user aws configure set default.s3.max_concurrent_requests 20
+            - sudo -H -u ec2-user aws configure set default.s3.signature_version s3v4
+            # Copy model
+            - sudo -H -u ec2-user echo "Starting model upload @ `date`"
+            - !Sub sudo -H -u ec2-user /home/ec2-user/go/bin/s5cmd sync --delete "${Assets}Mistral-7B-Instruct-v0.2/*" "s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2/" 
+            # - !Sub sudo -H -u ec2-user aws s3 sync ${Assets}Mistral-7B-Instruct-v0.2 s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2 --delete
+            # Veryfiy object counts
+            - sudo -H -u ec2-user echo "Source bucket object counts:"
+            - !Sub sudo -H -u ec2-user aws s3 ls --summarize --human-readable --recursive ${Assets}Mistral-7B-Instruct-v0.2
+            - sudo -H -u ec2-user echo "Destination bucket object counts:"
+            - sudo -H -u ec2-user aws s3 ls --summarize --human-readable --recursive s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2
+            - sudo -H -u ec2-user echo "End model upload @ `date`"
+        - action: aws:runShellScript
+          name: CreateEKSCluster
+          precondition:
+            StringEquals:
+              - '{{ LinuxFlavor }}'
+              - al2023          
+          inputs:
+            timeoutSeconds: '3600'
+            runCommand:
+            - "#!/bin/bash"   
+            - !Sub 'export CFN_RESPONSE_URL="${WaitForStackCreationHandle}"'
+            # Create EKS Cluster
+            - echo '=== Create EKS Cluster ==='
+            - !Sub echo 'EKS Cluster version - ${EKSClusterVersion} will be created in region ${AWS::Region}'
+            - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.vpc" -auto-approve 
+            - sudo -H -u ec2-user /usr/bin/terraform apply -target="aws_fsx_lustre_file_system.fsx_lustre" -target="module.eks" -auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
+            # add sleep to allow ALB controler to start else in some cases this is failing
+            - sudo -H -u ec2-user sleep 60
+            - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve            
+            # Delete FSx Lustre sysprep resources
+            - sudo -H -u ec2-user echo "Delete sysprep nodepool, sysprep job, pv and pvc"
+            # - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubernetes_job.sysprep --target kubectl_manifest.sysprep_pvc --target kubectl_manifest.sysprep_pv --target kubectl_manifest.nodepool_sysprep --target kubectl_manifest.ec2nodeclass_sysprep --target helm_release.fsx_csi_driver --auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubernetes_job.sysprep --auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubectl_manifest.sysprep_pvc --auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubectl_manifest.sysprep_pv --auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubectl_manifest.nodepool_sysprep --auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubectl_manifest.ec2nodeclass_sysprep --auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform destroy --target helm_release.fsx_csi_driver --auto-approve
+            - |
+              curl -X PUT -H 'Content-Type:' --data-binary '{"Status" : "SUCCESS","Reason" : "Creation Complete", "UniqueId" : "1","Data" : "Creation complete"}' $CFN_RESPONSE_URL
+            # - sudo shutdown --reboot 1
+
+  RunSSMDocLambdaRole:
+    Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: The Amazon EC2 ec2:Describe* API actions do not support resource-level permissions, so you cannot control which individual resources users can view in the console. Therefore, the * wildcard is necessary in the Resource element. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/iam-policies-ec2-console.html
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: RunSSMDocOnEC2
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                Resource:
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${VSCodeSSMDoc}
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${InfraSSMDocument}
+                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/AmazonCloudWatch-ManageAgent
+                  - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${VSCodeInstance}
+
+  RunSSMDocLambda:
+    Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W58
+            reason: Warning incorrectly reported. The role associated with the Lambda function has the AWSLambdaBasicExecutionRole managed policy attached, which includes permission to write CloudWatch Logs. See https://docs.aws.amazon.com/aws-managed-policy/latest/reference/AWSLambdaBasicExecutionRole.html
+          - id: W89
+            reason: CloudFormation custom function does not need the scaffolding of a VPC, to do so would add unnecessary complexity
+          - id: W92
+            reason: CloudFormation custom function does not need reserved concurrent executions, to do so would add unnecessary complexity
+    Properties:
+      Description: Run SSM document on EC2 instance
+      Handler: index.lambda_handler
+      Runtime: python3.12
+      MemorySize: 128
+      Timeout: 300
+      Architectures:
+        - arm64
+      Role: !GetAtt RunSSMDocLambdaRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+          import logging
+          import time
+
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+
+          SLEEP_MS = 2900
+
+          ssm = boto3.client('ssm')
+
+          def lambda_handler(event, context):
+              logger.debug('event: %s', event)
+
+              if event['RequestType'] != 'Create':
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData={}, reason='No action to take')
+              else:
+                  resource_properties = (event['ResourceProperties'])
+                  logger.debug('resource_properties: %s', resource_properties)
+
+                  instance_id = (event['ResourceProperties']['InstanceId'])
+                  document_name = (event['ResourceProperties']['DocumentName'])
+                  cloudwatch_log_group_name = (event['ResourceProperties']['CloudWatchLogGroupName'])
+
+                  del resource_properties['ServiceToken']
+                  if 'ServiceTimeout' in resource_properties:
+                      del resource_properties['ServiceTimeout']
+                  del resource_properties['InstanceId']
+                  del resource_properties['DocumentName']
+                  del resource_properties['CloudWatchLogGroupName']
+                  if 'PhysicalResourceId' in resource_properties:
+                      del resource_properties['PhysicalResourceId']
+
+                  logger.debug(f'resource_properties filtered: {resource_properties}')
+
+                  parameters = {}
+                  for key, value in resource_properties.items():
+                      parameters[key] = [value]
+
+                  logger.debug(f'parameters: {parameters}')
+
+                  retry = True
+                  attempt_no = 0
+                  time_remaining = context.get_remaining_time_in_millis()
+                  logger.info(f'Running SSM Document {document_name} on EC2 instance {instance_id}. Logging to {cloudwatch_log_group_name}')
+
+                  while (retry == True):
+                      attempt_no += 1
+                      logger.info(f'Attempt: {attempt_no}. Time Remaining: {time_remaining/1000}s')
+                      try:
+                          response = ssm.send_command(
+                              InstanceIds = [instance_id],
+                              DocumentName = document_name,
+                              CloudWatchOutputConfig = {'CloudWatchLogGroupName': cloudwatch_log_group_name, 'CloudWatchOutputEnabled': True},
+                              Parameters = parameters
+                          )
+                          logger.debug(f'response: {response}')
+                          command_id = response['Command']['CommandId']
+                          responseData = {'CommandId': command_id}
+                          cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, reason='OK')
+                          retry = False
+
+                      except ssm.exceptions.InvalidInstanceId:
+                          time_remaining = context.get_remaining_time_in_millis()
+                          if (time_remaining > SLEEP_MS):
+                              logger.info(f'Instance {instance_id} not ready: {e}. Sleeping: {SLEEP_MS/1000}s')
+                              time.sleep(SLEEP_MS/1000)
+                              retry = True
+                          else:
+                              logger.info(f'Instance {instance_id} not ready: {e}. Timed out')
+                              cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(e))
+                              retry = False
+
+                      except Exception as e:
+                          logger.error(e)
+                          cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(e))
+                          retry = False
+
+  VSCodeSecret:
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W77
+            reason: The default KMS Key used by Secrets Manager is appropriate for this password which will be used to log into VSCodeServer, which has very limited permissions. In addition this secret will not be required to be shared across accounts
+    Type: AWS::SecretsManager::Secret
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      Name: !Ref InstanceName
+      Description: VSCode user details
+      GenerateSecretString:
+        PasswordLength: 16
+        SecretStringTemplate: !Sub '{"username":"${VSCodeUser}"}'
+        GenerateStringKey: 'password'
+        ExcludePunctuation: true
+
+  SecretPlaintext:
+    Type: Custom::SecretPlaintextLambda
+    Properties:
+      ServiceToken: !GetAtt SecretPlaintextLambda.Arn
+      ServiceTimeout: 15
+      SecretArn: !Ref VSCodeSecret
 
   VSCodeSSMDoc:
     Type: AWS::SSM::Document
@@ -578,7 +927,7 @@ Resources:
                   EOF
                 - !Sub mkdir -p /home/${VSCodeUser}/.local/share/code-server/User/
                 - !Sub touch /home/${VSCodeUser}/.hushlogin
-                - !Sub mkdir -p /home/${VSCodeUser}/${HomeFolder} && chown -R ${VSCodeUser}:${VSCodeUser} /home/${VSCodeUser}/${HomeFolder}
+                - !Sub mkdir -p ${HomeFolder} && chown -R ${VSCodeUser}:${VSCodeUser} ${HomeFolder}
                 - !Sub |
                   tee /home/${VSCodeUser}/.local/share/code-server/User/settings.json <<EOF
                   {
@@ -713,6 +1062,7 @@ Resources:
                 - echo "Python and Pip installed. Checking configuration"
                 - python3.11 --version
                 - python3.11 -m pip --version 2>&1
+
           - action: aws:runShellScript
             name: InstallPythonApt
             precondition:
@@ -890,16 +1240,16 @@ Resources:
                   then
                     echo "No assets"
                   else
-                    mkdir -p /home/${VSCodeUser}/${HomeFolder} && chown -R ${VSCodeUser}:${VSCodeUser} /home/${VSCodeUser}/${HomeFolder}
+                    mkdir -p ${HomeFolder} && chown -R ${VSCodeUser}:${VSCodeUser} ${HomeFolder}
                     aws s3 cp s3://${AssetZipS3Path} /tmp/assets.zip
-                    unzip -o /tmp/assets.zip -d /home/${VSCodeUser}/${HomeFolder}
-                    chown -R ${VSCodeUser}:${VSCodeUser} /home/${VSCodeUser}/${HomeFolder}
-                    sudo -u ${VSCodeUser} git -C /home/${VSCodeUser}/${HomeFolder} init
-                    sudo -u ${VSCodeUser} git -C /home/${VSCodeUser}/${HomeFolder} add .
-                    sudo -u ${VSCodeUser} git -C /home/${VSCodeUser}/${HomeFolder} commit -m 'Initial commit'
-                    echo "Assets downloaded. Checking configuration: /home/${VSCodeUser}/${HomeFolder}"
-                    ls -la /home/${VSCodeUser}/${HomeFolder}
-                    sudo -u ${VSCodeUser} git -C /home/${VSCodeUser}/${HomeFolder} branch
+                    unzip -o /tmp/assets.zip -d ${HomeFolder}
+                    chown -R ${VSCodeUser}:${VSCodeUser} ${HomeFolder}
+                    sudo -u ${VSCodeUser} git -C ${HomeFolder} init
+                    sudo -u ${VSCodeUser} git -C ${HomeFolder} add .
+                    sudo -u ${VSCodeUser} git -C ${HomeFolder} commit -m 'Initial commit'
+                    echo "Assets downloaded. Checking configuration: ${HomeFolder}"
+                    ls -la ${HomeFolder}
+                    sudo -u ${VSCodeUser} git -C ${HomeFolder} branch
                   fi
           - action: aws:runShellScript
             name: DownloadFolders
@@ -916,8 +1266,8 @@ Resources:
                     aws s3 cp s3://${FolderZipS3Path} /tmp/asset-folder.zip
                     unzip -o /tmp/asset-folder.zip -d /tmp/folder
                     chown -R ${VSCodeUser}:${VSCodeUser} /tmp/folder
-                    mkdir -p /home/${VSCodeUser}/${HomeFolder} && chown -R ${VSCodeUser}:${VSCodeUser} /home/${VSCodeUser}/${HomeFolder}
-                    cd "/home/${VSCodeUser}/${HomeFolder}" && cd ..
+                    mkdir -p ${HomeFolder} && chown -R ${VSCodeUser}:${VSCodeUser} ${HomeFolder}
+                    cd "${HomeFolder}" && cd ..
                     if [[ $(pwd) ==  "/" ]]
                     then
                       targetRootFolder=""
@@ -960,762 +1310,30 @@ Resources:
                     aws s3 cp s3://${BranchZipS3Path} /tmp/branch/branch.zip
                     unzip -o /tmp/branch/branch.zip -d /tmp/branch
                     chown -R ${VSCodeUser}:${VSCodeUser} /tmp/branch
-                    mkdir -p /home/${VSCodeUser}/${HomeFolder} && chown -R ${VSCodeUser}:${VSCodeUser} /home/${VSCodeUser}/${HomeFolder}
-                    sudo -u ${VSCodeUser} git -C /home/${VSCodeUser}/${HomeFolder} init
-                    mv /home/${VSCodeUser}/${HomeFolder}/.git /tmp/git
-                    rm -rf /home/${VSCodeUser}/${HomeFolder}
-                    mkdir -p /home/${VSCodeUser}/${HomeFolder} && chown -R ${VSCodeUser}:${VSCodeUser} /home/${VSCodeUser}/${HomeFolder}
-                    mv /tmp/git/.git /home/${VSCodeUser}/${HomeFolder}
+                    mkdir -p ${HomeFolder} && chown -R ${VSCodeUser}:${VSCodeUser} ${HomeFolder}
+                    sudo -u ${VSCodeUser} git -C ${HomeFolder} init
+                    mv ${HomeFolder}/.git /tmp/git
+                    rm -rf ${HomeFolder}
+                    mkdir -p ${HomeFolder} && chown -R ${VSCodeUser}:${VSCodeUser} ${HomeFolder}
+                    mv /tmp/git/.git ${HomeFolder}
                     find /tmp/branch -maxdepth 1 -mindepth 1 -type d | while read sourceFolder; do
                       branch="$(basename $sourceFolder)"
                       echo $branch
-                      sudo -u ${VSCodeUser} git -C /home/${VSCodeUser}/${HomeFolder} checkout -b $branch 2>&1
-                      cp -a $sourceFolder/. /home/${VSCodeUser}/${HomeFolder}
-                      sudo -u ${VSCodeUser} git -C /home/${VSCodeUser}/${HomeFolder} add .
-                      sudo -u ${VSCodeUser} git -C /home/${VSCodeUser}/${HomeFolder} commit -m "Initial commit $branch"
-                      mv /home/${VSCodeUser}/${HomeFolder}/.git /tmp/git
-                      rm -rf /home/${VSCodeUser}/${HomeFolder}
-                      mkdir /home/${VSCodeUser}/${HomeFolder} && chown -R ${VSCodeUser}:${VSCodeUser} /home/${VSCodeUser}/${HomeFolder}
-                      mv /tmp/git/.git /home/${VSCodeUser}/${HomeFolder}
+                      sudo -u ${VSCodeUser} git -C ${HomeFolder} checkout -b $branch 2>&1
+                      cp -a $sourceFolder/. ${HomeFolder}
+                      sudo -u ${VSCodeUser} git -C ${HomeFolder} add .
+                      sudo -u ${VSCodeUser} git -C ${HomeFolder} commit -m "Initial commit $branch"
+                      mv ${HomeFolder}/.git /tmp/git
+                      rm -rf ${HomeFolder}
+                      mkdir ${HomeFolder} && chown -R ${VSCodeUser}:${VSCodeUser} ${HomeFolder}
+                      mv /tmp/git/.git ${HomeFolder}
                     done
-                    sudo -u ${VSCodeUser} git -C /home/${VSCodeUser}/${HomeFolder} checkout main 2>&1
-                    sudo -u ${VSCodeUser} git -C /home/${VSCodeUser}/${HomeFolder} restore .
+                    sudo -u ${VSCodeUser} git -C ${HomeFolder} checkout main 2>&1
+                    sudo -u ${VSCodeUser} git -C ${HomeFolder} restore .
                     echo "Branches downloaded. Checking configuration: $HomeFolder"
-                    sudo -u ${VSCodeUser} git -C /home/${VSCodeUser}/${HomeFolder} branch
-                    ls -la /home/${VSCodeUser}/${HomeFolder}
+                    sudo -u ${VSCodeUser} git -C ${HomeFolder} branch
+                    ls -la ${HomeFolder}
                   fi
-          ## ------------ INFRA -------------------------
-  
-  RunInfraSSMDocument:
-    DependsOn: [RunVSCodeSSMDoc]
-    Type: Custom::RunSSMDocLambda
-    Properties:
-      ServiceToken: !GetAtt RunSSMDocLambda.Arn
-      ServiceTimeout: 900
-      InstanceId: !Ref VSCodeInstance
-      DocumentName: !Ref InfraSSMDocument
-      DeleteDocumentName: ""
-      MonitoringSQSQueue: !GetAtt SSMCommandMonitorQueue.QueueUrl
-      LambdaArn: !GetAtt RunSSMDocLambda.Arn
-      CloudWatchLogGroupName: !Sub /aws/ssm/${InfraSSMDocument}
-      VSCodePassword: !GetAtt SecretPlaintext.password
-      LinuxFlavor: !If [IsAL2023, 'al2023', 'ubuntu']
-
-  InfraSSMDocument:
-    Type: AWS::SSM::Document
-    Properties:
-      DocumentType: Command
-      Content:
-        schemaVersion: '2.2'
-        description: Create Fsx, EKS, S3 ..etc resources for workshop requirement
-        parameters:
-          LinuxFlavor:
-            type: String
-            default: 'al2023'
-          VSCodePassword:
-            type: String
-            default: !Ref AWS::StackId
-          # NodeVersion:
-          #   type: String
-          #   default: '20'
-          #   allowedValues:
-          #     - '22'
-          #     - '20'
-          #     - '18'
-          # DotNetVersion:
-          #   type: String
-          #   default: '8.0'
-          #   allowedValues:
-          #     - '8.0'
-          #     - '7.0'
-        # all mainSteps scripts are in in /var/lib/amazon/ssm/<instanceid>/document/orchestration/<uuid>/<StepName>/_script.sh
-        mainSteps:
-          - action: aws:runShellScript
-            name: InstallKubectl
-            precondition:
-              StringEquals:
-                - '{{ LinuxFlavor }}'
-                - al2023          
-            inputs:
-              timeoutSeconds: '3600'
-              runCommand:
-              - "#!/bin/bash"
-              - date
-              - !Sub 'echo "export KUBECTL_VERSION=${C9KubectlVersion}"'
-              - aws sts get-caller-identity
-              - echo '=== INSTALL kubectl ==='
-              - !Sub 'export KUBECTL_VERSION=${C9KubectlVersion}'
-              - curl --silent --location -o /usr/local/bin/kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/${KUBECTL_VERSION}/2024-07-12/bin/linux/arm64/kubectl
-              - chmod +x /usr/local/bin/kubectl
-              - /usr/local/bin/kubectl version --client
-          - action: aws:runShellScript
-            name: ConfigureAWSCLI
-            precondition:
-              StringEquals:
-                - '{{ LinuxFlavor }}'
-                - al2023          
-            inputs:
-              timeoutSeconds: '3600'
-              runCommand:
-              - "#!/bin/bash"
-              - aws --version
-              - echo '=== setup AWS configs ==='                        
-              # - export AWS_ACCOUNTID=$(aws sts get-caller-identity --output text --query Account)
-              # - |
-              #   export TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 3600")
-              #   export AWS_REGION=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s 169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')
-              - !Sub echo "Account :" ${AWS::AccountId}
-              - !Sub echo "Region :" ${AWS::Region}
-              - !Sub export AWS_REGION=${AWS::Region}
-              - !Sub export AWS_ACCOUNTID=${AWS::AccountId}
-              - !Sub echo 'export AWS_ACCOUNTID=$AWS_ACCOUNTID' >> /home/${VSCodeUser}/.bashrc
-              - !Sub echo 'export AWS_REGION=$AWS_REGION' >> /home/${VSCodeUser}/.bashrc
-              - aws configure set default.region ${AWS_REGION}
-              - aws configure get default.region
-              - aws sts get-caller-identity
-          # - action: aws:runShellScript
-          #   name: InstallNodeViewer
-          #   precondition:
-          #     StringEquals:
-          #       - '{{ LinuxFlavor }}'
-          #       - al2023          
-          #   inputs:
-          #     timeoutSeconds: '3600'
-          #     runCommand:
-          #     - "#!/bin/bash"            
-          #     - echo '=== Install eks-node-viewer ==='
-          #     - !Sub 'echo "NODEVIEWER_VERSION=" ${C9NodeViewerVersion}'
-          #     - !Sub 'export NODEVIEWER_VERSION=${C9NodeViewerVersion}'
-          #     - go install github.com/awslabs/eks-node-viewer/cmd/eks-node-viewer@${NODEVIEWER_VERSION}
-          #     - eks-node-viewer -v
-          - action: aws:runShellScript
-            name: CreateKubectlShortcuts
-            precondition:
-              StringEquals:
-                - '{{ LinuxFlavor }}'
-                - al2023          
-            inputs:
-              timeoutSeconds: '3600'
-              runCommand:
-              - "#!/bin/bash"               
-              # kubectl shortcuts
-              - !Sub echo "alias k=kubectl" >> /home/${VSCodeUser}/.bashrc
-              - !Sub echo "alias ka=\"kubectl apply -f \"" >> /home/${VSCodeUser}/.bashrc
-              - !Sub echo "alias ke=\"kubectl exec -it \"" >> /home/${VSCodeUser}/.bashrc
-              - !Sub echo "alias kg=\"kubectl get \"" >> /home/${VSCodeUser}/.bashrc
-              - !Sub echo "alias kd=\"kubectl describe \"" >> /home/${VSCodeUser}/.bashrc
-              - !Sub echo "alias kdel=\"kubectl delete \"" >> /home/${VSCodeUser}/.bashrc
-              - !Sub echo "alias ks=\"kubectl -n kube-system \"" >> /home/${VSCodeUser}/.bashrc
-              - !Sub echo "alias ksg=\"kubectl -n kube-system get \"" >> /home/${VSCodeUser}/.bashrc
-              - !Sub echo "alias ksd=\"kubectl -n kube-system describe \"" >> /home/${VSCodeUser}/.bashrc
-              - !Sub echo "export PATH=/home/${VSCodeUser}/go/bin:$PATH" >> /home/${VSCodeUser}/.bashrc
-              - !Sub cat /home/${VSCodeUser}/.bashrc
-
-          - action: aws:runShellScript
-            name: Installeksctl
-            precondition:
-              StringEquals:
-                - '{{ LinuxFlavor }}'
-                - al2023          
-            inputs:
-              timeoutSeconds: '3600'
-              runCommand:
-              - "#!/bin/bash"   
-              - echo "=== Install eksctl ==="
-              - export ARCH=arm64
-              - export PLATFORM=$(uname -s)_$ARCH
-              - curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
-              - tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp && rm -f eksctl_$PLATFORM.tar.gz
-              - mv /tmp/eksctl /usr/local/bin
-              - echo "eksctl version"
-              - eksctl version
- 
-  RunDownloadWorkshopAssetsSSMDocument:
-    DependsOn: [RunInfraSSMDocument]
-    Type: Custom::RunSSMDocLambda
-    Properties:
-      ServiceToken: !GetAtt RunSSMDocLambda.Arn
-      ServiceTimeout: 900
-      InstanceId: !Ref VSCodeInstance
-      DocumentName: !Ref DownloadWorkshopAssetsSSMDocument
-      DeleteDocumentName: ""
-      MonitoringSQSQueue: !GetAtt SSMCommandMonitorQueue.QueueUrl
-      LambdaArn: !GetAtt RunSSMDocLambda.Arn
-      CloudWatchLogGroupName: !Sub /aws/ssm/${DownloadWorkshopAssetsSSMDocument}
-      VSCodePassword: !GetAtt SecretPlaintext.password
-      LinuxFlavor: !If [IsAL2023, 'al2023', 'ubuntu']
-
-  DownloadWorkshopAssetsSSMDocument:
-    Type: AWS::SSM::Document
-    Properties:
-      DocumentType: Command
-      Content:
-        schemaVersion: '2.2'
-        description: Create Fsx, EKS, S3 ..etc resources for workshop requirement
-        parameters:
-          LinuxFlavor:
-            type: String
-            default: 'al2023'
-          VSCodePassword:
-            type: String
-            default: !Ref AWS::StackId
-          # NodeVersion:
-          #   type: String
-          #   default: '20'
-          #   allowedValues:
-          #     - '22'
-          #     - '20'
-          #     - '18'
-          # DotNetVersion:
-          #   type: String
-          #   default: '8.0'
-          #   allowedValues:
-          #     - '8.0'
-          #     - '7.0'
-        # all mainSteps scripts are in in /var/lib/amazon/ssm/<instanceid>/document/orchestration/<uuid>/<StepName>/_script.sh
-        mainSteps:
-          - action: aws:runShellScript
-            name: DownloadWorkshopAssets
-            precondition:
-              StringEquals:
-                - '{{ LinuxFlavor }}'
-                - al2023          
-            inputs:
-              timeoutSeconds: '53999'
-              runCommand:
-              - "#!/bin/bash"              
-              # Download static assests from asset bucket
-              # - !Sub aws s3 sync ${Assets} /home/${VSCodeUser}/environment/ --delete
-              - !Sub 'echo ASSET_BUCKET=${Assets}'
-              - !Sub 'export ASSET_BUCKET=${Assets}'
-              - export ASSET_BUCKET=$(echo $ASSET_BUCKET | sed 's/\/assets\///')     
-              - export ASSET_BUCKET=$ASSET_BUCKET/static
-              - !Sub aws s3 sync $ASSET_BUCKET/terraform /home/${VSCodeUser}/environment/terraform --delete
-              - !Sub aws s3 sync $ASSET_BUCKET/eks /home/${VSCodeUser}/environment/eks --delete
-              # - !Sub aws s3 sync $ASSET_BUCKET/download /home/${VSCodeUser}/environment/download --delete
-              # - !Sub aws s3 sync $ASSET_BUCKET/scripts /home/${VSCodeUser}/environment/scripts --delete
-              # Replace region and eks version
-          - action: aws:runShellScript
-            name: Installs5cmd
-            precondition:
-              StringEquals:
-                - '{{ LinuxFlavor }}'
-                - al2023          
-            inputs:
-              timeoutSeconds: '3600'
-              runCommand:
-              - "#!/bin/bash" 
-              #Install s5cmd 
-              - echo "Install s5cmd"            
-              #Update PATH for s5cmd 
-              - !Sub sudo -u ${VSCodeUser} --login go install github.com/peak/s5cmd/v2@master
-              - !Sub echo 'PATH=$PATH:/home/${VSCodeUser}/go/bin/' >> /home/${VSCodeUser}/.bashrc
-              - echo "Verify s5cmd installation"
-              - !Sub sudo -u ${VSCodeUser} --login s5cmd help
-  
-  RunSetupFSxLSSMDocument:
-    DependsOn: [RunInfraSSMDocument]
-    Type: Custom::RunSSMDocLambda
-    Properties:
-      ServiceToken: !GetAtt RunSSMDocLambda.Arn
-      ServiceTimeout: 900
-      InstanceId: !Ref VSCodeInstance
-      DocumentName: !Ref SetupFSxLSSMDocument
-      DeleteDocumentName: !Ref InfraDeleteSSMDocument
-      MonitoringSQSQueue: !GetAtt SSMCommandMonitorQueue.QueueUrl
-      LambdaArn: !GetAtt RunSSMDocLambda.Arn
-      CloudWatchLogGroupName: !Sub /aws/ssm/${SetupFSxLSSMDocument}
-      VSCodePassword: !GetAtt SecretPlaintext.password
-      LinuxFlavor: !If [IsAL2023, 'al2023', 'ubuntu']
-
-  SetupFSxLSSMDocument:
-    Type: AWS::SSM::Document
-    Properties:
-      DocumentType: Command
-      Content:
-        schemaVersion: '2.2'
-        description: Create Fsx, EKS, S3 ..etc resources for workshop requirement
-        parameters:
-          LinuxFlavor:
-            type: String
-            default: 'al2023'
-          VSCodePassword:
-            type: String
-            default: !Ref AWS::StackId
-          # NodeVersion:
-          #   type: String
-          #   default: '20'
-          #   allowedValues:
-          #     - '22'
-          #     - '20'
-          #     - '18'
-          # DotNetVersion:
-          #   type: String
-          #   default: '8.0'
-          #   allowedValues:
-          #     - '8.0'
-          #     - '7.0'
-        # all mainSteps scripts are in in /var/lib/amazon/ssm/<instanceid>/document/orchestration/<uuid>/<StepName>/_script.sh
-        mainSteps:
-          - action: aws:runShellScript
-            name: DownloadWorkshopAssets
-            precondition:
-              StringEquals:
-                - '{{ LinuxFlavor }}'
-                - al2023          
-            inputs:
-              timeoutSeconds: '53999'
-              runCommand:
-              - "#!/bin/bash"              
-              # Download static assests from asset bucket
-              # - !Sub aws s3 sync ${Assets} /home/${VSCodeUser}/environment/ --delete
-              - !Sub 'echo ASSET_BUCKET=${Assets}'
-              - !Sub 'export ASSET_BUCKET=${Assets}'
-              - export ASSET_BUCKET=$(echo $ASSET_BUCKET | sed 's/\/assets\///')     
-              - export ASSET_BUCKET=$ASSET_BUCKET/static
-              - !Sub aws s3 sync $ASSET_BUCKET/terraform /home/${VSCodeUser}/environment/terraform --delete
-              - !Sub aws s3 sync $ASSET_BUCKET/eks /home/${VSCodeUser}/environment/eks --delete
-              # - !Sub aws s3 sync $ASSET_BUCKET/download /home/${VSCodeUser}/environment/download --delete
-              # - !Sub aws s3 sync $ASSET_BUCKET/scripts /home/${VSCodeUser}/environment/scripts --delete
-              # Replace region and eks version
-          - action: aws:runShellScript
-            name: Installs5cmd
-            precondition:
-              StringEquals:
-                - '{{ LinuxFlavor }}'
-                - al2023          
-            inputs:
-              timeoutSeconds: '3600'
-              runCommand:
-              - "#!/bin/bash" 
-              #Install s5cmd 
-              - echo "Install s5cmd"            
-              #Update PATH for s5cmd 
-              - !Sub sudo -u ${VSCodeUser} --login go install github.com/peak/s5cmd/v2@master
-              - !Sub echo 'PATH=$PATH:/home/${VSCodeUser}/go/bin/' >> /home/${VSCodeUser}/.bashrc
-              - echo "Verify s5cmd installation"
-              - !Sub sudo -u ${VSCodeUser} --login s5cmd help
-
-          - action: aws:runShellScript
-            name: InitializeFSxL
-            precondition:
-              StringEquals:
-                - '{{ LinuxFlavor }}'
-                - al2023          
-            inputs:
-              timeoutSeconds: '53999'
-              runCommand:
-              - "#!/bin/bash"              
-              - echo "Check if Terraform installed."
-              - terraform --version
-              - !Sub sed -i.bak -e 's/--AWS_REGION--/${AWS::Region}/' /home/${VSCodeUser}/environment/terraform/main.tf
-              - !Sub sed -i.bak -e 's/--EKS_VERSION--/${EKSClusterVersion}/' /home/${VSCodeUser}/environment/terraform/main.tf
-              - !Sub cd /home/${VSCodeUser}/environment/terraform/
-              - terraform init
-              # Create bucket before copy 
-              - echo "Creating FSx Lustre Bucket"
-              - terraform apply -target="module.fsx-lustre-bucket" -auto-approve 
-              # Copy model to fsx bucket
-              - export S3_BUCKET=$(aws s3 ls | grep fsx-lustre | grep -v fsx-lustre-2ndregion | awk '{print$3}')
-              - echo "Bucket name:" ${S3_BUCKET}
-              - aws configure set default.s3.max_concurrent_requests 20
-              - aws configure set default.s3.signature_version s3v4
-              # Copy model to FSxL S3 bucket
-              - echo "Starting model upload @ `date`"
-              - !Sub sudo -u ${VSCodeUser} --login s5cmd sync --delete "${Assets}Mistral-7B-Instruct-v0.2/*" "s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2/" 
-              # - !Sub aws s3 sync ${Assets}Mistral-7B-Instruct-v0.2 s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2 --delete
-              # Veryfiy object counts
-              - echo "Source bucket object counts:"
-              - !Sub aws s3 ls --summarize --human-readable --recursive ${Assets}Mistral-7B-Instruct-v0.2
-              - echo "Destination bucket object counts:"
-              - aws s3 ls --summarize --human-readable --recursive s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2
-              - echo "End model upload @ `date`"
-  
-  RunCreateVPCandFSxLSSMDocumentSSMDocument:
-    DependsOn: [RunSetupFSxLSSMDocument]
-    Type: Custom::RunSSMDocLambda
-    Properties:
-      ServiceToken: !GetAtt RunSSMDocLambda.Arn
-      ServiceTimeout: 300
-      InstanceId: !Ref VSCodeInstance
-      DocumentName: !Ref CreateVPCandFSxLSSMDocument
-      DeleteDocumentName: !Ref InfraDeleteSSMDocument
-      MonitoringSQSQueue: !GetAtt SSMCommandMonitorQueue.QueueUrl
-      LambdaArn: !GetAtt RunSSMDocLambda.Arn
-      CloudWatchLogGroupName: !Sub /aws/ssm/${CreateVPCandFSxLSSMDocument}
-      VSCodePassword: !GetAtt SecretPlaintext.password
-      LinuxFlavor: !If [IsAL2023, 'al2023', 'ubuntu']
-
-  CreateVPCandFSxLSSMDocument:
-    Type: AWS::SSM::Document
-    Properties:
-      DocumentType: Command
-      Content:
-        schemaVersion: '2.2'
-        description: Create Fsx, EKS, S3 ..etc resources for workshop requirement
-        parameters:
-          LinuxFlavor:
-            type: String
-            default: 'al2023'
-          VSCodePassword:
-            type: String
-            default: !Ref AWS::StackId
-          # NodeVersion:
-          #   type: String
-          #   default: '20'
-          #   allowedValues:
-          #     - '22'
-          #     - '20'
-          #     - '18'
-          # DotNetVersion:
-          #   type: String
-          #   default: '8.0'
-          #   allowedValues:
-          #     - '8.0'
-          #     - '7.0'
-        # all mainSteps scripts are in in /var/lib/amazon/ssm/<instanceid>/document/orchestration/<uuid>/<StepName>/_script.sh
-        mainSteps:
-          - action: aws:runShellScript
-            name: CreateVPCandFSxL
-            precondition:
-              StringEquals:
-                - '{{ LinuxFlavor }}'
-                - al2023          
-            inputs:
-              timeoutSeconds: '53999'
-              runCommand:
-              - "#!/bin/bash"   
-              - terraform --version
-              - !Sub 'export CFN_RESPONSE_URL="${WaitForStackCreationHandle}"'
-              # Create VPC
-              - echo '=== Create VPC for EKS Cluster ==='
-              - !Sub cd /home/${VSCodeUser}/environment/terraform/
-              - ls -la
-              - terraform apply -target="module.vpc" -auto-approve 
-              - terraform apply -target="aws_fsx_lustre_file_system.fsx_lustre" -target="module.eks" -auto-approve
-
-  RunCreateEKSClusterSSMDocument:
-    DependsOn: [RunCreateVPCandFSxLSSMDocumentSSMDocument]
-    Type: Custom::RunSSMDocLambda
-    Properties:
-      ServiceToken: !GetAtt RunSSMDocLambda.Arn
-      ServiceTimeout: 900
-      InstanceId: !Ref VSCodeInstance
-      DocumentName: !Ref CreateEKSClusterSSMDocument
-      DeleteDocumentName: !Ref InfraDeleteSSMDocument
-      MonitoringSQSQueue: !GetAtt SSMCommandMonitorQueue.QueueUrl
-      LambdaArn: !GetAtt RunSSMDocLambda.Arn
-      CloudWatchLogGroupName: !Sub /aws/ssm/${CreateEKSClusterSSMDocument}
-      VSCodePassword: !GetAtt SecretPlaintext.password
-      LinuxFlavor: !If [IsAL2023, 'al2023', 'ubuntu']
-
-  CreateEKSClusterSSMDocument:
-    Type: AWS::SSM::Document
-    Properties:
-      DocumentType: Command
-      Content:
-        schemaVersion: '2.2'
-        description: Create Fsx, EKS, S3 ..etc resources for workshop requirement
-        parameters:
-          LinuxFlavor:
-            type: String
-            default: 'al2023'
-          VSCodePassword:
-            type: String
-            default: !Ref AWS::StackId
-          # NodeVersion:
-          #   type: String
-          #   default: '20'
-          #   allowedValues:
-          #     - '22'
-          #     - '20'
-          #     - '18'
-          # DotNetVersion:
-          #   type: String
-          #   default: '8.0'
-          #   allowedValues:
-          #     - '8.0'
-          #     - '7.0'
-        # all mainSteps scripts are in in /var/lib/amazon/ssm/<instanceid>/document/orchestration/<uuid>/<StepName>/_script.sh
-        mainSteps:
-          - action: aws:runShellScript
-            name: CreateEKSCluster
-            precondition:
-              StringEquals:
-                - '{{ LinuxFlavor }}'
-                - al2023          
-            inputs:
-              timeoutSeconds: '53999'
-              runCommand:
-              - "#!/bin/bash"   
-              - terraform --version
-              - !Sub 'export CFN_RESPONSE_URL="${WaitForStackCreationHandle}"'
-              # Create EKS Cluster
-              - echo '=== Create EKS Cluster ==='
-              - !Sub echo 'EKS Cluster version - ${EKSClusterVersion} will be created in region ${AWS::Region}'
-              - !Sub cd /home/${VSCodeUser}/environment/terraform/
-              - ls -la
-              - terraform apply --auto-approve
-              # add sleep to allow ALB controler to start else in some cases this is failing
-              - sleep 60
-              - terraform apply --auto-approve            
-              # Delete FSx Lustre sysprep resources
-              - echo "Delete sysprep nodepool, sysprep job, pv and pvc"
-              # - terraform destroy --target kubernetes_job.sysprep --target kubectl_manifest.sysprep_pvc --target kubectl_manifest.sysprep_pv --target kubectl_manifest.nodepool_sysprep --target kubectl_manifest.ec2nodeclass_sysprep --target helm_release.fsx_csi_driver --auto-approve
-              - terraform destroy --target kubernetes_job.sysprep --auto-approve
-              - terraform destroy --target kubectl_manifest.sysprep_pvc --auto-approve
-              - terraform destroy --target kubectl_manifest.sysprep_pv --auto-approve
-              - terraform destroy --target kubectl_manifest.nodepool_sysprep --auto-approve
-              - terraform destroy --target kubectl_manifest.ec2nodeclass_sysprep --auto-approve
-              - terraform destroy --target helm_release.fsx_csi_driver --auto-approve
-
-  InfraDeleteSSMDocument:
-    Type: AWS::SSM::Document
-    Properties:
-      DocumentType: Command
-      Content:
-        schemaVersion: '2.2'
-        description: Bootstrap Cloud9 Instance
-        parameters:
-          LinuxFlavor:
-            type: String
-            default: 'al2023'
-          VSCodePassword:
-            type: String
-            default: !Ref AWS::StackId
-          # NodeVersion:
-          #   type: String
-          #   default: '20'
-          #   allowedValues:
-          #     - '22'
-          #     - '20'
-          #     - '18'
-          # DotNetVersion:
-          #   type: String
-          #   default: '8.0'
-          #   allowedValues:
-          #     - '8.0'
-          #     - '7.0'
-        mainSteps:
-        - action: aws:runShellScript
-          name: DeleteTerraformInfra
-          precondition:
-            StringEquals:
-              - '{{ LinuxFlavor }}'
-              - al2023          
-          inputs:
-            timeoutSeconds: '53999'
-            runCommand:
-            - "#!/bin/bash"   
-            - terraform --version
-            - !Sub cd /home/${VSCodeUser}/environment/terraform/
-            - ls -la
-            - terraform destroy --target kubernetes_job.sysprep --auto-approve
-            - terraform destroy --target kubectl_manifest.sysprep_pvc --auto-approve
-            - terraform destroy --target kubectl_manifest.sysprep_pv --auto-approve
-            - terraform destroy --target kubectl_manifest.nodepool_sysprep --auto-approve
-            - terraform destroy --target kubectl_manifest.ec2nodeclass_sysprep --auto-approve
-            - terraform destroy --target helm_release.fsx_csi_driver --auto-approve
-            - terraform destroy --target="module.fsx-lustre-bucket"  --auto-approve
-            - terraform destroy --target="aws_fsx_lustre_file_system.fsx_lustre" -target="module.eks" --auto-approve
-            - terraform destroy --target="module.vpc" --auto-approve
-            - terraform destroy --auto-approve     
-
-  SSMCommandMonitorQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      # QueueName: ssm-command-monitor-queue
-      VisibilityTimeout: 300  # 5 minutes
-      DelaySeconds: 0
-      MaximumMessageSize: 262144  # 256 KB
-      MessageRetentionPeriod: 1209600  # 14 days
-      ReceiveMessageWaitTimeSeconds: 20
-
-  RunSSMDocLambda:
-    Type: AWS::Lambda::Function
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-          - id: W58
-            reason: Warning incorrectly reported. The role associated with the Lambda function has the AWSLambdaBasicExecutionRole managed policy attached, which includes permission to write CloudWatch Logs. See https://docs.aws.amazon.com/aws-managed-policy/latest/reference/AWSLambdaBasicExecutionRole.html
-          - id: W89
-            reason: CloudFormation custom function does not need the scaffolding of a VPC, to do so would add unnecessary complexity
-          - id: W92
-            reason: CloudFormation custom function does not need reserved concurrent executions, to do so would add unnecessary complexity
-    Properties:
-      Description: Run SSM document on EC2 instance
-      Handler: index.lambda_handler
-      Runtime: python3.12
-      MemorySize: 128
-      Timeout: 900
-      Architectures:
-        - arm64
-      Role: !GetAtt RunSSMDocLambdaRole.Arn
-      Code:
-        ZipFile: |
-          import boto3
-          import cfnresponse
-          import logging
-          import json
-          import time
-
-          logger = logging.getLogger()
-          logger.setLevel(logging.INFO)
-
-          ssm = boto3.client('ssm')
-          sqs = boto3.client('sqs')
-          lambda_client = boto3.client('lambda')
-
-          def lambda_handler(event, context):
-              
-              logger.info(f'--- RUNNING ---: {event["ResourceProperties"]["DocumentName"]} --- RequestType: {event['RequestType']}')
-              logger.info('event: %s', event)
-
-              if event['RequestType'] == 'Create':
-                  run_ssm_document(event, context, 'create')
-              elif event['RequestType'] == 'Delete':
-                  delete_document_name = event['ResourceProperties'].get('DeleteDocumentName')
-                  if delete_document_name:
-                      run_ssm_document(event, context, 'delete')
-                  else:
-                      logger.info('DeleteDocumentName not provided, skipping SSM document execution.')
-                      cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData={}, reason='No action to take')
-              else:
-                  cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData={}, reason='No action to take')
-
-          def run_ssm_document(event, context, operation):
-              resource_properties = (event['ResourceProperties'])
-              logger.info('resource_properties: %s', resource_properties)
-
-              instance_id = (event['ResourceProperties']['InstanceId'])
-              document_name = (event['ResourceProperties']['DocumentName'])
-              cloudwatch_log_group_name = (event['ResourceProperties']['CloudWatchLogGroupName'])
-
-              if operation == 'delete':
-                  document_name = resource_properties.get('DeleteDocumentName', document_name)
-
-              parameters = {}
-              for key, value in resource_properties.items():
-                  if key in ['NodeVersion', 'LinuxFlavor','VSCodePassword','DotNetVersion']:
-                      parameters[key] = [value]
-
-              logger.info(f'send_command parameters: {parameters}')
-
-              try:
-                  response = ssm.send_command(
-                      InstanceIds=[instance_id],
-                      DocumentName=document_name,
-                      CloudWatchOutputConfig={'CloudWatchLogGroupName': cloudwatch_log_group_name, 'CloudWatchOutputEnabled': True},
-                      Parameters=parameters
-                  )
-                  logger.info(f'send_command response: {response}')
-                  command_id = response['Command']['CommandId']
-
-                  # Wait for a few seconds before checking the command status
-                  delay_seconds = 5  # Adjust this value as needed
-                  logger.info(f'Waiting for {delay_seconds} seconds before checking the command status.')
-                  time.sleep(delay_seconds)
-
-                  monitor_ssm_command(event, context, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters)
-
-              except Exception as e:
-                  logger.error(e)
-                  cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(e))
-
-          def monitor_ssm_command(event, context, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters):
-              
-              # Wait for a few seconds before checking the command status
-              delay_seconds = 10  # Adjust this value as needed
-                            
-              command_complete = False
-              while not command_complete:
-                  time_remaining = context.get_remaining_time_in_millis()
-                  if time_remaining < 60000:  # 60 seconds before timeout
-                      logger.info('Lambda function is about to time out. Invoking itself asynchronously.')
-                      invoke_self_asynchronously(event, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters)
-                      cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData={}, reason='Invoked self asynchronously')
-                      return
-
-                  result = ssm.get_command_invocation(
-                      CommandId=command_id,
-                      InstanceId=instance_id
-                  )
-                  if result['Status'] == 'Success':
-                      logger.info(f'SSM command {command_id} completed successfully.')
-                      cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData={'CommandId': command_id}, reason='SSM command completed successfully')
-                      command_complete = True
-                  elif result['Status'] == 'Failed':
-                      logger.error(f'SSM command {command_id} failed with reason: {result["StatusDetails"]}')
-                      cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=result['StatusDetails'])
-                      command_complete = True
-                  else:
-                      logger.info(f'SSM command {command_id} is still running. Sleeping for {delay_seconds} seconds.')
-                      time.sleep(delay_seconds)
-
-          def invoke_self_asynchronously(event, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters):
-              invoke_payload = {
-                  'CommandId': command_id,
-                  'InstanceId': instance_id,
-                  'DocumentName': document_name,
-                  'CloudWatchLogGroupName': cloudwatch_log_group_name,
-                  'Parameters': parameters,
-                  'RequestType': event['RequestType'],
-                  'ResourceProperties': event['ResourceProperties'],
-                  'StackId': event['StackId']
-              }
-
-              SQS_QUEUE_URL = (event['ResourceProperties']['MonitoringSQSQueue'])
-              LAMBDA_FUNCTION_ARN = (event['ResourceProperties']['LambdaArn'])
-
-              logger.info(f'Sending SQS message: {json.dumps(invoke_payload)} on Queue : {SQS_QUEUE_URL}')
-              sqs_result = sqs.send_message(QueueUrl=SQS_QUEUE_URL, MessageBody=json.dumps(invoke_payload))
-
-              if sqs_result['Status'] == 'Success':
-                  logger.info(f'SQS message sent successfully.')
-              else:
-                  logger.error(f'SQS message send failed')
-                  cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=result['StatusDetails'])
-
-
-              lamda_result = lambda_client.invoke(
-                  FunctionName=LAMBDA_FUNCTION_ARN,
-                  InvocationType='Event',
-                  Payload=json.dumps(invoke_payload)
-              )
-
-              if lamda_result['Status'] == 'Success':
-                  logger.info(f'Lambda {LAMBDA_FUNCTION_ARN} invoked successfully.')
-              else: 
-                  logger.info(f'Lambda {LAMBDA_FUNCTION_ARN} invoke failed.')
-                  cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=result['StatusDetails'])
-
-
-              
-
-  VSCodeSecret:
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-          - id: W77
-            reason: The default KMS Key used by Secrets Manager is appropriate for this password which will be used to log into VSCodeServer, which has very limited permissions. In addition this secret will not be required to be shared across accounts
-    Type: AWS::SecretsManager::Secret
-    DeletionPolicy: Delete
-    UpdateReplacePolicy: Delete
-    Properties:
-      # Name: !Ref InstanceName
-      Description: VSCode user details
-      GenerateSecretString:
-        PasswordLength: 16
-        SecretStringTemplate: !Sub '{"username":"${VSCodeUser}"}'
-        GenerateStringKey: 'password'
-        ExcludePunctuation: true
-
-  SecretPlaintext:
-    Type: Custom::SecretPlaintextLambda
-    Properties:
-      ServiceToken: !GetAtt SecretPlaintextLambda.Arn
-      ServiceTimeout: 15
-      SecretArn: !Ref VSCodeSecret
 
   VSCodeInstanceRole:
     Type: AWS::IAM::Role
@@ -1767,7 +1385,7 @@ Resources:
           #cloud-config
           hostname: ${InstanceName}
           runcmd:
-            - !Sub mkdir -p /home/${VSCodeUser}/${HomeFolder} && chown -R ${VSCodeUser}:${VSCodeUser} /home/${VSCodeUser}/${HomeFolder}
+            - !Sub mkdir -p ${HomeFolder} && chown -R ${VSCodeUser}:${VSCodeUser} ${HomeFolder}
       Tags:
       - Key: Name
         Value: !Ref InstanceName
@@ -2012,6 +1630,7 @@ Resources:
       ServiceTimeout: 605
       Url: !Sub https://${CloudFrontDistribution.DomainName}/healthz
 
+
   WaitForStackCreationHandle:
       Type: AWS::CloudFormation::WaitConditionHandle
 
@@ -2023,29 +1642,25 @@ Resources:
       Timeout: 7200
       Count: 1
 
+
 Outputs:
-  # EKSCluster:
-  #   Value:
-  #     Fn::Join:
-  #     - ''
-  #     - - https://
-  #       - Ref: AWS::Region
-  #       - ".console.aws.amazon.com/eks/home"
-  #       - "?region="
-  #       - Ref: AWS::Region
-  #       - "#/clusters/"
-  #       - Ref: EKSClusterName
-  # EKSClusterVersion:
-  #   Value: !Ref EKSClusterVersion
+  EKSCluster:
+    Value:
+      Fn::Join:
+      - ''
+      - - https://
+        - Ref: AWS::Region
+        - ".console.aws.amazon.com/eks/home"
+        - "?region="
+        - Ref: AWS::Region
+        - "#/clusters/"
+        - Ref: EKSClusterName
+  EKSClusterVersion:
+    Value: !Ref EKSClusterVersion
 ## VSCode Output
-  # SSMCommandMonitorQueueURL:
-  #   Description: The URL of the SSM Command Monitor Queue
-  #   Value: !Ref SSMCommandMonitorQueue
-  #   Export:
-  #     Name: SSMCommandMonitorQueueURL
   URL:
     Description: VSCode-Server URL
-    Value: !Sub https://${CloudFrontDistribution.DomainName}/?folder=/home/${VSCodeUser}/${HomeFolder}
+    Value: !Sub https://${CloudFrontDistribution.DomainName}/?folder=${HomeFolder}
   Password:
     Description: VSCode-Server Password
     Value: !GetAtt SecretPlaintext.password

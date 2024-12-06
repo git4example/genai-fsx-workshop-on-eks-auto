@@ -274,7 +274,6 @@ Resources:
               - Effect: Allow
                 Action:
                   - ssm:SendCommand
-                  - sqs:sendmessage
                 Resource:
                   - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${VSCodeSSMDoc}
                   - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${InfraSSMDocument}
@@ -285,7 +284,6 @@ Resources:
                   - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/${InfraDeleteSSMDocument}
                   - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:document/AmazonCloudWatch-ManageAgent
                   - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${VSCodeInstance}
-                  - !GetAtt SSMCommandMonitorQueue.Arn
         - PolicyName: ChekcSSMDocCompletionOnEC2
           PolicyDocument:
             Version: 2012-10-17
@@ -367,8 +365,6 @@ Resources:
       InstanceId: !Ref VSCodeInstance
       DocumentName: !Ref VSCodeSSMDoc
       DeleteDocumentName: ""
-      MonitoringSQSQueue: !GetAtt SSMCommandMonitorQueue.QueueUrl
-      LambdaArn: !GetAtt RunSSMDocLambda.Arn
       CloudWatchLogGroupName: !Sub /aws/ssm/${VSCodeSSMDoc}
       VSCodePassword: !GetAtt SecretPlaintext.password
       LinuxFlavor: !If [IsAL2023, 'al2023', 'ubuntu']
@@ -995,8 +991,6 @@ Resources:
       InstanceId: !Ref VSCodeInstance
       DocumentName: !Ref InfraSSMDocument
       DeleteDocumentName: ""
-      MonitoringSQSQueue: !GetAtt SSMCommandMonitorQueue.QueueUrl
-      LambdaArn: !GetAtt RunSSMDocLambda.Arn
       CloudWatchLogGroupName: !Sub /aws/ssm/${InfraSSMDocument}
       VSCodePassword: !GetAtt SecretPlaintext.password
       LinuxFlavor: !If [IsAL2023, 'al2023', 'ubuntu']
@@ -1015,19 +1009,19 @@ Resources:
           VSCodePassword:
             type: String
             default: !Ref AWS::StackId
-          # NodeVersion:
-          #   type: String
-          #   default: '20'
-          #   allowedValues:
-          #     - '22'
-          #     - '20'
-          #     - '18'
-          # DotNetVersion:
-          #   type: String
-          #   default: '8.0'
-          #   allowedValues:
-          #     - '8.0'
-          #     - '7.0'
+          NodeVersion:
+            type: String
+            default: '20'
+            allowedValues:
+              - '22'
+              - '20'
+              - '18'
+          DotNetVersion:
+            type: String
+            default: '8.0'
+            allowedValues:
+              - '8.0'
+              - '7.0'
         # all mainSteps scripts are in in /var/lib/amazon/ssm/<instanceid>/document/orchestration/<uuid>/<StepName>/_script.sh
         mainSteps:
           - action: aws:runShellScript
@@ -1139,8 +1133,6 @@ Resources:
       InstanceId: !Ref VSCodeInstance
       DocumentName: !Ref DownloadWorkshopAssetsSSMDocument
       DeleteDocumentName: ""
-      MonitoringSQSQueue: !GetAtt SSMCommandMonitorQueue.QueueUrl
-      LambdaArn: !GetAtt RunSSMDocLambda.Arn
       CloudWatchLogGroupName: !Sub /aws/ssm/${DownloadWorkshopAssetsSSMDocument}
       VSCodePassword: !GetAtt SecretPlaintext.password
       LinuxFlavor: !If [IsAL2023, 'al2023', 'ubuntu']
@@ -1159,19 +1151,19 @@ Resources:
           VSCodePassword:
             type: String
             default: !Ref AWS::StackId
-          # NodeVersion:
-          #   type: String
-          #   default: '20'
-          #   allowedValues:
-          #     - '22'
-          #     - '20'
-          #     - '18'
-          # DotNetVersion:
-          #   type: String
-          #   default: '8.0'
-          #   allowedValues:
-          #     - '8.0'
-          #     - '7.0'
+          NodeVersion:
+            type: String
+            default: '20'
+            allowedValues:
+              - '22'
+              - '20'
+              - '18'
+          DotNetVersion:
+            type: String
+            default: '8.0'
+            allowedValues:
+              - '8.0'
+              - '7.0'
         # all mainSteps scripts are in in /var/lib/amazon/ssm/<instanceid>/document/orchestration/<uuid>/<StepName>/_script.sh
         mainSteps:
           - action: aws:runShellScript
@@ -1222,8 +1214,6 @@ Resources:
       InstanceId: !Ref VSCodeInstance
       DocumentName: !Ref SetupFSxLSSMDocument
       DeleteDocumentName: !Ref InfraDeleteSSMDocument
-      MonitoringSQSQueue: !GetAtt SSMCommandMonitorQueue.QueueUrl
-      LambdaArn: !GetAtt RunSSMDocLambda.Arn
       CloudWatchLogGroupName: !Sub /aws/ssm/${SetupFSxLSSMDocument}
       VSCodePassword: !GetAtt SecretPlaintext.password
       LinuxFlavor: !If [IsAL2023, 'al2023', 'ubuntu']
@@ -1242,19 +1232,19 @@ Resources:
           VSCodePassword:
             type: String
             default: !Ref AWS::StackId
-          # NodeVersion:
-          #   type: String
-          #   default: '20'
-          #   allowedValues:
-          #     - '22'
-          #     - '20'
-          #     - '18'
-          # DotNetVersion:
-          #   type: String
-          #   default: '8.0'
-          #   allowedValues:
-          #     - '8.0'
-          #     - '7.0'
+          NodeVersion:
+            type: String
+            default: '20'
+            allowedValues:
+              - '22'
+              - '20'
+              - '18'
+          DotNetVersion:
+            type: String
+            default: '8.0'
+            allowedValues:
+              - '8.0'
+              - '7.0'
         # all mainSteps scripts are in in /var/lib/amazon/ssm/<instanceid>/document/orchestration/<uuid>/<StepName>/_script.sh
         mainSteps:
           - action: aws:runShellScript
@@ -1336,12 +1326,10 @@ Resources:
     Type: Custom::RunSSMDocLambda
     Properties:
       ServiceToken: !GetAtt RunSSMDocLambda.Arn
-      ServiceTimeout: 300
+      ServiceTimeout: 900
       InstanceId: !Ref VSCodeInstance
       DocumentName: !Ref CreateVPCandFSxLSSMDocument
       DeleteDocumentName: !Ref InfraDeleteSSMDocument
-      MonitoringSQSQueue: !GetAtt SSMCommandMonitorQueue.QueueUrl
-      LambdaArn: !GetAtt RunSSMDocLambda.Arn
       CloudWatchLogGroupName: !Sub /aws/ssm/${CreateVPCandFSxLSSMDocument}
       VSCodePassword: !GetAtt SecretPlaintext.password
       LinuxFlavor: !If [IsAL2023, 'al2023', 'ubuntu']
@@ -1360,19 +1348,19 @@ Resources:
           VSCodePassword:
             type: String
             default: !Ref AWS::StackId
-          # NodeVersion:
-          #   type: String
-          #   default: '20'
-          #   allowedValues:
-          #     - '22'
-          #     - '20'
-          #     - '18'
-          # DotNetVersion:
-          #   type: String
-          #   default: '8.0'
-          #   allowedValues:
-          #     - '8.0'
-          #     - '7.0'
+          NodeVersion:
+            type: String
+            default: '20'
+            allowedValues:
+              - '22'
+              - '20'
+              - '18'
+          DotNetVersion:
+            type: String
+            default: '8.0'
+            allowedValues:
+              - '8.0'
+              - '7.0'
         # all mainSteps scripts are in in /var/lib/amazon/ssm/<instanceid>/document/orchestration/<uuid>/<StepName>/_script.sh
         mainSteps:
           - action: aws:runShellScript
@@ -1403,8 +1391,6 @@ Resources:
       InstanceId: !Ref VSCodeInstance
       DocumentName: !Ref CreateEKSClusterSSMDocument
       DeleteDocumentName: !Ref InfraDeleteSSMDocument
-      MonitoringSQSQueue: !GetAtt SSMCommandMonitorQueue.QueueUrl
-      LambdaArn: !GetAtt RunSSMDocLambda.Arn
       CloudWatchLogGroupName: !Sub /aws/ssm/${CreateEKSClusterSSMDocument}
       VSCodePassword: !GetAtt SecretPlaintext.password
       LinuxFlavor: !If [IsAL2023, 'al2023', 'ubuntu']
@@ -1423,19 +1409,19 @@ Resources:
           VSCodePassword:
             type: String
             default: !Ref AWS::StackId
-          # NodeVersion:
-          #   type: String
-          #   default: '20'
-          #   allowedValues:
-          #     - '22'
-          #     - '20'
-          #     - '18'
-          # DotNetVersion:
-          #   type: String
-          #   default: '8.0'
-          #   allowedValues:
-          #     - '8.0'
-          #     - '7.0'
+          NodeVersion:
+            type: String
+            default: '20'
+            allowedValues:
+              - '22'
+              - '20'
+              - '18'
+          DotNetVersion:
+            type: String
+            default: '8.0'
+            allowedValues:
+              - '8.0'
+              - '7.0'
         # all mainSteps scripts are in in /var/lib/amazon/ssm/<instanceid>/document/orchestration/<uuid>/<StepName>/_script.sh
         mainSteps:
           - action: aws:runShellScript
@@ -1483,19 +1469,19 @@ Resources:
           VSCodePassword:
             type: String
             default: !Ref AWS::StackId
-          # NodeVersion:
-          #   type: String
-          #   default: '20'
-          #   allowedValues:
-          #     - '22'
-          #     - '20'
-          #     - '18'
-          # DotNetVersion:
-          #   type: String
-          #   default: '8.0'
-          #   allowedValues:
-          #     - '8.0'
-          #     - '7.0'
+          NodeVersion:
+            type: String
+            default: '20'
+            allowedValues:
+              - '22'
+              - '20'
+              - '18'
+          DotNetVersion:
+            type: String
+            default: '8.0'
+            allowedValues:
+              - '8.0'
+              - '7.0'
         mainSteps:
         - action: aws:runShellScript
           name: DeleteTerraformInfra
@@ -1521,16 +1507,6 @@ Resources:
             - terraform destroy --target="module.vpc" --auto-approve
             - terraform destroy --auto-approve     
 
-  SSMCommandMonitorQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      # QueueName: ssm-command-monitor-queue
-      VisibilityTimeout: 300  # 5 minutes
-      DelaySeconds: 0
-      MaximumMessageSize: 262144  # 256 KB
-      MessageRetentionPeriod: 1209600  # 14 days
-      ReceiveMessageWaitTimeSeconds: 20
-
   RunSSMDocLambda:
     Type: AWS::Lambda::Function
     Metadata:
@@ -1551,25 +1527,25 @@ Resources:
       Architectures:
         - arm64
       Role: !GetAtt RunSSMDocLambdaRole.Arn
+      Environment:
+        Variables:
+          LOG_LEVEL: DEBUG
       Code:
         ZipFile: |
           import boto3
           import cfnresponse
           import logging
-          import json
           import time
 
           logger = logging.getLogger()
           logger.setLevel(logging.INFO)
 
+          SLEEP_MS = 2900
+
           ssm = boto3.client('ssm')
-          sqs = boto3.client('sqs')
-          lambda_client = boto3.client('lambda')
 
           def lambda_handler(event, context):
-              
-              logger.info(f'--- RUNNING ---: {event["ResourceProperties"]["DocumentName"]} --- RequestType: {event['RequestType']}')
-              logger.info('event: %s', event)
+              logger.debug('event: %s', event)
 
               if event['RequestType'] == 'Create':
                   run_ssm_document(event, context, 'create')
@@ -1585,7 +1561,7 @@ Resources:
 
           def run_ssm_document(event, context, operation):
               resource_properties = (event['ResourceProperties'])
-              logger.info('resource_properties: %s', resource_properties)
+              logger.debug('resource_properties: %s', resource_properties)
 
               instance_id = (event['ResourceProperties']['InstanceId'])
               document_name = (event['ResourceProperties']['DocumentName'])
@@ -1594,103 +1570,89 @@ Resources:
               if operation == 'delete':
                   document_name = resource_properties.get('DeleteDocumentName', document_name)
 
+              del resource_properties['ServiceToken']
+              if 'ServiceTimeout' in resource_properties:
+                  del resource_properties['ServiceTimeout']
+              del resource_properties['InstanceId']
+              del resource_properties['DocumentName']
+              del resource_properties['CloudWatchLogGroupName']
+              if 'PhysicalResourceId' in resource_properties:
+                  del resource_properties['PhysicalResourceId']
+
+              logger.debug(f'resource_properties filtered: {resource_properties}')
+
               parameters = {}
               for key, value in resource_properties.items():
-                  if key in ['NodeVersion', 'LinuxFlavor','VSCodePassword','DotNetVersion']:
+                  if key != 'DeleteDocumentName':
                       parameters[key] = [value]
 
-              logger.info(f'send_command parameters: {parameters}')
+              logger.debug(f'parameters: {parameters}')
 
-              try:
-                  response = ssm.send_command(
-                      InstanceIds=[instance_id],
-                      DocumentName=document_name,
-                      CloudWatchOutputConfig={'CloudWatchLogGroupName': cloudwatch_log_group_name, 'CloudWatchOutputEnabled': True},
-                      Parameters=parameters
-                  )
-                  logger.info(f'send_command response: {response}')
-                  command_id = response['Command']['CommandId']
+              retry = True
+              attempt_no = 0
+              time_remaining = context.get_remaining_time_in_millis()
+              logger.info(f'Running SSM Document {document_name} on EC2 instance {instance_id}. Logging to {cloudwatch_log_group_name}')
 
-                  # Wait for a few seconds before checking the command status
-                  delay_seconds = 5  # Adjust this value as needed
-                  logger.info(f'Waiting for {delay_seconds} seconds before checking the command status.')
-                  time.sleep(delay_seconds)
+              while retry:
+                  attempt_no += 1
+                  logger.info(f'Attempt: {attempt_no}. Time Remaining: {time_remaining/1000}s')
+                  try:
+                      response = ssm.send_command(
+                          InstanceIds=[instance_id],
+                          DocumentName=document_name,
+                          CloudWatchOutputConfig={'CloudWatchLogGroupName': cloudwatch_log_group_name, 'CloudWatchOutputEnabled': True},
+                          Parameters=parameters
+                      )
+                      logger.debug(f'response: {response}')
+                      command_id = response['Command']['CommandId']
 
-                  monitor_ssm_command(event, context, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters)
-
-              except Exception as e:
-                  logger.error(e)
-                  cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(e))
-
-          def monitor_ssm_command(event, context, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters):
-              
-              # Wait for a few seconds before checking the command status
-              delay_seconds = 10  # Adjust this value as needed
-                            
-              command_complete = False
-              while not command_complete:
-                  time_remaining = context.get_remaining_time_in_millis()
-                  if time_remaining < 60000:  # 60 seconds before timeout
-                      logger.info('Lambda function is about to time out. Invoking itself asynchronously.')
-                      invoke_self_asynchronously(event, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters)
-                      cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData={}, reason='Invoked self asynchronously')
-                      return
-
-                  result = ssm.get_command_invocation(
-                      CommandId=command_id,
-                      InstanceId=instance_id
-                  )
-                  if result['Status'] == 'Success':
-                      logger.info(f'SSM command {command_id} completed successfully.')
-                      cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData={'CommandId': command_id}, reason='SSM command completed successfully')
-                      command_complete = True
-                  elif result['Status'] == 'Failed':
-                      logger.error(f'SSM command {command_id} failed with reason: {result["StatusDetails"]}')
-                      cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=result['StatusDetails'])
-                      command_complete = True
-                  else:
-                      logger.info(f'SSM command {command_id} is still running. Sleeping for {delay_seconds} seconds.')
+                      # Wait for a few seconds before checking the command status
+                      delay_seconds = 5  # Adjust this value as needed
+                      logger.info(f'Waiting for {delay_seconds} seconds before checking the command status.')
                       time.sleep(delay_seconds)
 
-          def invoke_self_asynchronously(event, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters):
-              invoke_payload = {
-                  'CommandId': command_id,
-                  'InstanceId': instance_id,
-                  'DocumentName': document_name,
-                  'CloudWatchLogGroupName': cloudwatch_log_group_name,
-                  'Parameters': parameters,
-                  'RequestType': event['RequestType'],
-                  'ResourceProperties': event['ResourceProperties'],
-                  'StackId': event['StackId']
-              }
+                      # Wait for the SSM command to complete
+                      command_complete = False
+                      while not command_complete:
+                          time_remaining = context.get_remaining_time_in_millis()
+                          if time_remaining < SLEEP_MS:
+                              logger.info(f'Lambda function is about to time out. Timed out')
+                              cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason='Lambda function timed out')
+                              return
 
-              SQS_QUEUE_URL = (event['ResourceProperties']['MonitoringSQSQueue'])
-              LAMBDA_FUNCTION_ARN = (event['ResourceProperties']['LambdaArn'])
+                          result = ssm.get_command_invocation(
+                              CommandId=command_id,
+                              InstanceId=instance_id
+                          )
+                          if result['Status'] == 'Success':
+                              command_complete = True
+                          elif result['Status'] == 'Failed':
+                              logger.info(f'SSM command {command_id} failed with reason: {result["StatusDetails"]}')
+                              cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=result['StatusDetails'])
+                              return
+                          else:
+                              logger.info(f'SSM command {command_id} is still running. Sleeping for {delay_seconds} seconds.')
+                              time.sleep(delay_seconds)
 
-              logger.info(f'Sending SQS message: {json.dumps(invoke_payload)} on Queue : {SQS_QUEUE_URL}')
-              sqs_result = sqs.send_message(QueueUrl=SQS_QUEUE_URL, MessageBody=json.dumps(invoke_payload))
+                      responseData = {'CommandId': command_id}
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData, reason='OK')
+                      retry = False
 
-              if sqs_result['Status'] == 'Success':
-                  logger.info(f'SQS message sent successfully.')
-              else:
-                  logger.error(f'SQS message send failed')
-                  cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=result['StatusDetails'])
+                  except ssm.exceptions.InvalidInstanceId as e:
+                      time_remaining = context.get_remaining_time_in_millis()
+                      if time_remaining > SLEEP_MS:
+                          logger.info(f'Instance {instance_id} not ready: {e}. Sleeping: {SLEEP_MS/1000}s')
+                          time.sleep(SLEEP_MS/1000)
+                          retry = True
+                      else:
+                          logger.info(f'Instance {instance_id} not ready: {e}. Timed out')
+                          cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(e))
+                          retry = False
 
-
-              lamda_result = lambda_client.invoke(
-                  FunctionName=LAMBDA_FUNCTION_ARN,
-                  InvocationType='Event',
-                  Payload=json.dumps(invoke_payload)
-              )
-
-              if lamda_result['Status'] == 'Success':
-                  logger.info(f'Lambda {LAMBDA_FUNCTION_ARN} invoked successfully.')
-              else: 
-                  logger.info(f'Lambda {LAMBDA_FUNCTION_ARN} invoke failed.')
-                  cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=result['StatusDetails'])
-
-
-              
+                  except Exception as e:
+                      logger.error(e)
+                      cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(e))
+                      retry = False
 
   VSCodeSecret:
     Metadata:
@@ -2038,11 +2000,6 @@ Outputs:
   # EKSClusterVersion:
   #   Value: !Ref EKSClusterVersion
 ## VSCode Output
-  # SSMCommandMonitorQueueURL:
-  #   Description: The URL of the SSM Command Monitor Queue
-  #   Value: !Ref SSMCommandMonitorQueue
-  #   Export:
-  #     Name: SSMCommandMonitorQueueURL
   URL:
     Description: VSCode-Server URL
     Value: !Sub https://${CloudFrontDistribution.DomainName}/?folder=/home/${VSCodeUser}/${HomeFolder}

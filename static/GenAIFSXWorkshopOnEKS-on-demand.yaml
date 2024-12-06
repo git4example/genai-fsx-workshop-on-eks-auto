@@ -1,0 +1,656 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation template to create a Cloud9 environment setup with kubectl and Terraform.
+Metadata:
+  Author:
+    Description: Parikshit Patel <ppariksh@amazon.com>
+  License:
+    Description: 'Copyright 2023 Amazon.com, Inc. and its affiliates. All Rights Reserved.
+
+      Licensed under the Amazon Software License (the "License"). You may not use this file
+      except in compliance with the License. A copy of the License is located at
+
+      http://aws.amazon.com/asl/
+
+      or in the "license" file accompanying this file. This file is distributed on an "AS IS"
+      BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+      License for the specific language governing permissions and limitations under the License.'
+
+Parameters:
+  C9InstanceType:
+    Description: Example Cloud9 instance type
+    Type: String
+    Default: t3.large
+    AllowedValues:
+      - t3.large
+      - m5.large
+    ConstraintDescription: Must be a valid Cloud9 instance type
+  C9KubectlVersion:
+    Description: Cloud9 instance kubectl version
+    Type: String
+    Default: 1.30.2
+    ConstraintDescription: Must be a valid kubectl version
+  C9TerraformVersion:
+    Type: String
+    Default: 1.9.5
+    ConstraintDescription: Must be a valid terraform version
+  C9NodeViewerVersion:
+    Type: String
+    Default: v0.6.0
+    ConstraintDescription: Must be a valid eks node viewer version
+  C9ImageId:
+    Description: ImageId for the Cloud9 instance
+    Type: String
+    Default: amazonlinux-2023-x86_64
+  EKSClusterVersion:
+    Description: EKS Cluster Version
+    Type: String
+    Default: "1.30"
+    ConstraintDescription: Must be a valid eks version
+  EKSClusterName:
+    Description: EKS Cluster Name
+    Type: String
+    Default: eksworkshop
+    ConstraintDescription: Must be a valid eks version
+  # ArmInstanceType:
+  #   Description: Instance type for the Arm-64 instance
+  #   Type: String
+  #   Default: t4g.micro
+  # AMIArm:
+  #   Description: AMI ID for the Arm Architecture instance types
+  #   Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+  #   Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-kernel-5.10-hvm-arm64-gp2
+  # Used only by Workshop Studio, if you are self-deploying the stack leave the default value to NONE
+  ParticipantRoleArn:
+    Description: "ARN of the Team Role"
+    Default: NONE
+    Type: String
+  
+  ParticipantAssumedRoleArn:
+    Description: "ARN of Assumed Team Role"
+    Default: NONE
+    Type: String
+  
+  ParticipantRoleName:
+    Description: "Name of the Team Role"
+    Default: NONE
+    Type: String
+  
+  Assets:
+    Description: "S3 Bucket location for Assets"
+    # Default: "s3://ws-event-064e131b-cd4-ap-southeast-2/17e62541-8ca1-47a6-8b79-c48000056abe/assets/"
+    Type: String
+
+Conditions: 
+  NotEventEngine: !Equals [!Ref ParticipantRoleArn, NONE]
+
+Resources:
+
+################## PERMISSIONS AND ROLES #################
+  C9Role:
+    Type: AWS::IAM::Role
+    Properties:
+      Tags:
+        - Key: Environment
+          Value: AWS Example
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+            - ssm.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AdministratorAccess
+      Path: "/"
+
+  C9LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName:
+          Fn::Join:
+          - ''
+          - - C9LambdaPolicy-
+            - Ref: AWS::Region
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource: arn:aws:logs:*:*:*
+          - Effect: Allow
+            Action:
+            - cloudformation:DescribeStacks
+            - cloudformation:DescribeStackEvents
+            - cloudformation:DescribeStackResource
+            - cloudformation:DescribeStackResources
+            - ec2:DescribeInstances
+            - ec2:AssociateIamInstanceProfile
+            - ec2:ModifyInstanceAttribute
+            - ec2:ReplaceIamInstanceProfileAssociation
+            - ec2:RebootInstances
+            - ec2:DescribeIamInstanceProfileAssociations
+            - iam:ListInstanceProfiles
+            - iam:PassRole
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - s3:ListBucket
+              - s3:DeleteObject
+            Resource:
+              - !Sub arn:${AWS::Partition}:s3:::${C9OutputBucket}
+              - !Sub arn:${AWS::Partition}:s3:::${C9OutputBucket}/*
+
+
+################## LAMBDA BOOTSTRAP FUNCTION ################
+  C9BootstrapInstanceLambda:
+    Type: Custom::Cloud9BootstrapInstanceLambda
+    DependsOn:
+      - C9LambdaExecutionRole
+    Properties:
+      Tags:
+        - Key: Environment
+          Value: AWS Example
+      ServiceToken:
+        Fn::GetAtt:
+          - C9BootstrapInstanceLambdaFunction
+          - Arn
+      Region:
+        Ref: AWS::Region
+      StackName:
+        Ref: AWS::StackName
+      EnvironmentId:
+        Ref: C9Instance
+      LabIdeInstanceProfileName:
+        Ref: C9InstanceProfile
+      LabIdeInstanceProfileArn:
+        Fn::GetAtt:
+          - C9InstanceProfile
+          - Arn
+      LogBucket:
+        Ref: C9OutputBucket
+
+  C9BootstrapInstanceLambdaFunction:
+    Type: AWS::Lambda::Function
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W58
+            reason: Cloud9LambdaExecutionRole has the AWSLambdaBasicExecutionRole managed policy attached, allowing writing to CloudWatch logs
+          - id: W89
+            reason: Bootstrap function does not need the scaffolding of a VPC or provisioned concurrency
+          - id: W92
+            reason: Bootstrap function does not need provisioned concurrency   
+    Properties:
+      Tags:
+        - Key: Environment
+          Value: AWS Example
+      Handler: index.lambda_handler
+      Role:
+        Fn::GetAtt:
+          - C9LambdaExecutionRole
+          - Arn
+      Runtime: python3.9
+      MemorySize: 1024
+      Timeout: 400
+      Code:
+        ZipFile: |
+          from __future__ import print_function
+          import boto3
+          import json
+          import os
+          import time
+          import traceback
+          import cfnresponse
+          import logging
+
+          logger = logging.getLogger(__name__)
+          logger.setLevel(logging.INFO)
+
+          def restart_instance(instance_id):
+              logger.info('Restart EC2 instance to restart SSM Agent')
+              ec2 = boto3.client('ec2')
+
+              try:
+                  response = ec2.reboot_instances(
+                      InstanceIds=[
+                          instance_id
+                      ]
+                  )
+              except Exception as error:
+                  raise error
+
+              logger.info('response: %s', response)
+
+          def lambda_handler(event, context):
+              logger.info("event: {}".format(event))
+              logger.info("context: {}".format(context))
+              responseData = {}
+
+              if event["RequestType"] == "Create":
+                  try:
+                      # Open AWS clients
+                      ec2 = boto3.client("ec2")
+
+                      # Get the InstanceId of the Cloud9 IDE
+                      instance = ec2.describe_instances(
+                          Filters=[
+                              {
+                                  "Name": "tag:aws:cloud9:environment",
+                                  "Values": [event["ResourceProperties"]["EnvironmentId"]],
+                              }
+                          ]
+                      )["Reservations"][0]["Instances"][0]
+                      logger.info("instance: {}".format(instance))
+
+                      # Create the IamInstanceProfile request object
+                      iam_instance_profile = {
+                          "Arn": event["ResourceProperties"]["LabIdeInstanceProfileArn"],
+                          "Name": event["ResourceProperties"]["LabIdeInstanceProfileName"],
+                      }
+                      logger.info("iam_instance_profile: {}".format(iam_instance_profile))
+
+                      # Wait for Instance to become ready before adding Role
+                      instance_state = instance["State"]["Name"]
+                      logger.info("instance_state: {}".format(instance_state))
+                      while instance_state != "running":
+                          time.sleep(5)
+                          instance_state = ec2.describe_instances(
+                              InstanceIds=[instance["InstanceId"]]
+                          )
+                          logger.info("instance_state: {}".format(instance_state))
+
+                      response = ec2.describe_iam_instance_profile_associations(
+                          Filters=[
+                              {
+                                  "Name": "instance-id",
+                                  "Values": [instance["InstanceId"]],
+                              }
+                          ]
+                      )
+                      
+                      if len(response['IamInstanceProfileAssociations']) > 0:
+                          for association in response['IamInstanceProfileAssociations']:
+                              if association['State'] == 'associated':
+                                  print("{} is active with state {}".format(association['AssociationId'], association['State']))
+                                  logger.info(
+                                      "{} is active with state {}".format(association['AssociationId'], association['State'])
+                                  )
+                                  time.sleep(120)
+                                  ec2.replace_iam_instance_profile_association(
+                                    AssociationId=association['AssociationId'], 
+                                    IamInstanceProfile=iam_instance_profile
+                                  )
+                      else:
+                          time.sleep(120)
+                          # attach instance profile
+                          response = ec2.associate_iam_instance_profile(
+                              IamInstanceProfile=iam_instance_profile,
+                              InstanceId=instance["InstanceId"],
+                          )
+                          logger.info(
+                              "response - associate_iam_instance_profile: {}".format(response)
+                          )
+                          # r_ec2 = boto3.resource('ec2')
+
+                      restart_instance(instance['InstanceId'])
+
+                      responseData = {
+                          "Success": "Started bootstrapping for instance: "
+                          + instance["InstanceId"]
+                      }
+                      cfnresponse.send( 
+                          event,
+                          context,
+                          cfnresponse.SUCCESS,
+                          responseData,
+                          "CustomResourcePhysicalID",
+                      )
+
+                  except Exception as e:
+                      logger.error(e, exc_info=True)
+                      # responseData = {'Error': traceback.format_exc(e)}
+                      responseData = {
+                          "Error": "There was a problem associating IAM profile to the Cloud9 Instance"
+                      }
+                      cfnresponse.send(
+                          event,
+                          context,
+                          cfnresponse.FAILED,
+                          responseData,
+                          "CustomResourcePhysicalID",
+                      )
+              elif event["RequestType"] == "Update":
+                  responseData["Message"] = {"Success": "Update event"}
+                  cfnresponse.send(
+                      event,
+                      context,
+                      cfnresponse.SUCCESS,
+                      responseData,
+                      "CustomResourcePhysicalID",
+                  )
+              elif event["RequestType"] == "Delete":
+                  try:
+                      # Need to empty the S3 bucket before it is deleted
+                      AssetsBucketName = (event["ResourceProperties"]["LogBucket"])
+                      s3 = boto3.resource("s3")
+                      bucket = s3.Bucket(AssetsBucketName)
+                      bucket.objects.all().delete()
+                      responseData = {
+                          "Success": "S3 Log bucket emptied for S3 Log Bucket: " + AssetsBucketName
+                      }
+                      cfnresponse.send(
+                          event,
+                          context,
+                          cfnresponse.SUCCESS,
+                          responseData,
+                          "CustomResourcePhysicalID",
+                      )
+                  except Exception as e:
+                      logger.error(e, exc_info=True)
+                      # responseData = {'Error': traceback.format_exc(e)}
+                      responseData = {"Error": "There was a problem emptying the S3 bucket"}
+                      cfnresponse.send(
+                          event,
+                          context,
+                          cfnresponse.FAILED,
+                          responseData,
+                          "CustomResourcePhysicalID",
+                      )
+              else:
+                  responseData = {"Success": "Other event"}
+                  cfnresponse.send(
+                      event,
+                      context,
+                      cfnresponse.SUCCESS,
+                      responseData,
+                      "CustomResourcePhysicalID",
+                  )
+
+################## SSM BOOTSRAP HANDLER ###############
+  C9OutputBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+
+  C9SSMDocument:
+    Type: AWS::SSM::Document
+    Properties:
+      Tags:
+        - Key: Environment
+          Value: AWS Example
+      # Content: Yaml
+      DocumentType: Command
+      Content:
+        schemaVersion: '2.2'
+        description: Bootstrap Cloud9 Instance
+        mainSteps:
+        - action: aws:runShellScript
+          name: C9bootstrap
+          inputs:
+            timeoutSeconds: '7200'
+            runCommand:
+            - "#!/bin/bash"
+            - date
+            - . /home/ec2-user/.bashrc
+            - whoami
+            - |
+              export TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 3600")
+            - echo '=== Resizing the Instance volume'
+            - !Sub export AWS_REGION=${AWS::Region}
+            - !Sub export AWS_ACCOUNTID=${AWS::AccountId}
+            - !Sub export SIZE=100
+            - |
+              INSTANCEID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+              VOLUMEID=$(aws ec2 describe-instances \
+                --instance-id $INSTANCEID \
+                --query "Reservations[0].Instances[0].BlockDeviceMappings[0].Ebs.VolumeId" \
+                --output text --region $AWS_REGION)
+              aws ec2 modify-volume --volume-id $VOLUMEID --size $SIZE --volume-type gp3 --region $AWS_REGION
+              while [ \
+                "$(aws ec2 describe-volumes-modifications \
+                  --volume-id $VOLUMEID \
+                  --filters Name=modification-state,Values="optimizing","completed" \
+                  --query "length(VolumesModifications)"\
+                  --output text --region $AWS_REGION)" != "1" ]; do
+              sleep 1
+              done
+            - !Sub 'echo "export KUBECTL_VERSION=${C9KubectlVersion}"'
+            - sudo -H -u ec2-user aws sts get-caller-identity
+            - echo '=== INSTALL kubectl ==='
+            - !Sub 'export KUBECTL_VERSION=${C9KubectlVersion}'
+            - sudo curl --silent --location -o /usr/local/bin/kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/${KUBECTL_VERSION}/2024-07-12/bin/linux/amd64/kubectl
+            - sudo chmod +x /usr/local/bin/kubectl
+            - sudo /usr/local/bin/kubectl version --client
+            - echo '=== Install JQ and envsubst ==='
+            - sudo yum -y install jq gettext
+            - sudo -H -u ec2-user aws --version
+            - echo '=== setup AWS configs ==='            
+            - rm -vf /home/ec2-user/.aws/credentials
+            - export ACCOUNT_ID=$(aws sts get-caller-identity --output text --query Account)
+            - |
+              export AWS_REGION=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s 169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')
+            - echo "export ACCOUNT_ID=${ACCOUNT_ID}" >> /home/ec2-user/.bash_profile
+            - echo "export AWS_REGION=${AWS_REGION}" >> /home/ec2-user/.bash_profile
+            - sudo -H -u ec2-user aws configure set default.region ${AWS_REGION}
+            - sudo -H -u ec2-user aws configure get default.region
+            - sudo -H -u ec2-user aws sts get-caller-identity
+            - echo '=== Update Golang ==='
+            - sudo rm -r /usr/lib/golang/
+            - sudo wget https://storage.googleapis.com/golang/go1.20.6.linux-amd64.tar.gz
+            - sudo tar -C /usr/lib/ -xzf ./go1.20.6.linux-amd64.tar.gz
+            - sudo ln -s /usr/lib/go /usr/lib/golang
+            - echo '=== Install eks-node-viewer ==='
+            - !Sub 'export NODEVIEWER_VERSION=${C9NodeViewerVersion}'
+            - sudo -H -u ec2-user go install github.com/awslabs/eks-node-viewer/cmd/eks-node-viewer@${NODEVIEWER_VERSION}
+            # kubectl shortcuts
+            - sudo -H -u ec2-user echo "alias k=kubectl" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias ka=\"kubectl apply -f \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias ke=\"kubectl exec -it \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias kg=\"kubectl get \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias kd=\"kubectl describe \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias kdel=\"kubectl delete \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias ks=\"kubectl -n kube-system \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias ksg=\"kubectl -n kube-system get \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "alias ksd=\"kubectl -n kube-system describe \"" >> /home/ec2-user/.bashrc
+            - sudo -H -u ec2-user echo "export PATH=/home/ec2-user/go/bin:$PATH" >> /home/ec2-user/.bashrc
+            - . /home/ec2-user/.bashrc
+            - eks-node-viewer -v
+            - echo '=== Install Terraform ==='
+            - sudo yum install -y yum-utils
+            - sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+            - !Sub 'export TERRAFORM_VERSION=${C9TerraformVersion}'
+            - sudo yum -y install terraform-${TERRAFORM_VERSION} 
+            - terraform -v
+            - echo "=== Install eksctl ==="
+            - export ARCH=amd64
+            - export PLATFORM=$(uname -s)_$ARCH
+            - curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
+            - sudo tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp && rm -f eksctl_$PLATFORM.tar.gz
+            - sudo mv /tmp/eksctl /usr/local/bin
+            - echo "eksctl version"
+            - eksctl version
+            # Download static assests from asset bucket
+            # - !Sub sudo -H -u ec2-user aws s3 sync ${Assets} /home/ec2-user/environment/ --delete
+            - !Sub 'export ASSET_BUCKET=${Assets}'
+            - export ASSET_BUCKET=$(echo $ASSET_BUCKET | sed 's/\/assets\///')     
+            - export ASSET_BUCKET=$ASSET_BUCKET/static
+            - sudo -H -u ec2-user aws s3 sync $ASSET_BUCKET/terraform /home/ec2-user/environment/terraform --delete
+            - sudo -H -u ec2-user aws s3 sync $ASSET_BUCKET/eks /home/ec2-user/environment/eks --delete
+            # - sudo -H -u ec2-user aws s3 sync $ASSET_BUCKET/download /home/ec2-user/environment/download --delete
+            # - sudo -H -u ec2-user aws s3 sync $ASSET_BUCKET/scripts /home/ec2-user/environment/scripts --delete
+            # Replace region and eks version
+            - !Sub sed -i.bak -e 's/--AWS_REGION--/${AWS::Region}/' /home/ec2-user/environment/terraform/main.tf
+            - !Sub sed -i.bak -e 's/--EKS_VERSION--/${EKSClusterVersion}/' /home/ec2-user/environment/terraform/main.tf
+            - cd /home/ec2-user/environment/terraform/
+            - !Sub 'export CFN_RESPONSE_URL="${WaitForStackCreationHandle}"'
+            - sudo -H -u ec2-user /usr/bin/terraform init
+            # Create bucket before copy 
+            - sudo -H -u ec2-user echo "Creating FSx Lustre Bucket"
+            - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.fsx-lustre-bucket" -auto-approve 
+            # Copy model to fsx bucket
+            - export S3_BUCKET=$(aws s3 ls | grep fsx-lustre | grep -v fsx-lustre-2ndregion | awk '{print$3}')
+            - sudo -H -u ec2-user echo "Bucket name:" ${S3_BUCKET}
+             #Install c5cmd and push model to S3
+            - sudo -H -u ec2-user echo "Install s5cmd"            
+            - sudo -H -u ec2-user go install github.com/peak/s5cmd/v2@master
+            - sudo -H -u ec2-user aws configure set default.s3.max_concurrent_requests 20
+            - sudo -H -u ec2-user aws configure set default.s3.signature_version s3v4
+            # Copy model
+            - sudo -H -u ec2-user echo "Starting model upload @ `date`"
+            - !Sub sudo -H -u ec2-user /home/ec2-user/go/bin/s5cmd sync --delete "${Assets}Mistral-7B-Instruct-v0.2/*" "s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2/" 
+            # - !Sub sudo -H -u ec2-user aws s3 sync ${Assets}Mistral-7B-Instruct-v0.2 s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2 --delete
+            # Veryfiy object counts
+            - sudo -H -u ec2-user echo "Source bucket object counts:"
+            - !Sub sudo -H -u ec2-user aws s3 ls --summarize --human-readable --recursive ${Assets}Mistral-7B-Instruct-v0.2
+            - sudo -H -u ec2-user echo "Destination bucket object counts:"
+            - sudo -H -u ec2-user aws s3 ls --summarize --human-readable --recursive s3://$S3_BUCKET/Mistral-7B-Instruct-v0.2
+            - sudo -H -u ec2-user echo "End model upload @ `date`"
+            # Create EKS Cluster
+            - echo '=== Create EKS Cluster ==='
+            - !Sub echo 'EKS Cluster version - ${EKSClusterVersion} will be created in region ${AWS::Region}'
+            - sudo -H -u ec2-user /usr/bin/terraform apply -target="module.vpc" -auto-approve 
+            - sudo -H -u ec2-user /usr/bin/terraform apply -target="aws_fsx_lustre_file_system.fsx_lustre" -target="module.eks" -auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve
+            # add sleep to allow ALB controler to start else in some cases this is failing
+            - sudo -H -u ec2-user sleep 60
+            - sudo -H -u ec2-user /usr/bin/terraform apply --auto-approve            
+            # Delete FSx Lustre sysprep resources
+            - sudo -H -u ec2-user echo "Delete sysprep nodepool, sysprep job, pv and pvc"
+            # - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubernetes_job.sysprep --target kubectl_manifest.sysprep_pvc --target kubectl_manifest.sysprep_pv --target kubectl_manifest.nodepool_sysprep --target kubectl_manifest.ec2nodeclass_sysprep --target helm_release.fsx_csi_driver --auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubernetes_job.sysprep --auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubectl_manifest.sysprep_pvc --auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubectl_manifest.sysprep_pv --auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubectl_manifest.nodepool_sysprep --auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform destroy --target kubectl_manifest.ec2nodeclass_sysprep --auto-approve
+            - sudo -H -u ec2-user /usr/bin/terraform destroy --target helm_release.fsx_csi_driver --auto-approve
+            - |
+              curl -X PUT -H 'Content-Type:' --data-binary '{"Status" : "SUCCESS","Reason" : "Creation Complete", "UniqueId" : "1","Data" : "Creation complete"}' $CFN_RESPONSE_URL
+            - sudo shutdown --reboot 1
+
+  C9BootstrapAssociation:
+    Type: AWS::SSM::Association
+    DependsOn:
+    - C9OutputBucket
+    Properties:
+      Name: !Ref C9SSMDocument
+      OutputLocation:
+        S3Location:
+          OutputS3BucketName: !Ref C9OutputBucket
+          OutputS3KeyPrefix: bootstrapoutput
+      Targets:
+        - Key: tag:SSMBootstrap
+          Values:
+          - Active
+      WaitForSuccessTimeoutSeconds: 7200
+
+  WaitForStackCreationHandle:
+      Type: AWS::CloudFormation::WaitConditionHandle
+
+  WaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: [C9BootstrapInstanceLambda]
+    Properties:
+      Handle: !Ref WaitForStackCreationHandle
+      Timeout: 7200
+      Count: 1
+
+################## INSTANCE #####################
+  C9InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - Ref: C9Role
+      
+  C9Instance:
+    Description: "-"
+    DependsOn: C9BootstrapAssociation
+    Type: AWS::Cloud9::EnvironmentEC2
+    Properties:
+      Description: AWS Cloud9 instance for Examples
+      AutomaticStopTimeMinutes: 3600
+      ImageId: 
+        Ref: C9ImageId
+      InstanceType:
+        Ref: C9InstanceType
+      Name: 
+        Ref: AWS::StackName
+      OwnerArn: !If [NotEventEngine , !Ref AWS::NoValue , !Ref ParticipantAssumedRoleArn ]
+      Tags:
+        -
+          Key: SSMBootstrap
+          Value: Active
+        -
+          Key: Environment
+          Value:
+            Ref: AWS::StackName
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: "genai-fsx-workshop"
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+        - arn:aws:iam::aws:policy/EC2InstanceProfileForImageBuilderECRContainerBuilds
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    DependsOn:
+      - InstanceRole
+    Properties:
+      InstanceProfileName: "genai-fsx-workshop-profile"
+      Path: /
+      Roles:
+        - Ref: InstanceRole  
+
+Outputs:
+  Cloud9IDE:
+    Value:
+      Fn::Join:
+      - ''
+      - - https://
+        - Ref: AWS::Region
+        - ".console.aws.amazon.com/cloud9/ide/"
+        - Ref: C9Instance
+        - "?region="
+        - Ref: AWS::Region
+
+  EKSCluster:
+    Value:
+      Fn::Join:
+      - ''
+      - - https://
+        - Ref: AWS::Region
+        - ".console.aws.amazon.com/eks/home"
+        - "?region="
+        - Ref: AWS::Region
+        - "#/clusters/"
+        - Ref: EKSClusterName
+  EKSClusterVersion:
+    Value: !Ref EKSClusterVersion
