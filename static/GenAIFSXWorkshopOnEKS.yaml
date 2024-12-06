@@ -1510,15 +1510,25 @@ Resources:
             - terraform --version
             - !Sub cd /home/${VSCodeUser}/environment/terraform/
             - ls -la
+            - echo "Deleting kubernetes_job.sysprep"
             - terraform destroy --target kubernetes_job.sysprep --auto-approve
+            - echo "Deleting kubectl_manifest.sysprep_pvc"
             - terraform destroy --target kubectl_manifest.sysprep_pvc --auto-approve
+            - echo "Deleting kubectl_manifest.sysprep_pv"
             - terraform destroy --target kubectl_manifest.sysprep_pv --auto-approve
+            - echo "Deleting kubectl_manifest.nodepool_sysprep"
             - terraform destroy --target kubectl_manifest.nodepool_sysprep --auto-approve
+            - echo "Deleting kubectl_manifest.ec2nodeclass_sysprep"
             - terraform destroy --target kubectl_manifest.ec2nodeclass_sysprep --auto-approve
+            - echo "Deleting helm_release.fsx_csi_driver"
             - terraform destroy --target helm_release.fsx_csi_driver --auto-approve
+            - echo "Deleting module.fsx-lustre-bucket"
             - terraform destroy --target="module.fsx-lustre-bucket"  --auto-approve
+            - echo "Deleting aws_fsx_lustre_file_system.fsx_lustre"
             - terraform destroy --target="aws_fsx_lustre_file_system.fsx_lustre" -target="module.eks" --auto-approve
+            - echo "Deleting VPC"
             - terraform destroy --target="module.vpc" --auto-approve
+            - echo "Deleting all remaining"
             - terraform destroy --auto-approve     
 
   SSMCommandMonitorQueue:
