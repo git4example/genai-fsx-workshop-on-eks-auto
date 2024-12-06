@@ -1662,16 +1662,51 @@ Resources:
                       logger.info(f'SSM command {command_id} is still running. Sleeping for {delay_seconds} seconds.')
                       time.sleep(delay_seconds)
 
+            def invoke_self_asynchronously(event, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters):
+                invoke_payload = {
+                    'CommandId': command_id,
+                    'InstanceId': instance_id,
+                    'DocumentName': document_name,
+                    'CloudWatchLogGroupName': cloudwatch_log_group_name,
+                    'Parameters': parameters,
+                    'RequestType': event['RequestType'],
+                    'ResourceProperties': event['ResourceProperties'],
+                    'StackId': event['StackId']
+                }
+
+                SQS_QUEUE_URL = (event['ResourceProperties']['MonitoringSQSQueue'])
+                LAMBDA_FUNCTION_ARN = (event['ResourceProperties']['LambdaArn'])
+
+                logger.info(f'Sending SQS message: {json.dumps(invoke_payload)} on Queue: {SQS_QUEUE_URL}')
+                sqs_result = sqs.send_message(QueueUrl=SQS_QUEUE_URL, MessageBody=json.dumps(invoke_payload))
+
+                if 'ResponseMetadata' in sqs_result:
+                    logger.info(f'SQS message sent successfully.')
+                else:
+                    logger.error(f'SQS message send failed: {sqs_result}')
+                    cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(sqs_result))
+
+                lambda_result = lambda_client.invoke(
+                    FunctionName=LAMBDA_FUNCTION_ARN,
+                    InvocationType='Event',
+                    Payload=json.dumps(invoke_payload)
+                )
+
+                if 'ResponseMetadata' in lambda_result:
+                    logger.info(f'Lambda {LAMBDA_FUNCTION_ARN} invoked successfully.')
+                else:
+                    logger.error(f'Lambda {LAMBDA_FUNCTION_ARN} invoke failed: {lambda_result}')
+                    cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(lambda_result))
           def invoke_self_asynchronously(event, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters):
               invoke_payload = {
-                'CommandId': command_id,
-                'InstanceId': instance_id,
-                'DocumentName': document_name,
-                'CloudWatchLogGroupName': cloudwatch_log_group_name,
-                'Parameters': parameters,
-                'RequestType': event['RequestType'],
-                'ResourceProperties': event['ResourceProperties'],
-                'StackId': event['StackId']
+                  'CommandId': command_id,
+                  'InstanceId': instance_id,
+                  'DocumentName': document_name,
+                  'CloudWatchLogGroupName': cloudwatch_log_group_name,
+                  'Parameters': parameters,
+                  'RequestType': event['RequestType'],
+                  'ResourceProperties': event['ResourceProperties'],
+                  'StackId': event['StackId']
               }
 
               SQS_QUEUE_URL = (event['ResourceProperties']['MonitoringSQSQueue'])
@@ -1701,6 +1736,46 @@ Resources:
                   if 'LogResult' in lambda_result:
                       logger.error(f"Log result: {lambda_result['LogResult']}")
                   cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(lambda_result))
+
+          # def invoke_self_asynchronously(event, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters):
+          #     invoke_payload = {
+          #         'CommandId': command_id,
+          #         'InstanceId': instance_id,
+          #         'DocumentName': document_name,
+          #         'CloudWatchLogGroupName': cloudwatch_log_group_name,
+          #         'Parameters': parameters,
+          #         'RequestType': event['RequestType'],
+          #         'ResourceProperties': event['ResourceProperties'],
+          #         'StackId': event['StackId']
+          #     }
+
+          #     SQS_QUEUE_URL = (event['ResourceProperties']['MonitoringSQSQueue'])
+          #     LAMBDA_FUNCTION_ARN = (event['ResourceProperties']['LambdaArn'])
+
+          #     logger.info(f'Sending SQS message: {json.dumps(invoke_payload)} on Queue : {SQS_QUEUE_URL}')
+          #     sqs_result = sqs.send_message(QueueUrl=SQS_QUEUE_URL, MessageBody=json.dumps(invoke_payload))
+
+          #     if sqs_result['Status'] == 'Success':
+          #         logger.info(f'SQS message sent successfully.')
+          #     else:
+          #         logger.error(f'SQS message send failed')
+          #         cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=result['StatusDetails'])
+
+
+          #     lamda_result = lambda_client.invoke(
+          #         FunctionName=LAMBDA_FUNCTION_ARN,
+          #         InvocationType='Event',
+          #         Payload=json.dumps(invoke_payload)
+          #     )
+
+          #     if lamda_result['Status'] == 'Success':
+          #         logger.info(f'Lambda {LAMBDA_FUNCTION_ARN} invoked successfully.')
+          #     else: 
+          #         logger.info(f'Lambda {LAMBDA_FUNCTION_ARN} invoke failed.')
+          #         cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=result['StatusDetails'])
+
+
+              
 
   VSCodeSecret:
     Metadata:
