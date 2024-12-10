@@ -1501,7 +1501,7 @@ Resources:
       Handler: index.lambda_handler
       Runtime: python3.12
       MemorySize: 128
-      Timeout: 120
+      Timeout: 900
       Architectures:
         - arm64
       Role: !GetAtt RunSSMDocLambdaRole.Arn
