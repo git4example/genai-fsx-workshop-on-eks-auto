@@ -53,6 +53,7 @@ aws cloudformation validate-template --template-url https://databackupbucket.s3.
 
 ```bash
 aws cloudformation delete-stack --stack-name ${STACK_NAME} --region $REGION
+aws cloudformation wait stack-delete-complete --stack-name ${STACK_NAME} --region $REGION
 ```
 
 
