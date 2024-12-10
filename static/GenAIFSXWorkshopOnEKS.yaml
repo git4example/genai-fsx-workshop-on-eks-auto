@@ -1565,7 +1565,7 @@ Resources:
                   if key in ['NodeVersion', 'LinuxFlavor','VSCodePassword','DotNetVersion']:
                       parameters[key] = [value]
 
-              logger.info(f'send_command parameters: {parameters}')
+              logger.debug(f'send_command parameters: {parameters}')
 
               try:
                   response = ssm.send_command(
