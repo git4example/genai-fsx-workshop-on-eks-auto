@@ -1658,7 +1658,7 @@ Resources:
                       }
                   }
 
-                  logger.info(f'invoke_payload: {json.dumps(invoke_payload)}')
+                  logger.debug(f'invoke_payload: {json.dumps(invoke_payload)}')
 
                   sqs_payload = {
                       'CommandId': command_id,
