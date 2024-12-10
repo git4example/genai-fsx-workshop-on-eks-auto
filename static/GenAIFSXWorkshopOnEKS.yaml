@@ -1551,7 +1551,7 @@ Resources:
 
           def run_ssm_document(event, context, operation):
               resource_properties = (event['ResourceProperties'])
-              logger.info('resource_properties: %s', resource_properties)
+              logger.debug('resource_properties: %s', resource_properties)
 
               instance_id = (event['ResourceProperties']['InstanceId'])
               document_name = (event['ResourceProperties']['DocumentName'])
