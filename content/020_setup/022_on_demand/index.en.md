@@ -5,16 +5,36 @@ weight: 22
 ---
 ## Login into the AWS Console
 
+### Part 1 : here you need to have an ec2 jump box where you can run these commands with needful permissions in your account. We are unable to provide detil steps for this because each account may be differently managed. 
+
+1. Create EC2 instance where you should have awscli, docker and git commands available, if not then you can install them using 
+    - awscli : https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+    - Docker : 
+        - sudo yum update -y
+        - sudo yum install -y docker
+        - sudo service docker start
+        - sudo usermod -a -G docker ec2-user
+        - docker ps
+    - Git : 
+        - sudo yum update -y
+        - sudo yum install git -y
+        - git — version
+        - git config — global user.name “Your Name”
+        - git config — global user.email “your_email@example.com”
+
 1. Git Clone : 
 
 ```bash
 git clone https://github.com/git4example/genai-fsx-workshop-on-eks.git
 ```
 
-2. Move needful code to your asset bucket which we will be using for the provisioning resources using CloudFormation in next step. 
+2. Create s3 bucket for temporary hosting workshop asseets. These asset bucket should be in the same region as of your CFN stack. Note that some of the automation in CFN stack and terraform executing as part of setup will copy over these data to vscode instance and new s3 bucket required for the workshop. 
+    - export REGION=<current region>
+    - ASSET_BUCKET=<my-bucket-name>
+    - aws s3api create-bucket --bucket $ASSET_BUCKET --region $REGION
+3. Move needful code to your asset bucket which we will be using for the provisioning resources using CloudFormation in next step. 
 
 ```bash
-ASSET_BUCKET=genai-fsx-workshop
 cd genai-fsx-workshop-on-eks 
 aws s3 sync ${ASSET_BUCKET}/static/eks ./static/eks
 aws s3 sync ${ASSET_BUCKET}/static/terraform ./static/terraform
@@ -22,25 +42,83 @@ aws s3 sync ${ASSET_BUCKET}/static/download ./static/download
 aws s3 sync ${ASSET_BUCKET}/static/script ./static/script
 ```
 
-3. Log into your AWS CloudFormation console [link](https://console.aws.amazon.com/cloudformation)
-4. Go to your desired region 
-
-
-Step 4 : Download model 
+4. : Download model 
 ```bash
 docker run -v ./work-dir/:/work-dir/ --entrypoint huggingface-cli public.ecr.aws/parikshit/huggingface-cli:slim download "enghwa/neuron-mistral7bv0.2" --local-dir /work-dir/Mistral-7B-Instruct-v0.2
 ```
 
-Step 5 : Upload model to asset bucket. In following command replace credentials from the workshop studio to allow access to assets bucket.
+5. Upload model to asset bucket. In following command replace credentials to allow access to assets bucket.
 
 ```bash
-docker run -e AWS_DEFAULT_REGION="region" \
-  -e AWS_ACCESS_KEY_ID="<access-id>>" \
+export $(printf "AWS_ACCESS_KEY_ID=%s exp=%s AWS_SESSION_TOKEN=%s" $(aws sts assume-role --role-arn <role-arn> --role-session-name <session-name> --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" --output text))
+```
+
+```bash
+docker run -e AWS_DEFAULT_REGION=$REGION \
+  -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
   -e AWS_SECRET_ACCESS_KEY="<access-key>" \
-  -e AWS_SESSION_TOKEN="<session-token>" \
+  -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
   -v ./work-dir/:/work-dir/  public.ecr.aws/parikshit/s5cmd cp /work-dir/Mistral-7B-Instruct-v0.2/ s3://<your-bucket>/Mistral-7B-Instruct-v0.2/
 ```
 
+6. Now create stack 
+
+
+```bash
+aws s3 cp ./static/GenAIFSXWorkshopOnEKS.yaml s3://${ASSET_BUCKET}/GenAIFSXWorkshopOnEKS.yaml
+aws cloudformation validate-template --template-url https://${ASSET_BUCKET}.s3.amazonaws.com/GenAIFSXWorkshopOnEKS.yaml
+```
+
+
+```bash
+export REGION=us-east-2
+STACK_NAME=GenAIFSXWorkshopOnEKS
+VSINSTANCE_NAME=VSCodeServerForEKS
+ASSET_BUCKET_ZIPPATH=""
+ASSET_BUCKET=my-genai-fsx-workshop-bucket
+ASSET_BUCKET_PATH=genai-fsx-workshop-on-eks
+
+
+aws cloudformation create-stack \
+  --stack-name ${STACK_NAME} \
+  --template-url https://${ASSET_BUCKET}.s3.amazonaws.com/GenAIFSXWorkshopOnEKS.yaml \
+  --region $REGION \
+  --parameters \
+  ParameterKey=VSCodeUser,ParameterValue=participant \
+  ParameterKey=InstanceName,ParameterValue=${VSINSTANCE_NAME} \
+  ParameterKey=InstanceVolumeSize,ParameterValue=100 \
+  ParameterKey=InstanceType,ParameterValue=t4g.medium \
+  ParameterKey=InstanceOperatingSystem,ParameterValue=AmazonLinux-2023 \
+  ParameterKey=HomeFolder,ParameterValue=environment \
+  ParameterKey=DevServerPort,ParameterValue=8081 \
+  ParameterKey=AssetZipS3Path,ParameterValue=${ASSET_BUCKET_ZIPPATH} \
+  ParameterKey=BranchZipS3Path,ParameterValue="" \
+  ParameterKey=FolderZipS3Path,ParameterValue="" \
+  ParameterKey=C9KubectlVersion,ParameterValue=1.30.2 \
+  ParameterKey=C9NodeViewerVersion,ParameterValue=latest \
+  ParameterKey=EKSClusterName,ParameterValue=eksworkshop \
+  ParameterKey=EKSClusterVersion,ParameterValue=1.30 \
+  ParameterKey=ParticipantAssumedRoleArn,ParameterValue=NONE \
+  ParameterKey=ParticipantRoleArn,ParameterValue=NONE \
+  ParameterKey=ParticipantRoleArn,ParameterValue=NONE \
+  ParameterKey=Assets,ParameterValue=s3://${ASSET_BUCKET}/${ASSET_BUCKET_PATH}/assets/ \
+  --disable-rollback \
+  --capabilities CAPABILITY_NAMED_IAM
+```
+
+7. Clean up 
+This may take upto 30 mins. 
+Note:  sometimes it fails to clean up due to VPC Dependency violations error due to ELB/EC2/ENI/Security groups/NAT gateway ..etc are blocking VPC deletion. You may have to take manual action to clean up. 
+```bash
+aws cloudformation delete-stack --stack-name ${STACK_NAME} --region $REGION
+aws cloudformation wait stack-delete-complete --stack-name ${STACK_NAME} --region $REGION
+```
+
+
+
+
+3. Log into your AWS CloudFormation console [link](https://console.aws.amazon.com/cloudformation)
+4. Go to your desired region 
 
 5. Create stack and select file `GenAIFSXWorkshopOnEKS-on-demand.yaml` from <yourpath>/genai-fsx-workshop-on-eks/static/GenAIFSXWorkshopOnEKS-on-demand.yaml
 
@@ -51,10 +129,6 @@ aws s3 cp ./static/GenAIFSXWorkshopOnEKS.yaml s3://databackupbucket/GenAIFSXWork
 aws cloudformation validate-template --template-url https://databackupbucket.s3.amazonaws.com/GenAIFSXWorkshopOnEKS.yaml
 ```
 
-```bash
-aws cloudformation delete-stack --stack-name ${STACK_NAME} --region $REGION
-aws cloudformation wait stack-delete-complete --stack-name ${STACK_NAME} --region $REGION
-```
 
 
 ```bash
@@ -121,7 +195,11 @@ aws cloudformation create-stack \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
-
+This may take upto 30 mins : 
+```bash
+aws cloudformation delete-stack --stack-name ${STACK_NAME} --region $REGION
+aws cloudformation wait stack-delete-complete --stack-name ${STACK_NAME} --region $REGION
+```
 
 
 

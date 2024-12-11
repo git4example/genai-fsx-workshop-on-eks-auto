@@ -1501,7 +1501,7 @@ Resources:
       Handler: index.lambda_handler
       Runtime: python3.12
       MemorySize: 128
-      Timeout: 900 # Keep this timeout atleast 120 or more upto 900, else lambda invocation will keep blocking command status check.
+      Timeout: 900
       Architectures:
         - arm64
       Role: !GetAtt RunSSMDocLambdaRole.Arn
@@ -1521,103 +1521,53 @@ Resources:
           lambda_client = boto3.client('lambda')
 
           def lambda_handler(event, context):
-                  logger.info('event: %s', event)
-                  if 'InvokedByLambda' in event:
-                      # Invoked by the asynchronous self-invocation
+              if 'InvokedByLambda' in event:
+                  # Invoked by the asynchronous self-invocation
+                  logger.debug('event: %s', event)
+                  if event['RequestType'] == 'Create':
+                    logger.info(f'--- CONTINUE MONITORING ---: {event["ResourceProperties"]["DocumentName"]} --- RequestType: Continue Monitoring')
+
+                  if event['RequestType'] == 'Delete':
+                    logger.info(f'--- CONTINUE MONITORING ---: {event["ResourceProperties"]["DeleteDocumentName"]} --- RequestType: Continue Monitoring')
                   
-                      if event['RequestType'] == 'Create':
-                          logger.info(f'--- CONTINUE MONITORING ---: {event["ResourceProperties"]["DocumentName"]} --- RequestType: Continue Monitoring')
-
-                      if event['RequestType'] == 'Delete':
-                          logger.info(f'--- CONTINUE MONITORING ---: {event["ResourceProperties"]["DeleteDocumentName"]} --- RequestType: Continue Monitoring')
-                      
-                      return_status = process_sqs_messages(event, context)
-                      # Continue monitoring previous ssm command execution via preious lambda invocation based on SQS message
-
-                      match return_status:
-                          case "success":
-                              logger.info('InvokedByLambda: Successfully Processed SQS messages')
-                          case "fail":
-                              logger.info('InvokedByLambda: Fail Processing SQS messages')
-                          case "error":
-                              logger.info('InvokedByLambda: Error Processing SQS messages')
-                          case "skip":
-                              logger.info('InvokedByLambda: No action to take')
-                          case "continue":
-                              logger.info('InvokedByLambda: Continue: invoked lambda will monitor - do not signal back to stack')
-                          case _:                
-                              logger.info("InvokedByLambda: Unknown status")
-                              
+                  # Continue monitoring previous ssm command execution via preious lambda invocation based on SQS message
+                  process_sqs_messages(event, context)
+              else:
+                  # Invoked by CloudFormation
+                  logger.debug('event: %s', event)
+                  logger.info(f'--- RUNNING ---: {event["ResourceProperties"]["DocumentName"]} --- RequestType: {event["RequestType"]}')
+                                    
+                  if event['RequestType'] == 'Create':
+                      run_ssm_document(event, context, 'create')
+                  elif event['RequestType'] == 'Delete':
+                      delete_document_name = event['ResourceProperties'].get('DeleteDocumentName')
+                      if delete_document_name:
+                          run_ssm_document(event, context, 'delete')
+                      else:
+                          logger.info('DeleteDocumentName not provided, skipping SSM document execution.')
+                          cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData={}, reason='No action to take')
                   else:
-                      # Invoked by CloudFormation        
-                      logger.info(f'--- RUNNING ---: {event["ResourceProperties"]["DocumentName"]} --- RequestType: {event["RequestType"]}')
-
-                      return_status = run_ssm_document(event, context,  event['RequestType'])
-
-                      match return_status:
-                          case "success":
-                              logger.info('InvokedByCFN: Successfully executed command')
-                          case "fail":
-                              logger.info('InvokedByCFN: Fail executing command')
-                          case "error":
-                              logger.info('InvokedByCFN: Error Executing Command')
-                          case "skip":
-                              logger.info('InvokedByCFN: No action to take')
-                          case "continue":
-                              logger.info('InvokedByCFN: Continue: invoked lambda will monitor - do not signal back to stack')
-                          case _:                
-                              logger.info("InvokedByCFN: Unknown status")
-                  
-                  # Finally Send CFN Custom resource Signal 
-                  match return_status:
-                      case "success":
-                          logger.info("Successfully Executed Command")
-                          cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData={}, reason='Successfully Executed Command')
-                      case "fail":
-                          logger.info("Fail Executing Command")
-                          cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason='Fail Executing Command')
-                      case "error":
-                          logger.info("Error Executing Command")
-                          cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason='Error Executing Command')
-                      case "skip":
-                              logger.info('No action to take')
-                              cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData={}, reason='No action to take')
-                      case "continue":
-                          logger.info("Continue: invoked lambda will monitor - do not signal back to stack")
-
-                      case _:                
-                          logger.info("Unknown status")
-                          cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason='Unknown status')
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData={}, reason='No action to take')
 
           def run_ssm_document(event, context, operation):
-              # Executes only on CloudFormation Create or Delete
+              resource_properties = (event['ResourceProperties'])
+              logger.debug('resource_properties: %s', resource_properties)
+
+              instance_id = (event['ResourceProperties']['InstanceId'])
+              document_name = (event['ResourceProperties']['DocumentName'])
+              cloudwatch_log_group_name = (event['ResourceProperties']['CloudWatchLogGroupName'])
+
+              if operation == 'delete':
+                  document_name = resource_properties.get('DeleteDocumentName', document_name)
+
+              parameters = {}
+              for key, value in resource_properties.items():
+                  if key in ['NodeVersion', 'LinuxFlavor','VSCodePassword','DotNetVersion']:
+                      parameters[key] = [value]
+
+              logger.debug(f'send_command parameters: {parameters}')
+
               try:
-                  instance_id = (event['ResourceProperties']['InstanceId'])    
-                  cloudwatch_log_group_name = (event['ResourceProperties']['CloudWatchLogGroupName'])
-                  resource_properties = (event['ResourceProperties'])
-                  logger.debug('resource_properties: %s', resource_properties)
-
-                  match operation:
-                      case "Create":
-                          document_name = (event['ResourceProperties']['DocumentName'])   
-                      case "Delete":
-                          document_name = event['ResourceProperties'].get('DeleteDocumentName')
-                          
-                          if document_name == "":
-                              logger.info('DeleteDocumentName not provided, skipping SSM document execution.')
-                              return "skip" 
-                      case _:                
-                          logger.info("run_ssm_document: CFN is being updated - no action")
-                          return "skip"
-                  
-                  parameters = {}
-                  for key, value in resource_properties.items():
-                      if key in ['NodeVersion', 'LinuxFlavor','VSCodePassword','DotNetVersion']:
-                          parameters[key] = [value]
-
-                  logger.debug(f'send_command parameters: {parameters}')
-
-              
                   response = ssm.send_command(
                       InstanceIds=[instance_id],
                       DocumentName=document_name,
@@ -1632,85 +1582,13 @@ Resources:
                   logger.info(f'Waiting for {delay_seconds} seconds before checking the command status.')
                   time.sleep(delay_seconds)
 
-                  monitor_status = monitor_ssm_command(event, context, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters)
+                  monitor_ssm_command(event, context, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters)
 
-                  match monitor_status:
-                      case "success":
-                          logger.info('run_ssm_document: Successfully executed command')
-                      case "fail":
-                          logger.info('run_ssm_document: Fail executing command')
-                      case "error":
-                          logger.info('run_ssm_document: Error Executing Command')
-                      case "skip":
-                          logger.info('run_ssm_document: No action to take')
-                      case "continue":
-                          logger.info('run_ssm_document: Continue: invoked lambda will monitor')
-                      case _:                
-                          logger.info("run_ssm_document: Unknown status")
-                  
-                  return monitor_status
-              
               except Exception as e:
                   logger.error(e)
-                  logger.info('run_ssm_document: Error')
-                  return "error"
-
-
-          def process_sqs_messages(event, context):
-              # Invoked only from lambda async invocation
-              try:
-                  SQS_QUEUE_URL = (event['ResourceProperties']['MonitoringSQSQueue'])
-                  logger.info(f'Fetching SQS message')
-                  response = sqs.receive_message(
-                      QueueUrl=SQS_QUEUE_URL,
-                      MaxNumberOfMessages=1,  # Adjust this value based on your needs
-                      WaitTimeSeconds=20  # Adjust this value based on your needs
-                  )
-
-                  queue_messages = response.get('Messages', [])
-
-                  if not queue_messages:
-                      logger.info('No SQS messages found in the queue.')
-                      return "success"
-              except Exception as e:
-                  logger.error(f'Error retriving SQS message: {e}')
-                  return "error"
-
-              for message in queue_messages:
-                  try:
-                      message_body = json.loads(message['Body'])
-                      command_id = message_body['CommandId']
-                      instance_id = message_body['InstanceId']
-                      document_name = message_body['DocumentName']
-                      cloudwatch_log_group_name = message_body['CloudWatchLogGroupName']
-                      parameters = message_body['Parameters']
-
-                      logger.info(f'Processing SQS message for command ID: {command_id}')
-                      monitor_status = monitor_ssm_command(event, context, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters)
-
-                      match monitor_status:
-                          case "success":
-                              logger.info('process_sqs_messages: Successfully executed command')
-                              sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message['ReceiptHandle'])
-                          case "fail":
-                              logger.info(f'process_sqs_messages: Fail Processing SQS message for command ID: {command_id}')
-                          case "error":
-                              logger.info(f'process_sqs_messages: Error Processing SQS message for command ID: {command_id}')
-                          case "skip":
-                              logger.info('process_sqs_messages: No action to take')
-                          case "continue":
-                              logger.info('process_sqs_messages: Continue: invoked lambda will monitor')
-                          case _:                
-                              logger.info("process_sqs_messages: Unknown status")
-                  
-                      return monitor_status
-
-                  except Exception as e:
-                      logger.error(f'Error processing SQS message: {e}')
-                      return "error"
+                  cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(e))
 
           def monitor_ssm_command(event, context, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters):
-              # Called from run_ssm_document (first invocation create/delete) and process_sqs_messages (continue from lambda async invocations)
               try:
                   # Wait for a few seconds before checking the command status
                   delay_seconds = 10  # Adjust this value as needed
@@ -1720,54 +1598,40 @@ Resources:
 
                   while not command_complete :
                       time_remaining = context.get_remaining_time_in_millis()
-                      # If lambda about to timeout then async self invoke 
                       if time_remaining < 60000:  # 60 seconds before timeout
                           logger.info('Lambda function is about to time out. Invoking itself asynchronously.')
+                          if invoke_self_asynchronously(event, context, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters):
+                              logger.info("Lambda function invokation successful")
+                              return False
+                          else:
+                              logger.error("Lambda function invokation failed")
+                              cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason="Lambda function invokation failed")
+                              return False
 
-                          lambda_status=invoke_self_asynchronously(event, context, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters)
-
-                          match lambda_status:
-                              case "success":
-                                  # Only here we need to use continue without sending CFN signal when lambda was invoked
-                                  logger.info('monitor_ssm_command: Successfully invoked lambda') 
-                                  return "continue"       
-                              case "fail":
-                                  logger.info('monitor_ssm_command: Fail to invoke lambda')  
-                                  return lambda_status               
-                              case "error":
-                                  logger.info('monitor_ssm_command: Error invoking lambda')     
-                                  return lambda_status                   
-                              case "skip":
-                                  logger.info('monitor_ssm_command: No action to take')   
-                                  return lambda_status                     
-                              case "continue":
-                                  logger.info('monitor_ssm_command: Continue: invoked lambda will monitor ')
-                                  return lambda_status
-                              case _:                
-                                  logger.info("monitor_ssm_command: Unknown status")
-                      
-                      # Monitor command status 
                       result = ssm.get_command_invocation(
                           CommandId=command_id,
                           InstanceId=instance_id
                       )
                       if result['Status'] == 'Success':
                           logger.info(f'SSM command {command_id} completed successfully.')
+                          cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData={'CommandId': command_id}, reason='SSM command completed successfully')
                           command_complete = True
-                          return "success"
+                          return True
                       elif result['Status'] == 'Failed':
                           logger.error(f'SSM command {command_id} failed with reason: {result["StatusDetails"]}')
+                          cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=result['StatusDetails'])
                           command_complete = True
-                          return "fail"
+                          return True
                       else:
                           logger.info(f'SSM command {command_id} is still running. Sleeping for {delay_seconds} seconds. Retry count :{retries}')
                           time.sleep(delay_seconds)
                           retries += 1
 
               except Exception as e:
-                  logger.error("There was error monitoring command")
+                  logger.error("there was error calling invoke lambda function")
                   logger.error(e)
-                  return "error"
+                  cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(e))
+                  return False
 
           def invoke_self_asynchronously(event, context, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters):                      
               try:
@@ -1806,7 +1670,7 @@ Resources:
                       'ResourceProperties': event['ResourceProperties'],
                       'StackId': event['StackId']
                   }
-
+          
                   SQS_QUEUE_URL = (event['ResourceProperties']['MonitoringSQSQueue'])
                   LAMBDA_FUNCTION_ARN = (event['ResourceProperties']['LambdaArn'])
                   
@@ -1817,7 +1681,8 @@ Resources:
                       logger.info(f'SQS message sent successfully. Message ID: {sqs_result["MessageId"]}')
                   else:
                       logger.error(f'SQS message send failed: {sqs_result}')
-                      return "error"
+                      cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(sqs_result))
+                      return False
 
                   lambda_result = lambda_client.invoke(
                       FunctionName=LAMBDA_FUNCTION_ARN,
@@ -1827,18 +1692,66 @@ Resources:
 
                   if lambda_result['StatusCode'] in [200, 202, 204]:
                       logger.info(f'Lambda {LAMBDA_FUNCTION_ARN} invoked successfully.')
-                      return "success"
+                      return True
                   else:
                       logger.error(f"Lambda {LAMBDA_FUNCTION_ARN} invoke failed with status code {lambda_result['StatusCode']}")
                       if 'FunctionError' in lambda_result:
                           logger.error(f"Function error: {lambda_result['FunctionError']}")
                       if 'LogResult' in lambda_result:
                           logger.error(f"Log result: {lambda_result['LogResult']}")
-                      return "fail"
+                      cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(lambda_result))
+                      return False
               except Exception as e:
                   logger.error("There was an error inside invoke lambda function")
                   logger.error(e)
-                  return "error"
+                  cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(e))
+                  return False
+
+
+          def process_sqs_messages(event, context):
+              
+              SQS_QUEUE_URL = (event['ResourceProperties']['MonitoringSQSQueue'])
+              try:
+                  queue_messages = receive_sqs_messages(event, context)
+
+                  if not queue_messages:
+                      logger.info('No SQS messages found in the queue.')
+                      return False
+              except Exception as e:
+                    logger.error(f'Error retriving SQS message: {e}')
+                    cfnresponse.send(event, context, cfnresponse.FAILED, responseData={}, reason=str(e))
+                    return False
+
+              for message in queue_messages:
+                  try:
+                      message_body = json.loads(message['Body'])
+                      command_id = message_body['CommandId']
+                      instance_id = message_body['InstanceId']
+                      document_name = message_body['DocumentName']
+                      cloudwatch_log_group_name = message_body['CloudWatchLogGroupName']
+                      parameters = message_body['Parameters']
+
+                      logger.info(f'Processing SQS message for command ID: {command_id}')
+                      monitor_ssm_command(event, context, command_id, instance_id, document_name, cloudwatch_log_group_name, parameters)
+
+                      sqs.delete_message(QueueUrl=SQS_QUEUE_URL, ReceiptHandle=message['ReceiptHandle'])
+                  except Exception as e:
+                      logger.error(f'Error processing SQS message: {e}')
+                      return False
+
+          def receive_sqs_messages(event, context):
+              try:
+                  SQS_QUEUE_URL = (event['ResourceProperties']['MonitoringSQSQueue'])
+                  logger.info(f'Fetching SQS message')
+                  response = sqs.receive_message(
+                      QueueUrl=SQS_QUEUE_URL,
+                      MaxNumberOfMessages=1,  # Adjust this value based on your needs
+                      WaitTimeSeconds=20  # Adjust this value based on your needs
+                  )
+                  return response.get('Messages', [])
+              except Exception as e:
+                  logger.error(f'Error receiving SQS messages: {e}')
+                  return []
 
   VSCodeSecret:
     Metadata:
