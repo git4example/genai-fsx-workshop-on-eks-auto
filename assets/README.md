@@ -1,5 +1,34 @@
 
 DO NOT FULL SYNC THIS ASSET BUCKET. WE HAVE "Mistral-7B-Instruct-v0.2" FOLDER ON THIS BUCKET "s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20" WITH 27 GB OF MODEL WHICH WILL BE DELETED IF YOU FULL SYNC
+### Stack Creation and deletion times sample  
+
+Create workflow times from local account : 
+```bash
+RunVSCodeSSMDoc                         - 2024-12-11 14:36:33 UTC+1100 - 2024-12-11 14:41:04 UTC+1100 = ~ 5m
+RunInfraDeleteSSMDocument               - 2024-12-11 14:36:33 UTC+1100 - 2024-12-11 14:36:41 UTC+1100 = ~ 10s
+RunInfraSSMDocument                     - 2024-12-11 14:41:04 UTC+1100 - 2024-12-11 14:41:35 UTC+1100 = ~ 30s
+RunDownloadWorkshopAssetsSSMDocument    - 2024-12-11 14:41:36 UTC+1100 - 2024-12-11 14:43:25 UTC+1100 = ~ 2m
+RunSetupFSxLBucketSSMDocument           - 2024-12-11 14:43:26 UTC+1100 - 2024-12-11 14:44:31 UTC+1100 = ~ 1m
+RunCreateVPCEKSClusterFSxLSSMDocument   - 2024-12-11 14:44:31 UTC+1100 - 2024-12-11 14:58:17 UTC+1100 = ~ 14m
+RunCreateEKSClusterResourceSSMDocument  - 2024-12-11 14:58:18 UTC+1100 - 2024-12-11 15:12:04 UTC+1100 = ~ 14m
+
+Stack : GenAIFSXWorkshopOnEKS           - 2024-12-11 14:33:32 UTC+1100 - 2024-12-11 15:12:05 UTC+1100 = ~ 39m
+```
+
+Delete workflow times from local account : (NLB and SG had to be deleted manually)
+```bash
+RunCreateEKSClusterResourceSSMDocument  - ~ 3s
+RunInfraDeleteSSMDocument               - ~ 26m
+RunCreateVPCEKSClusterFSxLSSMDocument   - ~ 1s
+RunSetupFSxLBucketSSMDocument           - ~ 1s
+RunDownloadWorkshopAssetsSSMDocument    - ~ 1s
+RunInfraSSMDocument                     - ~ 1s
+RunVSCodeSSMDoc                         - ~ 1s
+
+Stack : GenAIFSXWorkshopOnEKS           - 2024-12-11 15:40:28 UTC+1100 - 22024-12-11 16:08:06 UTC+1100 = ~ 28m
+```
+
+
 
 ### Download install/clean up script on cloud9 in Participant/event account
 ```bash
