@@ -1,5 +1,61 @@
 
 DO NOT FULL SYNC THIS ASSET BUCKET. WE HAVE "Mistral-7B-Instruct-v0.2" FOLDER ON THIS BUCKET "s3://ws-assets-us-east-1/fb548aaa-7ac1-4162-9a4c-98efc6943f20" WITH 27 GB OF MODEL WHICH WILL BE DELETED IF YOU FULL SYNC
+
+
+## Create stack 
+
+```bash
+aws s3 cp ./static/GenAIFSXWorkshopOnEKS.yaml s3://databackupbucket/GenAIFSXWorkshopOnEKS.yaml
+aws cloudformation validate-template --template-url https://databackupbucket.s3.amazonaws.com/GenAIFSXWorkshopOnEKS.yaml
+```
+
+
+
+```bash
+export REGION=us-east-2
+STACK_NAME=GenAIFSXWorkshopOnEKS
+VSINSTANCE_NAME=VSCodeServerForEKS
+ASSET_BUCKET_ZIPPATH=""
+ASSET_BUCKET=my-genai-fsx-workshop-bucket
+ASSET_BUCKET_PATH=genai-fsx-workshop-on-eks
+
+
+aws cloudformation create-stack \
+  --stack-name ${STACK_NAME} \
+  --template-url https://databackupbucket.s3.amazonaws.com/GenAIFSXWorkshopOnEKS.yaml \
+  --region $REGION \
+  --parameters \
+  ParameterKey=VSCodeUser,ParameterValue=participant \
+  ParameterKey=InstanceName,ParameterValue=${VSINSTANCE_NAME} \
+  ParameterKey=InstanceVolumeSize,ParameterValue=100 \
+  ParameterKey=InstanceType,ParameterValue=t4g.medium \
+  ParameterKey=InstanceOperatingSystem,ParameterValue=AmazonLinux-2023 \
+  ParameterKey=HomeFolder,ParameterValue=environment \
+  ParameterKey=DevServerPort,ParameterValue=8081 \
+  ParameterKey=AssetZipS3Path,ParameterValue=${ASSET_BUCKET_ZIPPATH} \
+  ParameterKey=BranchZipS3Path,ParameterValue="" \
+  ParameterKey=FolderZipS3Path,ParameterValue="" \
+  ParameterKey=C9KubectlVersion,ParameterValue=1.30.2 \
+  ParameterKey=C9NodeViewerVersion,ParameterValue=latest \
+  ParameterKey=EKSClusterName,ParameterValue=eksworkshop \
+  ParameterKey=EKSClusterVersion,ParameterValue=1.30 \
+  ParameterKey=ParticipantAssumedRoleArn,ParameterValue=NONE \
+  ParameterKey=ParticipantRoleArn,ParameterValue=NONE \
+  ParameterKey=ParticipantRoleArn,ParameterValue=NONE \
+  ParameterKey=Assets,ParameterValue=s3://${ASSET_BUCKET}/${ASSET_BUCKET_PATH}/assets/ \
+  --disable-rollback \
+  --capabilities CAPABILITY_NAMED_IAM
+```
+
+## Clean up :
+This may take upto 30 mins : 
+```bash
+aws cloudformation delete-stack --stack-name ${STACK_NAME} --region $REGION
+aws cloudformation wait stack-delete-complete --stack-name ${STACK_NAME} --region $REGION
+```
+
+
+
 ### Stack Creation and deletion times sample  
 
 Create workflow times from local account : 
@@ -27,6 +83,16 @@ RunVSCodeSSMDoc                         - ~ 1s
 
 Stack : GenAIFSXWorkshopOnEKS           - 2024-12-11 15:40:28 UTC+1100 - 22024-12-11 16:08:06 UTC+1100 = ~ 28m
 ```
+
+Workshop Studio : 
+Create workflow times from local account : 
+```
+2024-12-11 16:35:14 UTC+1100
+2024-12-11 17:19:33 UTC+1100
+stack provisioning : ~ 34m
+Account provisioning took total : 00:44:49m
+```
+
 
 
 

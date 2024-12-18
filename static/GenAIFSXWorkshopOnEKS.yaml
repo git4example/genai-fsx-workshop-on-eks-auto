@@ -2161,25 +2161,6 @@ Resources:
       Url: !Sub https://${CloudFrontDistribution.DomainName}/healthz
 
 Outputs:
-  # EKSCluster:
-  #   Value:
-  #     Fn::Join:
-  #     - ''
-  #     - - https://
-  #       - Ref: AWS::Region
-  #       - ".console.aws.amazon.com/eks/home"
-  #       - "?region="
-  #       - Ref: AWS::Region
-  #       - "#/clusters/"
-  #       - Ref: EKSClusterName
-  # EKSClusterVersion:
-  #   Value: !Ref EKSClusterVersion
-## VSCode Output
-  # SSMCommandMonitorQueueURL:
-  #   Description: The URL of the SSM Command Monitor Queue
-  #   Value: !Ref SSMCommandMonitorQueue
-  #   Export:
-  #     Name: SSMCommandMonitorQueueURL
   URL:
     Description: VSCode-Server URL
     Value: !Sub https://${CloudFrontDistribution.DomainName}/?folder=/home/${VSCodeUser}/${HomeFolder}
