@@ -1,7 +1,5 @@
 #! /bin/bash
 
-aws cloud9 update-environment --environment-id ${C9_PID} --managed-credentials-action DISABLE
-rm -vf ${HOME}/.aws/credentials
 aws sts get-caller-identity
 TOKEN=`curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
 export AWS_REGION=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)

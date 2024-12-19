@@ -321,6 +321,9 @@ module "data_addons" {
   # Neuron and NVIDIA Device Plugin Add-on
   #---------------------------------------------------------------
   enable_aws_neuron_device_plugin  = true
+  aws_neuron_device_plugin_helm_config = {
+    create_namespace=true
+  }
   enable_nvidia_device_plugin = true
   nvidia_device_plugin_helm_config = {
     version =  "v0.16.1"
@@ -655,154 +658,157 @@ resource "helm_release" "fsx_csi_driver" {
 ################################################################################
 # Kubernetes Manifests
 ################################################################################
-resource "kubectl_manifest" "kube_ops_view_deployment" {
-  yaml_body = <<-YAML
-    apiVersion: apps/v1
-    kind: Deployment
-    metadata:
-      labels:
-        application: kube-ops-view
-        component: frontend
-      name: kube-ops-view
-    spec:
-      replicas: 1
-      selector:
-        matchLabels:
-          application: kube-ops-view
-          component: frontend
-      template:
-        metadata:
-          labels:
-            application: kube-ops-view
-            component: frontend
-        spec:
-          nodeSelector:
-            intent: control-apps
-          serviceAccountName: kube-ops-view
-          containers:
-          - name: service
-            image: hjacobs/kube-ops-view:20.4.0
-            ports:
-            - containerPort: 8080
-              protocol: TCP
-            readinessProbe:
-              httpGet:
-                path: /health
-                port: 8080
-              initialDelaySeconds: 5
-              timeoutSeconds: 1
-            livenessProbe:
-              httpGet:
-                path: /health
-                port: 8080
-              initialDelaySeconds: 30
-              periodSeconds: 30
-              timeoutSeconds: 10
-              failureThreshold: 5
-            resources:
-              limits:
-                cpu: 400m
-                memory: 400Mi
-              requests:
-                cpu: 400m
-                memory: 400Mi
-            securityContext:
-              readOnlyRootFilesystem: true
-              runAsNonRoot: true
-              runAsUser: 1000
-  YAML
 
-  depends_on = [
-    module.eks
-  ]
-}
+# ---- kubeops ----
+# resource "kubectl_manifest" "kube_ops_view_deployment" {
+#   yaml_body = <<-YAML
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     metadata:
+#       labels:
+#         application: kube-ops-view
+#         component: frontend
+#       name: kube-ops-view
+#     spec:
+#       replicas: 1
+#       selector:
+#         matchLabels:
+#           application: kube-ops-view
+#           component: frontend
+#       template:
+#         metadata:
+#           labels:
+#             application: kube-ops-view
+#             component: frontend
+#         spec:
+#           nodeSelector:
+#             intent: control-apps
+#           serviceAccountName: kube-ops-view
+#           containers:
+#           - name: service
+#             image: hjacobs/kube-ops-view:20.4.0
+#             ports:
+#             - containerPort: 8080
+#               protocol: TCP
+#             readinessProbe:
+#               httpGet:
+#                 path: /health
+#                 port: 8080
+#               initialDelaySeconds: 5
+#               timeoutSeconds: 1
+#             livenessProbe:
+#               httpGet:
+#                 path: /health
+#                 port: 8080
+#               initialDelaySeconds: 30
+#               periodSeconds: 30
+#               timeoutSeconds: 10
+#               failureThreshold: 5
+#             resources:
+#               limits:
+#                 cpu: 400m
+#                 memory: 400Mi
+#               requests:
+#                 cpu: 400m
+#                 memory: 400Mi
+#             securityContext:
+#               readOnlyRootFilesystem: true
+#               runAsNonRoot: true
+#               runAsUser: 1000
+#   YAML
 
-resource "kubectl_manifest" "kube_ops_view_sa" {
-  yaml_body = <<-YAML
-    apiVersion: v1
-    kind: ServiceAccount
-    metadata:
-      name: kube-ops-view
-  YAML
+#   depends_on = [
+#     module.eks
+#   ]
+# }
 
-  depends_on = [
-    module.eks
-  ]
-}
+# resource "kubectl_manifest" "kube_ops_view_sa" {
+#   yaml_body = <<-YAML
+#     apiVersion: v1
+#     kind: ServiceAccount
+#     metadata:
+#       name: kube-ops-view
+#   YAML
 
-resource "kubectl_manifest" "kube_ops_view_clusterrole" {
-  yaml_body = <<-YAML
-    kind: ClusterRole
-    apiVersion: rbac.authorization.k8s.io/v1
-    metadata:
-      name: kube-ops-view
-    rules:
-    - apiGroups: [""]
-      resources: ["nodes", "pods"]
-      verbs:
-        - list
-    - apiGroups: ["metrics.k8s.io"]
-      resources: ["nodes", "pods"]
-      verbs:
-        - get
-        - list
-  YAML
+#   depends_on = [
+#     module.eks
+#   ]
+# }
 
-  depends_on = [
-    module.eks
-  ]
-}
+# resource "kubectl_manifest" "kube_ops_view_clusterrole" {
+#   yaml_body = <<-YAML
+#     kind: ClusterRole
+#     apiVersion: rbac.authorization.k8s.io/v1
+#     metadata:
+#       name: kube-ops-view
+#     rules:
+#     - apiGroups: [""]
+#       resources: ["nodes", "pods"]
+#       verbs:
+#         - list
+#     - apiGroups: ["metrics.k8s.io"]
+#       resources: ["nodes", "pods"]
+#       verbs:
+#         - get
+#         - list
+#   YAML
 
-resource "kubectl_manifest" "kube_ops_view_clusterrole_binding" {
-  yaml_body = <<-YAML
-    kind: ClusterRoleBinding
-    apiVersion: rbac.authorization.k8s.io/v1
-    metadata:
-      name: kube-ops-view
-    roleRef:
-      apiGroup: rbac.authorization.k8s.io
-      kind: ClusterRole
-      name: kube-ops-view
-    subjects:
-    - kind: ServiceAccount
-      name: kube-ops-view
-      namespace: default
-  YAML
+#   depends_on = [
+#     module.eks
+#   ]
+# }
 
-  depends_on = [
-    module.eks
-  ]
-}
+# resource "kubectl_manifest" "kube_ops_view_clusterrole_binding" {
+#   yaml_body = <<-YAML
+#     kind: ClusterRoleBinding
+#     apiVersion: rbac.authorization.k8s.io/v1
+#     metadata:
+#       name: kube-ops-view
+#     roleRef:
+#       apiGroup: rbac.authorization.k8s.io
+#       kind: ClusterRole
+#       name: kube-ops-view
+#     subjects:
+#     - kind: ServiceAccount
+#       name: kube-ops-view
+#       namespace: default
+#   YAML
 
-resource "kubectl_manifest" "kube_ops_view_service" {
-  yaml_body = <<-YAML
-    apiVersion: v1
-    kind: Service
-    metadata:
-      labels:
-        application: kube-ops-view
-        component: frontend
-      name: kube-ops-view
-      annotations:
-        service.beta.kubernetes.io/aws-load-balancer-type: external
-        service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
-        service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-    spec:
-      selector:
-        application: kube-ops-view
-        component: frontend
-      type: LoadBalancer
-      ports:
-      - port: 80
-        protocol: TCP
-        targetPort: 8080
-  YAML
+#   depends_on = [
+#     module.eks
+#   ]
+# }
 
-  depends_on = [
-    module.eks
-  ]
-}
+# resource "kubectl_manifest" "kube_ops_view_service" {
+#   yaml_body = <<-YAML
+#     apiVersion: v1
+#     kind: Service
+#     metadata:
+#       labels:
+#         application: kube-ops-view
+#         component: frontend
+#       name: kube-ops-view
+#       annotations:
+#         service.beta.kubernetes.io/aws-load-balancer-type: external
+#         service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+#         service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+#     spec:
+#       selector:
+#         application: kube-ops-view
+#         component: frontend
+#       type: LoadBalancer
+#       ports:
+#       - port: 80
+#         protocol: TCP
+#         targetPort: 8080
+#   YAML
 
+#   depends_on = [
+#     module.eks
+#   ]
+# }
+
+# ---- karpenter nodepool ----
 resource "kubectl_manifest" "nodepool_default" {
   yaml_body = <<-YAML
     apiVersion: karpenter.sh/v1
@@ -845,6 +851,7 @@ resource "kubectl_manifest" "nodepool_default" {
   ]
 }
 
+# ---- karpenter ec2nodeclass ----
 resource "kubectl_manifest" "ec2nodeclass_default" {
   yaml_body = <<-YAML
     apiVersion: karpenter.k8s.aws/v1
@@ -876,7 +883,7 @@ resource "kubectl_manifest" "ec2nodeclass_default" {
 # loading FSx Lustre filesystem with Mistral model
 ################################################################################
 
-
+# ---- karpenter nodepool for sysprep ----
 resource "kubectl_manifest" "nodepool_sysprep" {
   yaml_body = <<-YAML
     apiVersion: karpenter.sh/v1
@@ -920,6 +927,7 @@ resource "kubectl_manifest" "nodepool_sysprep" {
   ]
 }
 
+# ---- karpenter nodeclass for sysprep ----
 resource "kubectl_manifest" "ec2nodeclass_sysprep" {
   yaml_body = <<-YAML
     apiVersion: karpenter.k8s.aws/v1
@@ -953,6 +961,7 @@ resource "kubectl_manifest" "ec2nodeclass_sysprep" {
 }
 
 
+# ---- k8s job for sysprep ----
 resource "kubernetes_job" "sysprep" {
   metadata {
     name = "sysprep"
@@ -1009,6 +1018,7 @@ resource "kubernetes_job" "sysprep" {
   ]
 }
 
+# ---- PVC for sysprep ----
 resource "kubectl_manifest" "sysprep_pvc" {
   yaml_body = <<-YAML
     apiVersion: v1
@@ -1030,7 +1040,7 @@ resource "kubectl_manifest" "sysprep_pvc" {
   ]
 }
 
-
+# ---- PV for sysprep ----
 resource "kubectl_manifest" "sysprep_pv" {
   yaml_body = <<-YAML
     apiVersion: v1

@@ -15,7 +15,6 @@ awsAccountConfig:
     - fsx.amazonaws.com
     - ssm.amazonaws.com
     - autoscaling.amazonaws.com
-    - cloud9.amazonaws.com
   ec2KeyPair: true
   regionConfiguration:
     minAccessibleRegions: 2

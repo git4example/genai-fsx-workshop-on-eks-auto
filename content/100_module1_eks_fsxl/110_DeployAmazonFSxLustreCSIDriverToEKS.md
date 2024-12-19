@@ -5,15 +5,6 @@ weight : 110
 
 In this section, the following steps will guide you to set the required environmental variables, create a service account, and  create/attach an IAM policy for use with your EKS cluster, allowing you to then deploy the CSI driver for FSx for Lustre.
 
-
-##### Step 1: Prerequisite - setting the account-id environmental variable
-
-Copy and paste the following lines in your Cloud9 terminal.
-
-:::code[]{language=bash showLineNumbers=true showCopyAction=true}
-ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
-:::
-
 :::alert{header="Note" type="info"}
 For an AWS Sponsored Workshop, the Security Group and S3 Bucket have been pre-created for you.
 :::
@@ -21,7 +12,7 @@ For an AWS Sponsored Workshop, the Security Group and S3 Bucket have been pre-cr
 For more information about what rule is required for the FSx Lustre Security Group, please refer to the [official document](https://docs.aws.amazon.com/fsx/latest/LustreGuide/limit-access-security-groups.html).
 
 
-##### Step 2: Create an IAM policy, and service account, that allows the CSI driver to make the AWS API calls on your behalf
+##### Step 1: Create an IAM policy, and service account, that allows the CSI driver to make the AWS API calls on your behalf
 
 Copy and run the below command to create the fsx-csi-driver.json file.
 
@@ -69,7 +60,7 @@ cat << EOF >  fsx-csi-driver.json
 EOF
 :::
 
-##### Step 3: Create the IAM policy
+##### Step 2: Create the IAM policy
 
 Copy and run the following command to create an IAM polcy.
 
@@ -79,7 +70,7 @@ aws iam create-policy \
         --policy-document file://fsx-csi-driver.json
 :::
 
-##### Step 4: Create a Kubernetes service account for the driver and attach the policy to the service account
+##### Step 3: Create a Kubernetes service account for the driver and attach the policy to the service account
 
 Copy and run the below command to create the service account and attach the IAM policy created in Step 3.
 
@@ -89,7 +80,7 @@ eksctl create iamserviceaccount \
     --name fsx-csi-controller-sa \
     --namespace kube-system \
     --cluster $CLUSTER_NAME \
-    --attach-policy-arn arn:aws:iam::$ACCOUNT_ID:policy/Amazon_FSx_Lustre_CSI_Driver \
+    --attach-policy-arn arn:aws:iam::$AWS_ACCOUNTID:policy/Amazon_FSx_Lustre_CSI_Driver \
     --approve
 :::
 
@@ -104,7 +95,7 @@ eksctl create iamserviceaccount \
 
 ::::
 
-##### Step 5: Save the Role ARN that was created into a variable
+##### Step 4: Save the Role ARN that was created into a variable
 
 Copy and run the below command to save the role ARN.
 
@@ -115,7 +106,7 @@ Copy the output of this ROLE_ARN into your notepad file
 echo $ROLE_ARN
 :::
 
-##### Step 6: Deploy the CSI driver of FSx for Lustre
+##### Step 5: Deploy the CSI driver of FSx for Lustre
 
 Copy and the run the following command to deploy the CSI driver for FSx for Lustre
 
@@ -138,7 +129,7 @@ fsx-csi-node-jxscw                  3/3     Running   0          45s
 
 ::::
 
-##### Step 7: Annotate service account that we created in step 4 above
+##### Step 6: Annotate service account that we created in step 4 above
 
 Copy and the run the following commands to add IAM role to the service account
 

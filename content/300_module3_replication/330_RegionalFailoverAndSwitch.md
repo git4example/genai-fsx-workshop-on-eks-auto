@@ -7,7 +7,7 @@ In this section, you will log-in to a Pod, inspect the Mistral-7B  model data, a
 
 ##### Step 1: Login to Pod, inspect model data, and create a test file to replicate
 
-Navigate to back to your Cloud9 terminal and change to your working directory.
+Navigate to back to your VSCode IDE terminal and change to your working directory.
 
 ::code[cd /home/ec2-user/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 

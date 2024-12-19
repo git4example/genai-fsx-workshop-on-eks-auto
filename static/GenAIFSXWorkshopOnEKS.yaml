@@ -61,13 +61,13 @@ Metadata:
 
 Parameters:
 
-  C9KubectlVersion:
-    Description: Cloud9 instance kubectl version
+  KubectlVersion:
+    Description: VSCode IDE instance kubectl version
     Type: String
     Default: 1.30.2
     ConstraintDescription: Must be a valid kubectl version
 
-  C9NodeViewerVersion:
+  NodeViewerVersion:
     Type: String
     Default: latest #v0.6.0
     ConstraintDescription: Must be a valid eks node viewer version
@@ -1048,10 +1048,10 @@ Resources:
               runCommand:
               - "#!/bin/bash"
               - date
-              - !Sub 'echo "export KUBECTL_VERSION=${C9KubectlVersion}"'
+              - !Sub 'echo "export KUBECTL_VERSION=${KubectlVersion}"'
               - aws sts get-caller-identity
               - echo '=== INSTALL kubectl ==='
-              - !Sub 'export KUBECTL_VERSION=${C9KubectlVersion}'
+              - !Sub 'export KUBECTL_VERSION=${KubectlVersion}'
               - curl --silent --location -o /usr/local/bin/kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/${KUBECTL_VERSION}/2024-07-12/bin/linux/arm64/kubectl
               - chmod +x /usr/local/bin/kubectl
               - /usr/local/bin/kubectl version --client
@@ -1091,8 +1091,8 @@ Resources:
           #     runCommand:
           #     - "#!/bin/bash"            
           #     - echo '=== Install eks-node-viewer ==='
-          #     - !Sub 'echo "NODEVIEWER_VERSION=" ${C9NodeViewerVersion}'
-          #     - !Sub 'export NODEVIEWER_VERSION=${C9NodeViewerVersion}'
+          #     - !Sub 'echo "NODEVIEWER_VERSION=" ${NodeViewerVersion}'
+          #     - !Sub 'export NODEVIEWER_VERSION=${NodeViewerVersion}'
           #     - go install github.com/awslabs/eks-node-viewer/cmd/eks-node-viewer@${NODEVIEWER_VERSION}
           #     - eks-node-viewer -v
           - action: aws:runShellScript
@@ -1405,7 +1405,7 @@ Resources:
       DocumentType: Command
       Content:
         schemaVersion: '2.2'
-        description: Bootstrap Cloud9 Instance
+        description: Bootstrap VSCode IDE Instance
         parameters:
           LinuxFlavor:
             type: String
@@ -1454,7 +1454,7 @@ Resources:
       DocumentType: Command
       Content:
         schemaVersion: '2.2'
-        description: Bootstrap Cloud9 Instance
+        description: Bootstrap VSCode IDE Instance
         parameters:
           LinuxFlavor:
             type: String

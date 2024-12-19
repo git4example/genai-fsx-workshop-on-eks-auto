@@ -8,7 +8,7 @@ In the previous module you learnt how you can use Static Provisioning with an ex
 
 #### Step 1: Define the StorageClass
 
-In the following steps you will be using the below environment variables,so lets set them. Copy and paste the below into your Cloud9 Terminal.
+In the following steps you will be using the below environment variables,so lets set them. Copy and paste the below into your VSCode IDE Terminal.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 VPC_ID=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION --query "cluster.resourcesVpcConfig.vpcId" --output text)

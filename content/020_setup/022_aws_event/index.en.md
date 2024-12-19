@@ -65,7 +65,7 @@ You will be using the Open source VSCode IDE terminal to copy and paste commands
 
 ### Validate the IAM role {#validate_iam}
 
-- Use the [GetCallerIdentity](https://docs.aws.amazon.com/cli/latest/reference/sts/get-caller-identity.html) CLI command to validate that the Cloud9 IDE is using the correct IAM role.
+- Use the [GetCallerIdentity](https://docs.aws.amazon.com/cli/latest/reference/sts/get-caller-identity.html) CLI command to validate that the VSCode IDE is using the correct IAM role.
 
 ```bash
 aws sts get-caller-identity
@@ -88,7 +88,7 @@ echo $CLUSTER_NAME
 :::
 
 ## Update the kube-config file:
-Before you can start running all the Kubernetes commands included in this workshop, you need to update the kube-config file with the proper credentials to access the cluster. To do so, in your Cloud9 terminal run the below command:
+Before you can start running all the Kubernetes commands included in this workshop, you need to update the kube-config file with the proper credentials to access the cluster. To do so, in your VSCode terminal run the below command:
 
 ::code[aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION]{language=bash showLineNumbers=false showCopyAction=true}
 

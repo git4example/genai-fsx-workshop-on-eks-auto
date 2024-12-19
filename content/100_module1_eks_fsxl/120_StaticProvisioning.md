@@ -20,7 +20,7 @@ Run the below command to change to the correct working directly, so you can run 
 cd /home/ec2-user/environment/eks/FSxL
 :::
 
-Run the below commands in your Cloud9 terminal to populated the variables with the FSx Lustre Instance details (that we have pre-created for you)
+Run the below commands in your VSCode IDE terminal to populated the variables with the FSx Lustre Instance details (that we have pre-created for you)
 
 ```bash
 FSXL_VOLUME_ID=$(aws fsx describe-file-systems --query 'FileSystems[].FileSystemId' --output text)

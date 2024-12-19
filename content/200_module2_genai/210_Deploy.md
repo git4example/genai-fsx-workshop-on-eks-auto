@@ -10,7 +10,7 @@ Karpenter configuration comes in the form of a NodePool Custom Resource (CR). Th
 
 1. A Karpenter NodePool sets constraints on the nodes that can be created by Karpenter and the pods that can run on those nodes. AWS-specific settings can be set up with NodeClasses. Multiple NodePools may point to the same EC2NodeClass.
 
-2. Change to the working directory in your Cloud9 terminal
+2. Change to the working directory in your VSCode IDE terminal
 
 ```bash
 cd /home/ec2-user/environment/eks/genai
