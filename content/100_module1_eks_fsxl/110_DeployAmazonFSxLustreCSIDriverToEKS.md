@@ -88,10 +88,10 @@ eksctl create iamserviceaccount \
 
 ::::expand{header="You’ll see several lines of output as the service account is created. The last line of output is similar to the following example line, click to expand"}
 
-```
+:::code[]{language=bash showLineNumbers=false showCopyAction=false}
 (...)
 2023-09-29 07:40:56 [ℹ]  created serviceaccount "kube-system/fsx-csi-controller-sa"
-```
+:::
 
 ::::
 
@@ -102,9 +102,8 @@ Copy and run the below command to save the role ARN.
 ::code[export ROLE_ARN=$(aws cloudformation describe-stacks --stack-name "eksctl-${CLUSTER_NAME}-addon-iamserviceaccount-kube-system-fsx-csi-controller-sa" --query "Stacks[0].Outputs[0].OutputValue"  --region $AWS_REGION --output text)]{language=bash showLineNumbers=false showCopyAction=true}
 
 Copy the output of this ROLE_ARN into your notepad file
-:::code[]{language=bash showLineNumbers=true showCopyAction=true}
-echo $ROLE_ARN
-:::
+::code[echo $ROLE_ARN]{language=bash showLineNumbers=false showCopyAction=true}
+
 
 ##### Step 5: Deploy the CSI driver of FSx for Lustre
 
@@ -120,12 +119,12 @@ Verify that the CSI driver has been installed successfully with the following co
 
 ::::expand{header="You should see the results as below, click to expand"}
 
-```
+:::code[]{language=bash showLineNumbers=false showCopyAction=false}
 fsx-csi-controller-c7d98b5b-j47bq   4/4     Running   0          45s
 fsx-csi-controller-c7d98b5b-kdgs9   4/4     Running   0          45s
 fsx-csi-node-ckqjr                  3/3     Running   0          45s
 fsx-csi-node-jxscw                  3/3     Running   0          45s
-```
+:::
 
 ::::
 
@@ -133,9 +132,8 @@ fsx-csi-node-jxscw                  3/3     Running   0          45s
 
 Copy and the run the following commands to add IAM role to the service account
 
-:::code[]{language=bash showLineNumbers=true showCopyAction=true}
-kubectl annotate serviceaccount -n kube-system fsx-csi-controller-sa \
- eks.amazonaws.com/role-arn=$ROLE_ARN --overwrite=true
+:::code[]{language=bash showLineNumbers=false showCopyAction=true}
+kubectl annotate serviceaccount -n kube-system fsx-csi-controller-sa eks.amazonaws.com/role-arn=$ROLE_ARN --overwrite=true
 :::
 
 You can verify this was successful by checking the service account contents

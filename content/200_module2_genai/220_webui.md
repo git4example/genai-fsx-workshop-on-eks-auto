@@ -9,17 +9,16 @@ You can connect to the Inference Service using the **"Open WebUI"** application,
 
 1. Run the below command to deploy the Open WebUI application Pod, so we can interact with the vLLM Mistral model, that we deployed in previous step. This will also deploy an application load balancer, which will serve the chatbot Open WebUI Chat user interface.
 
-```bash
-kubectl apply -f open-webui.yaml
-````
+::code[kubectl apply -f open-webui.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 2. Let's obtain the URL ADDRESS of the Open WebUI Chat interface by running the below command
 
-```bash
-kubectl get ing
-```
+::code[kubectl get ing]{language=bash showLineNumbers=false showCopyAction=true}
 
 3. Now wait 1-2 minutes (for the OpenWeb UI to deploy) then copy above the URL ADDRESS, and paste it into a web browser. This will open a Open WebUI chat client interface.
+:::alert{header="Note" type="info"}
+Please make sure your URL is "**http:**//< URL ADDRESS >". Some browser like chrome try **"https"** by default if you dont provide protocol. (note extra **"s"** in protocol)
+:::
 
 ![WebUI_url](/static/images/WebUI_url.png)
 

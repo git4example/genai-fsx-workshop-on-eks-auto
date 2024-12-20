@@ -26,7 +26,7 @@ echo $SECURITY_GROUP_ID
 
 2. Change to the right working directory so the lab commands work.
 
-::code[cd /home/ec2-user/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
+::code[cd /home/participant/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 Below is the output of the `fsxL-storage-class.yaml` file. This file has the StorageClass definition that we will use with the CSI driver to dynamically provision a Persistent Volume Claim (PVC) from FSx for Lustre. Take a moment inspect the parameters shown, which you can configure an FSx for Lustre Instance that will be provisioned by the CSI driver.

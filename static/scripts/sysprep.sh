@@ -7,7 +7,7 @@ export CLUSTER_NAME=eksworkshop
 echo $AWS_REGION
 echo $CLUSTER_NAME
 aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION
-cd /home/ec2-user/environment/eks/FSxL
+cd /home/participant/environment/eks/FSxL
 ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
 cat << EOF >  fsx-csi-driver.json
 {
@@ -90,8 +90,8 @@ kubectl get pv,pvc
 ASSET_BUCKET=$(aws cloudformation describe-stacks --stack-name genaifsxworkshoponeks --query "Stacks[0].Parameters[?ParameterKey=='Assets'].ParameterValue" --output text)
 ASSET_BUCKET=$(echo $ASSET_BUCKET | sed 's/\/assets\///')    
 ASSET_BUCKET=$ASSET_BUCKET/static
-aws s3 sync $ASSET_BUCKET/download/ /home/ec2-user/environment/download    
-cd /home/ec2-user/environment/download
+aws s3 sync $ASSET_BUCKET/download/ /home/participant/environment/download    
+cd /home/participant/environment/download
 
 sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" sysprep-new.yaml
 sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" sysprep-new.yaml

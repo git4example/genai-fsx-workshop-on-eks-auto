@@ -1186,6 +1186,7 @@ Resources:
               - export ASSET_BUCKET=$ASSET_BUCKET/static
               - !Sub aws s3 sync $ASSET_BUCKET/terraform /home/${VSCodeUser}/environment/terraform --delete
               - !Sub aws s3 sync $ASSET_BUCKET/eks /home/${VSCodeUser}/environment/eks --delete
+              - !Sub chown -R ${VSCodeUser}:${VSCodeUser} /home/${VSCodeUser}/environment
               # - !Sub aws s3 sync $ASSET_BUCKET/download /home/${VSCodeUser}/environment/download --delete
               # - !Sub aws s3 sync $ASSET_BUCKET/scripts /home/${VSCodeUser}/environment/scripts --delete
               # Replace region and eks version

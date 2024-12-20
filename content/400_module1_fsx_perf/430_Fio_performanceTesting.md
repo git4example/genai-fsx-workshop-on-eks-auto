@@ -13,7 +13,7 @@ Let's start...
 Go to the correct working directory.
 
 
-::code[cd /home/ec2-user/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
+::code[cd /home/participant/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 Run the below command and write down the output shown for availability zone of the FSx for Lustre Instance (i.e. "us-west-2c")

@@ -32,12 +32,6 @@ weight: 22
 
     ![Workshop Studio](/static/images/account_access.png)
 
-
-
-
-<!-- ::alert[Ask Your Operator for the region to use.] -->
-
-
 ::alert[Before getting started, from the top right corner of your AWS Console session, select the **AWS Region** that has been stated for your workshop session.]{header="Important" type="warning"}
 
 
@@ -56,7 +50,7 @@ You will be using the Open source VSCode IDE terminal to copy and paste commands
 
 ![CFN-Output](/static/images/cfn-output.png)
 
-5. Select your VS Code UI theam 
+5. Select your VSCode UI theam 
 
 ![Select Theme](/static/images/select-theme.png)
 
@@ -67,9 +61,9 @@ You will be using the Open source VSCode IDE terminal to copy and paste commands
 
 - Use the [GetCallerIdentity](https://docs.aws.amazon.com/cli/latest/reference/sts/get-caller-identity.html) CLI command to validate that the VSCode IDE is using the correct IAM role.
 
-```bash
+:::code[]{language=bash showLineNumbers=false showCopyAction=true}
 aws sts get-caller-identity
-```
+:::
 
 - The output assumed-role name should look like the following:
 
@@ -104,4 +98,4 @@ You should see two nodes provisioned (which are the on-demand nodes used by the 
 ![get-nodes](/static/images/get-nodes.png)
 
 
-You now have a VS Code IDE Server environment set-up ready to use your Amazon EKS Cluster! You may now proceed with the next step.
+You now have a VSCode IDE Server environment set-up ready to use your Amazon EKS Cluster! You may now proceed with the next step.

@@ -9,7 +9,7 @@ In this section, you will log-in to a Pod, inspect the Mistral-7B  model data, a
 
 Navigate to back to your VSCode IDE terminal and change to your working directory.
 
-::code[cd /home/ec2-user/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
+::code[cd /home/participant/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
 Now lets log into the vLLM Pod, first we need to get the pod name by running the following command
 

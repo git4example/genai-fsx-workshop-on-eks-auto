@@ -16,21 +16,17 @@ In this lab section, we will use the **Static Provisioning** method for Persiste
 
 Run the below command to change to the correct working directly, so you can run the commands for this exercise
 
-:::code[]{language=bash showLineNumbers=true showCopyAction=true}
-cd /home/ec2-user/environment/eks/FSxL
-:::
+::code[cd /home/participant/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
 Run the below commands in your VSCode IDE terminal to populated the variables with the FSx Lustre Instance details (that we have pre-created for you)
 
-```bash
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
 FSXL_VOLUME_ID=$(aws fsx describe-file-systems --query 'FileSystems[].FileSystemId' --output text)
 DNS_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].DNSName' --output text)
 MOUNT_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].LustreConfiguration.MountName' --output text)
-```
+:::
 
 ##### Step 1: Create the Persistent Volume
-
-
 
 Lets take a look at a Persistent Volume (PV) yaml file definition (fsxL-persistent-volume.yaml) that has our placeholder variables in it. We have already created a 1200GiB FSx for Lustre instance for this workshop.So in this Persistent Volume definition, you will simply configure that 1200GiB FSx for Lustre instance to register as an EKS Cluster resource using a name of 'fsx-pv'. 
 
@@ -60,31 +56,24 @@ spec:
 Run the below commands to replace `FSXL_VOLUME_ID`,  `DNS_NAME`,  and `MOUNT_NAME` with the actual values of the FSx Lustre instance.
 
 
-```bash
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
 sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" fsxL-persistent-volume.yaml
 sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" fsxL-persistent-volume.yaml
 sed -i'' -e "s/MOUNT_NAME/$MOUNT_NAME/g" fsxL-persistent-volume.yaml
-```
+:::
 
 You can view the output of the Persistent Volume definition with our FSx instance details. You can see we have created a 1200GiB FSx for Lustre file system for you, and its Instance ID and DNS Name.
 
-```bash
-cat fsxL-persistent-volume.yaml
-```
+::code[cat fsxL-persistent-volume.yaml]{language=bash showLineNumbers=false showCopyAction=true}
+
 
 Let's deploy this PersistentVolume (PV) to the EKS cluster:
 
-```bash
-kubectl apply -f fsxL-persistent-volume.yaml
-```
+::code[kubectl apply -f fsxL-persistent-volume.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 Check the PV called "fsx-pv" is created
 
-```bash
-kubectl get pv
-```
-
-
+::code[kubectl get pv]{language=bash showLineNumbers=false showCopyAction=true}
 
 ##### Step 2: Create the PersistentVolumeClaim
 
@@ -108,15 +97,10 @@ spec:
 
 Deploy this PersistentVolumeClaim to the EKS cluster:
 
-```bash
-kubectl apply -f fsxL-claim.yaml
-```
+::code[kubectl apply -f fsxL-claim.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 Check that the PersistentVolumeClaim is bound to the PersistentVolume. You can see that the persistentvolumeclaim/fsx-lustre-claim is showing as bound to the **Volume** of fsx-pv:
-```bash
-kubectl get pv,pvc
-```
-
+::code[kubectl get pv,pvc]{language=bash showLineNumbers=false showCopyAction=true}
 
 ## Summary
 

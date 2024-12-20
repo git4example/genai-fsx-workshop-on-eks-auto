@@ -10,97 +10,109 @@ If you are in **AWS SPONSORED WORKSHOP** instead of self-paced On Demand Worksho
 
 
 ### Part 1 : Prerequisite of setting up On-demand Workshop
-Here you will do pre-setup before launching cloud formation stack which will provision your workshop. Note that here some of step you may feel as duplication of data, however its to align it will sponsored workshop like setup and code managability. 
+Here you will do pre-setup before launching cloud formation stack which will provision your workshop. 
+
+:::alert{header="Note" type="info"}
+Here some of step you may feel as duplication of data, however its to align it with sponsored workshop setup and code managability. 
+:::
 
 
-1. You will need ec2 jump box where you can run these commands with needful permissions in your account. We are unable to provide detil steps for this because each account may be differently managed. 
+1. You will need ec2 jump box where you can run these commands with needful permissions in your account. We are not provide detil steps to provision EC2 because each account may be differently managed. 
 
-Create EC2 instance where you should have awscli, docker and git commands available, if not then you can install them using instuctions here : 
+Please create EC2 instance where you should have awscli, docker and git commands available, if not then you can install them using instuctions here on Amazon Linux 2, if you have differnt OS then please find instuctions to install these commands.
 
-    - awscli : https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-    - Docker : 
-        - sudo yum update -y
-        - sudo yum install -y docker
-        - sudo service docker start
-        - sudo usermod -a -G docker ec2-user
-        - docker ps
-    - Git : 
-        - sudo yum update -y
-        - sudo yum install git -y
-        - git — version
-        - git config — global user.name “Your Name”
-        - git config — global user.email “your_email@example.com”
+- awscli : https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+:::
+- Docker : 
+
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
+sudo yum update -y
+sudo yum install -y docker
+sudo service docker start
+sudo usermod -a -G docker participant
+docker ps
+:::
+
+- Git : 
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
+sudo yum update -y
+sudo yum install git -y
+git — version
+git config — global user.name “Your Name”
+git config — global user.email “your_email@example.com”
+:::
 
 2. Git Clone : 
 
-```bash
+:::code[]{language=bash showLineNumbers=false showCopyAction=true}
 git clone https://github.com/git4example/genai-fsx-workshop-on-eks.git
-```
+:::
 
 3. Create s3 bucket for temporary hosting workshop asseets. These asset bucket should be in the same region as of your CFN stack. Note that some of the automation in CFN stack and terraform executing as part of setup will copy over these data to vscode instance and new s3 bucket required to upload/host the workshop data and GenAI model. 
 
-```bash
-export REGION=< Your current region >
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
+export REGION=< your-region >
 ASSET_BUCKET=< new-bucket-name >
 aws s3api create-bucket --bucket $ASSET_BUCKET --region $REGION
-```
+:::
 
 4. Move needful code to your asset bucket which we will be using for the provisioning resources using CloudFormation in next step. 
 
-```bash
+:::code[]{language=bash showLineNumbers=false showCopyAction=true}
 aws s3 sync ./genai-fsx-workshop-on-eks ${ASSET_BUCKET}/genai-fsx-workshop-on-eks
-```
-
-
-<!-- aws s3 sync ./static/eks ${ASSET_BUCKET}/static/eks
-aws s3 sync ./static/terraform ${ASSET_BUCKET}/static/terraform
-aws s3 sync ./static/download ${ASSET_BUCKET}/static/download
-aws s3 sync ./static/script ${ASSET_BUCKET}/static/script  -->
+:::
 
 
 5. : Download model 
-```bash
+:::code[]{language=bash showLineNumbers=false showCopyAction=true}
 docker run -v ./work-dir/:/work-dir/ --entrypoint huggingface-cli public.ecr.aws/parikshit/huggingface-cli:slim download "enghwa/neuron-mistral7bv0.2" --local-dir /work-dir/Mistral-7B-Instruct-v0.2
-```
+:::
 
 6. Upload model to asset bucket. In following command replace credentials to allow access to assets bucket.
 
-```bash
+:::code[]{language=bash showLineNumbers=false showCopyAction=true}
 export $(printf "AWS_ACCESS_KEY_ID=%s exp=%s AWS_SESSION_TOKEN=%s" $(aws sts assume-role --role-arn <role-arn> --role-session-name <session-name> --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" --output text))
-```
+:::
 
-```bash
+:::code[]{language=bash showLineNumbers=false showCopyAction=true}
 docker run -e AWS_DEFAULT_REGION=$REGION \
   -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
   -e AWS_SECRET_ACCESS_KEY="<access-key>" \
   -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
   -v ./work-dir/:/work-dir/  public.ecr.aws/parikshit/s5cmd cp /work-dir/Mistral-7B-Instruct-v0.2/ s3://<your-bucket>/Mistral-7B-Instruct-v0.2/
-```
+:::
 
 
 ### Part 2 : Provision workshop resources
 
-Now create stack. Note that this will take upto 45 - 60 mins. 
+:::alert{header="Note" type="info"}
+This will take upto 45 - 60 mins. 
 
-Note : Any stack creation/deletion failures can be investigated by looking at Cloudformation stack along with `/aws/lambda/GenAIFSXWorkshopOnEKS-XXX` and `/aws/ssm/GenAIFSXWorkshopOnEKS-XXX` log groups in cloudwatch 
+Any stack creation/deletion failures can be investigated by looking at Cloudformation stack along with `/aws/lambda/GenAIFSXWorkshopOnEKS-XXX` and `/aws/ssm/GenAIFSXWorkshopOnEKS-XXX` log groups in AWS Cloudwatch Logs
+:::
 
 Validate Template : 
-```bash
+:::code[]{language=bash showLineNumbers=false showCopyAction=true}
 aws cloudformation validate-template --template-url https://${ASSET_BUCKET}.s3.amazonaws.com/genai-fsx-workshop-on-eks/static/GenAIFSXWorkshopOnEKS.yaml
-```
+:::
 
 Set parameter values : 
-```bash
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
 export REGION=${REGION}
 STACK_NAME=GenAIFSXWorkshopOnEKS
 VSINSTANCE_NAME=VSCodeServerForEKS
 ASSET_BUCKET_ZIPPATH=""
 ASSET_BUCKET=${ASSET_BUCKET}
 ASSET_BUCKET_PATH=genai-fsx-workshop-on-eks
-```
+:::
 
 Create stack : 
-```bash
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
 aws cloudformation create-stack \
   --stack-name ${STACK_NAME} \
   --template-url https://${ASSET_BUCKET}.s3.amazonaws.com/GenAIFSXWorkshopOnEKS.yaml \
@@ -126,7 +138,7 @@ aws cloudformation create-stack \
   ParameterKey=Assets,ParameterValue=s3://${ASSET_BUCKET}/${ASSET_BUCKET_PATH}/assets/ \
   --disable-rollback \
   --capabilities CAPABILITY_NAMED_IAM
-```
+:::
 
 ### Part 3 : Access your workshop
 
@@ -146,7 +158,7 @@ You will be using the Open source VSCode IDE terminal to copy and paste commands
 
 ![CFN-Output](/static/images/cfn-output.png)
 
-5. Select your VS Code UI theam 
+5. Select your VSCode UI theam 
 
 ![Select Theme](/static/images/select-theme.png)
 
@@ -156,9 +168,9 @@ You will be using the Open source VSCode IDE terminal to copy and paste commands
 
 - Use the [GetCallerIdentity](https://docs.aws.amazon.com/cli/latest/reference/sts/get-caller-identity.html) CLI command to validate that the VSCode IDE is using the correct IAM role.
 
-```bash
+:::code[]{language=bash showLineNumbers=false showCopyAction=true}
 aws sts get-caller-identity
-```
+:::
 
 - The output assumed-role name should look like the following:
 
@@ -193,7 +205,7 @@ You should see two nodes provisioned (which are the on-demand nodes used by the 
 ![get-nodes](/static/images/get-nodes.png)
 
 
-You now have a VS Code IDE Server environment set-up ready to use your Amazon EKS Cluster! You may now proceed with the next step.
+You now have a VSCode IDE Server environment set-up ready to use your Amazon EKS Cluster! You may now proceed with the next step.
 
 Now, you can go to next module **[Explore workshop environment](/030_module_explore_karpenter)** to continue with your workshop, once you are done and ready to clean up visit this page and execute commands in Part 4 Clean up below.
 
@@ -203,9 +215,9 @@ Delete Cloud formation stack to clean up, Please note this will take upto 30 min
 
 Note:  sometimes it fails to clean up due to VPC Dependency violations error due to ELB/EC2/ENI/Security groups/NAT gateway ..etc are blocking VPC deletion. You may have to take manual action to clean up. 
 
-```bash
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
 aws cloudformation delete-stack --stack-name ${STACK_NAME} --region $REGION
 aws cloudformation wait stack-delete-complete --stack-name ${STACK_NAME} --region $REGION
-```
+:::
 
 

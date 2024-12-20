@@ -23,9 +23,7 @@ Karpenter follows best practices for Kubernetes controllers as part of its confi
 
 Karpenter uses environment variables for configuration. Run the below command in your VSCode IDE terminal to checkout the Karpenter configuration:
 
-```bash
-kubectl -n karpenter get deploy/karpenter -o yaml
-```
+::code[kubectl -n karpenter get deploy/karpenter -o yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 Inspecting the output for the Karpenter controller Pod you can see the following environment variables set:
 
@@ -35,16 +33,17 @@ Inspecting the output for the Karpenter controller Pod you can see the following
 Checkout the [Karpenter documentation](https://karpenter.sh/docs/reference/settings/) for information on the other configuration options.
 
 To verify if Karpenter is running in your Amazon EKS environment, you can check that the Pods are running by issue the below command in your VSCode IDE terminal. There should be at least two `karpenter` pods.
-```bash
-kubectl get pods --namespace karpenter
-```
+
+::code[kubectl get pods --namespace karpenter]{language=bash showLineNumbers=false showCopyAction=true}
+
+
 
 You should see an output similar to the one below.
-```
+:::code[]{language=bash showLineNumbers=false showCopyAction=false}
 NAME                         READY   STATUS    RESTARTS   AGE
 karpenter-75f6596894-pgrsd   1/1     Running   0          48s
 karpenter-75f6596894-t4mrx   1/1     Running   0          48s
-```
+:::
 
 
 ### Displaying Karpenter Logs
@@ -55,17 +54,14 @@ You can create a new terminal window within VSCode IDE and leave the command bel
 
 To read karpenter logs set-up the following alias to stream logs from all of the Karpenter controller logs:
 
-```bash
-alias kl='kubectl -n karpenter logs -l app.kubernetes.io/name=karpenter --all-containers=true -f --tail=20'
-```
+::code[alias kl='kubectl -n karpenter logs -l app.kubernetes.io/name=karpenter --all-containers=true -f --tail=20']{language=bash showLineNumbers=false showCopyAction=true}
+
 
 From now on to invoke the alias and get the logs we can just use to see if karpenter is launching inferentia node for our mistral pod.
 
-```bash
-kl
-```
+::code[kl]{language=bash showLineNumbers=false showCopyAction=true}
+
 
 Hit `control + c` to exit
-```bash
-^C
-```
+::code[^C]{language=bash showLineNumbers=false showCopyAction=false}
+

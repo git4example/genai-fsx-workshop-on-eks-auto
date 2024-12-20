@@ -12,36 +12,29 @@ Karpenter configuration comes in the form of a NodePool Custom Resource (CR). Th
 
 2. Change to the working directory in your VSCode IDE terminal
 
-```bash
-cd /home/ec2-user/environment/eks/genai
-```
+::code[cd /home/participant/environment/eks/genai]{language=bash showLineNumbers=false showCopyAction=true}
 
 3. Lets take a look at the Karpenter NodePool definition that we will deploy. It will create a new nodepool for AWS Inferentia INF2 Accelerated Compute nodes that we will use to power our Generative AI application (vLLM pod)
 
-```bash
-cat inferentia_nodepool.yaml
-```
+::code[cat inferentia_nodepool.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 4. Let's deploy the Karpenter NodePool definition for AWS Inferentia INF2 Accelerated Compute nodes
 
 
-```bash
-kubectl apply -f inferentia_nodepool.yaml
-```
-
+::code[kubectl apply -f inferentia_nodepool.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 5. Verify NodePool and EC2NodeClass:
-:::code{showCopyAction=true showLineNumbers=true language=bash}
-kubectl get nodepool,ec2nodeclass inferentia
-:::
+::code[kubectl get nodepool,ec2nodeclass inferentia]{language=bash showLineNumbers=false showCopyAction=true}
 
-```
+You should see an output similar to the one below.
+
+:::code{showCopyAction=false showLineNumbers=false language=bash}
 NAME                               NODECLASS    NODES   READY   AGE
 nodepool.karpenter.sh/inferentia   inferentia   0       True    6s
 
 NAME                                        READY   AGE
 ec2nodeclass.karpenter.k8s.aws/inferentia   True    6s
-```
+:::
 
 ##### Step 2: Install Neuron device plugin & scheduler
 
@@ -78,9 +71,7 @@ You will now deploy the vLLM pod which will provide you with model serving capab
 
 1. Run the below command to deploy your vLLM Pod.
 
-```bash
-kubectl apply -f mistral-fsxl.yaml
-```
+::code[kubectl apply -f mistral-fsxl.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 2. The vLLM deployment will take approx. 7-8 minutes. (**You can continue to the next steps, and don't need to wait for this step to complete**).
 
@@ -91,15 +82,12 @@ You will notice a single pod deployment request, with a request for AWS Inferent
 :::
 
 
-```bash
-cat mistral-fsxl.yaml
-```
+::code[cat mistral-fsxl.yaml]{language=bash showLineNumbers=false showCopyAction=true}
+
 
 4. You can monitor the vLLM pod creation by running the following command periodically, until you see it transitioning to `Running`
 
-```bash
-kubectl get pod
-```
+::code[kubectl get pod]{language=bash showLineNumbers=false showCopyAction=true}
 
 ![vllm_pod](/static/images/vllm_pod_1.png)
 
