@@ -14,7 +14,7 @@ weight: 22
 
     - Click on the Email one-time password(OTP) and enter your email address to receive the OTP
 
-        ![Workshop Studio](/static/images/signin_page.png)
+    ![Workshop Studio](/static/images/signin_page.png)
 
     - Enter the One-time email 9 digits passcode and click sign in
 
@@ -54,6 +54,8 @@ You will be using the Open source VSCode IDE terminal to copy and paste commands
 
 ![Select Theme](/static/images/select-theme.png)
 
+6. You can maximize terminal window.
+
 ![maximize](/static/images/maximize.png)
 
 
@@ -61,8 +63,13 @@ You will be using the Open source VSCode IDE terminal to copy and paste commands
 
 - Use the [GetCallerIdentity](https://docs.aws.amazon.com/cli/latest/reference/sts/get-caller-identity.html) CLI command to validate that the VSCode IDE is using the correct IAM role.
 
-:::code[]{language=bash showLineNumbers=false showCopyAction=true}
-aws sts get-caller-identity
+::code[aws sts get-caller-identity]{language=bash showLineNumbers=false showCopyAction=true}
+
+
+:::alert{header="Note" type="info"}
+When you first time copy-paste a command on VSCode IDE, your browser may ask you to allow permission to see informaiton on clipboard. Please select **"Allow"**.
+
+![allow-clipboard](/static/images/allow-clipboard.png)
 :::
 
 - The output assumed-role name should look like the following:

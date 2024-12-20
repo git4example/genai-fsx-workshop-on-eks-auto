@@ -162,6 +162,8 @@ You will be using the Open source VSCode IDE terminal to copy and paste commands
 
 ![Select Theme](/static/images/select-theme.png)
 
+6. You can maximize terminal window.
+
 ![maximize](/static/images/maximize.png)
 
 ### Validate the IAM role {#validate_iam}
@@ -170,6 +172,12 @@ You will be using the Open source VSCode IDE terminal to copy and paste commands
 
 :::code[]{language=bash showLineNumbers=false showCopyAction=true}
 aws sts get-caller-identity
+:::
+
+:::alert{header="Note" type="info"}
+When you first time copy-paste a command on VSCode IDE, your browser may ask you to allow permission to see informaiton on clipboard. Please select **"Allow"**.
+
+![allow-clipboard](/static/images/allow-clipboard.png)
 :::
 
 - The output assumed-role name should look like the following:

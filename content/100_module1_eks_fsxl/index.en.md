@@ -10,7 +10,7 @@ In this workshop the **Mistral-7B-Instruct** model is stored in an Amazon S3 buc
 In this module you will deploy and integrate an FSx for Lustre instance (which will serve your model data) with your Amazon EKS cluster (which will host your Generative AI application), and learn about Kubernetes storage concepts, such as the CSI driver, Persistent Volumes, StorageClass,and  Static vs Dynamic storage provisioning. The infrastructure for this module, comprises of an Amazon EKS cluster with two EC2 worker nodes, Amazon FSx for Lustre file system, and Amazon S3 Bucket.
 
 
-![fsxl-lab](/static/images/fsxl_lab.jpg)
+![fsxl-lab](/static/images/fsxl_lab.png)
 
 ---
 ## Amazon FSx for Lustre

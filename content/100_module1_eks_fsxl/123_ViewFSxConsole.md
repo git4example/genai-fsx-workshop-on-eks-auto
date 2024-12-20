@@ -23,6 +23,7 @@ In the previous steps you have configured a Persistent Volume (PV) using the FSx
 6. On the following screen, you can see that you have deployment options for FSx for Lustre. From **PERSISTENT-SSD** or **Scratch** storage, to being able to configure your desired **Throughput unit per of storage**, and your Metadata IOPS performance. You can also set other options such as compression, and configure your S3-linked bucket for automatic data import/export options in the **Data Repository Import/Export** section.
 
 ![FSxL_console_5](/static/images/fsx_console_5.png)
+
 ---
 7.  Click the on the **Cancel** button to exit this screen, and return to the FSx console.
 

@@ -66,6 +66,7 @@ ls -ll /work-dir/test
 Navigate to the Amazon S3 Console page:  [Amazon S3 console](https://s3.console.aws.amazon.com)
 
 Click on the S3 bucket that is in your region (linked to your FSx instance). **DO NOT** click on the S3 bucket which has **2ndregion** in its name..
+
 ![S3_console_1](/static/images/s3_console_1.png)
 
 Notice that there is a **test** folder there. Click on the **test** folder. You will now see that the **testfile** you created on the Persistent Volume in your Pod has also been automatically exported from the FSx for Lustre file system, to your S3 bucket.
