@@ -25,9 +25,7 @@ Replace the **<YOUR-vLLM-POD-NAME>** value with the value you just copied, and r
 
 Run the following command
 
-:::code{showCopyAction=true showLineNumbers=true language=bash}
-df -h
-:::
+::code[df -h]{showCopyAction=true showLineNumbers=false language=bash}
 
 The **work-dir** is the mount location of your Persistent Volume Claim (backed by FSx for Lustre file system).
 

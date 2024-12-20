@@ -101,9 +101,9 @@ Account provisioning took total : 00:44:49m
 ASSET_BUCKET=$(aws cloudformation describe-stacks --stack-name genaifsxworkshoponeks --query "Stacks[0].Parameters[?ParameterKey=='Assets'].ParameterValue" --output text)
 ASSET_BUCKET=$(echo $ASSET_BUCKET | sed 's/\/assets\///')    
 ASSET_BUCKET=$ASSET_BUCKET/static
-cd /home/ec2-user/environment/
+cd /home/participant/environment/
 aws s3 sync $ASSET_BUCKET/scripts ./scripts    
-cd /home/ec2-user/environment/scripts
+cd /home/participant/environment/scripts
 ```
 
 <!-- 
@@ -111,11 +111,11 @@ WE DONT NEED THIS:
 ### USE FOLLOWING COMMANDs TO SYNC S3 TO LOCAL/CLOUD9 : 
 ```bash
 ASSET_BUCKET=<asset bucket>
-aws s3 sync $ASSET_BUCKET/eks /home/ec2-user/environment/eks --delete
-aws s3 sync $ASSET_BUCKET/terraform /home/ec2-user/environment/terraform --delete
+aws s3 sync $ASSET_BUCKET/eks /home/participant/environment/eks --delete
+aws s3 sync $ASSET_BUCKET/terraform /home/participant/environment/terraform --delete
 # Following are only required for testing
-aws s3 sync $ASSET_BUCKET/download /home/ec2-user/environment/download --delete
-aws s3 sync $ASSET_BUCKET/scripts /home/ec2-user/environment/scripts --delete
+aws s3 sync $ASSET_BUCKET/download /home/participant/environment/download --delete
+aws s3 sync $ASSET_BUCKET/scripts /home/participant/environment/scripts --delete
 ``` -->
 
 ## DOWNLOAD AND UPLOAD MODEL TO ASSET BUCKET

@@ -8,7 +8,7 @@ echo $AWS_REGION
 echo $CLUSTER_NAME
 aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION
 cd /home/participant/environment/eks/FSxL
-ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+AWS_ACCOUNTID=$(aws sts get-caller-identity --query "Account" --output text)
 cat << EOF >  fsx-csi-driver.json
 {
     "Version":"2012-10-17",
@@ -60,7 +60,7 @@ eksctl create iamserviceaccount \
     --name fsx-csi-controller-sa \
     --namespace kube-system \
     --cluster $CLUSTER_NAME \
-    --attach-policy-arn arn:aws:iam::$ACCOUNT_ID:policy/Amazon_FSx_Lustre_CSI_Driver \
+    --attach-policy-arn arn:aws:iam::$AWS_ACCOUNTID:policy/Amazon_FSx_Lustre_CSI_Driver \
     --approve
 
 export ROLE_ARN=$(aws cloudformation describe-stacks --stack-name "eksctl-${CLUSTER_NAME}-addon-iamserviceaccount-kube-system-fsx-csi-controller-sa" --query "Stacks[0].Outputs[0].OutputValue"  --region $AWS_REGION --output text)
