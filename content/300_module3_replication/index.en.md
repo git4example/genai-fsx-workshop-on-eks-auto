@@ -1,5 +1,5 @@
 ---
-title : "Inspect Mistral-7B data, and share & replicate generated data assets"
+title : "Inspect vLLM config, and replicate generated data assets"
 weight : 300
 ---
 -------------------------------------------------------------

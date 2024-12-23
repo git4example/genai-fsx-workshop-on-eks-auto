@@ -30,3 +30,7 @@ If you don't see the Mistral-7B model, please refresh the WebUI page until you c
 
 
 You have now successfully deployed a Generative AI Chatbot as a containerized application running on Amazon EKS, with the cached Mistral-7B model hosted on Amazon FSx Lustre, and the compute powered by AWS Inferentia Accelerators.
+
+:::alert{header="Note" type="info"}
+Don't close your WebUI browser session, as you will need it for the next module 
+:::

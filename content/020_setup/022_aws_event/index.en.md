@@ -36,32 +36,31 @@ weight: 22
 
 
 ## Connect to your AWS lab environment via Open source VSCode IDE
-Ref : [code-server](https://github.com/coder/code-server) 
+Ref : [code-server](https://github.com/coder/code-server)
 
-You will be using the Open source VSCode IDE terminal to copy and paste commands that are provided in this workshop. 
+You will be using the Open source VSCode IDE terminal to copy and paste commands that are provided in this workshop. Let's get started and connect to your VScode IDE instance by running the follow actions.
 
-::alert[Note: Please use google chrome browser for best user experience. Firefox may experience some issues while copy-paste commands.]{header="Important" type="warning"}
+::alert[Note: Please use a Google chrome browser for this workshop, Firefox users may experience some issues with copy-paste commands.]{header="Important" type="warning"}
 
-1. Go to Cloud formation console [link](https://console.aws.amazon.com/cloudformation) and select `genaifsxworkshoponeks` stack 
-2. Go to Stack **Outputs**
-3. Copy Password and click URL
-4. Enter copied password in the new tab opened for the URL
-
+1. Navigate to the CloudFrmation console using this [link](https://console.aws.amazon.com/cloudformation), then select the `genaifsxworkshoponeks` stack
+2. In the Stack window, select the **Outputs** tab as shown in the image below
+3. Copy the temporary **Password** that has been generated for this workshop as shown, and click then on the **URL** shown to launch the VSCode-Server interface
+4. In the VSCode IDE that pops up, enter the password you previously copied, and click **Submit**
 
 ![CFN-Output](/static/images/cfn-output.png)
 
-5. Select your VSCode UI theam 
+5. Select your VSCode UI theam
 
 ![Select Theme](/static/images/select-theme.png)
 
-6. You can maximize terminal window.
+6. Click on the **TERMINAL** TAB, and maximize your terminal window.
 
 ![maximize](/static/images/maximize.png)
 
 
 ### Validate the IAM role {#validate_iam}
 
-- Use the [GetCallerIdentity](https://docs.aws.amazon.com/cli/latest/reference/sts/get-caller-identity.html) CLI command to validate that the VSCode IDE is using the correct IAM role.
+- Copy and paste the below CLI command into your VSCode IDE terminal to validate that the VSCode IDE is using the correct IAM role.
 
 ::code[aws sts get-caller-identity]{language=bash showLineNumbers=false showCopyAction=true}
 

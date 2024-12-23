@@ -1,11 +1,11 @@
 ---
-title : "Inspect Mistral-7B data, generate test file in Pod to enable auto-export and replication of data"
+title : "Inspect vLLM, Neuron Cores, Mistral-7B data, and replicate data"
 weight : 330
 
 ---
 In this section, you will log-in to a Pod, inspect the Mistral-7B  model data, and generate a test file which will be shared and replicated.
 
-##### Step 1: Login to Pod, inspect model data, and create a test file to replicate
+##### Step 1: Login to vLLM Pod, inspect Neuron cores config and performance
 
 Navigate to back to your VSCode IDE terminal and change to your working directory.
 
@@ -15,19 +15,34 @@ Now lets log into the vLLM Pod, first we need to get the pod name by running the
 
 ::code[kubectl get pods]{language=bash showLineNumbers=false showCopyAction=true}
 
-From the output copy the name shown in your environment that starts with **vllm**
+From the output, copy the name shown in your environment that starts with **vllm**
 
 ![vllm_name](/static/images/vllm_name.png)
 
-Replace the **<YOUR-vLLM-POD-NAME>** value with the value you just copied, and run the below command to log into your vLLM pod.
+Log into your vLLM pod by running the below command, by replacing the value of **YOUR-vLLM-POD-NAME** with the value you just copied.
 
-::code[kubectl exec -it <YOUR-vLLM-POD-NAME> -- bash]{language=bash showLineNumbers=false showCopyAction=true}
+::code[kubectl exec -it YOUR-vLLM-POD-NAME -- bash]{language=bash showLineNumbers=false showCopyAction=true}
 
-Run the following command
+
+Run the below command to view the number of AWS Inferentia2 devices on your instance.
+
+::code[neuron-ls]{showCopyAction=true showLineNumbers=false language=bash}
+
+Let's view the performance of your AWS Inferentia2 node by running the **neuron-top** command. The neuron-top command provides information about NeuronCore and vCPU utilization, memory usage, loaded models, and Neuron applications.
+
+::code[neuron-top]{showCopyAction=true showLineNumbers=false language=bash}
+
+![neuron-top](/static/images/neuron-top.png)
+
+Now re-size the neuron-top window, and also the existing WebUI client to your Chatbot, so they are side-by-side in on your monitor.
+
+Ask the Chatbot a question, and then pay close attention to the **NeuronCores V2 utilization section** as your Chatbot processes your input/output tokens. Notice the optimized performance of AWS Inferentia2, which is designed to use all available Neuron core utilization capacity to process a request.
+
+##### Step 2: Inspect model data, and create a test file to replicate
+We will now inspect the layout of the model data on the vLLM. When you run the below command you will see a mount point called **work-dir**, which is the mount location of your Persistent Volume Claim (backed by FSx for Lustre file system).
 
 ::code[df -h]{showCopyAction=true showLineNumbers=false language=bash}
 
-The **work-dir** is the mount location of your Persistent Volume Claim (backed by FSx for Lustre file system).
 
 ![vllm_02](/static/images/vllm_02.png)
 
@@ -59,7 +74,7 @@ ls -ll /work-dir/test
 
 
 
-##### Step 2: Verify data exported to S3 bucket and replicated across regions
+##### Step 3: Verify data exported to S3 bucket and replicated across regions
 
 Navigate to the Amazon S3 Console page:  [Amazon S3 console](https://s3.console.aws.amazon.com)
 
