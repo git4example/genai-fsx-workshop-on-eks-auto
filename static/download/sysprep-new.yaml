@@ -1,0 +1,114 @@
+# #!/bin/bash
+
+# # Get all FSx for Lustre file systems in the region
+# FSX_SYSTEMS=$(aws fsx describe-file-systems --query 'FileSystems[*].[FileSystemId,DNSName,LustreConfiguration.MountName]' --output json)
+
+# # Count the number of file systems
+# FSX_COUNT=$(echo $FSX_SYSTEMS | jq length)
+
+# if [ "$FSX_COUNT" -eq 0 ]; then
+#     echo "No FSx for Lustre file systems found in this region."
+#     exit 1
+# elif [ "$FSX_COUNT" -eq 1 ]; then
+#     echo "Single FSx for Lustre file system found. Using it automatically."
+#     SYSTEM_INFO=$(echo $FSX_SYSTEMS | jq -r '.[0] | @tsv')
+# else
+#     echo "Multiple FSx for Lustre File Systems found:"
+#     echo $FSX_SYSTEMS | jq -r '.[] | @tsv' | column -t -s $'\t'
+    
+#     # Prompt user to select a file system
+#     read -p "Enter the FileSystemId of the FSx file system you want to use: " FSXL_VOLUME_ID
+    
+#     # Fetch details for the selected file system
+#     SYSTEM_INFO=$(aws fsx describe-file-systems --file-system-ids $FSXL_VOLUME_ID --query 'FileSystems[0].[FileSystemId,DNSName,LustreConfiguration.MountName]' --output text)
+# fi
+
+# # Parse the output and export variables
+# IFS=$'\t' read -r FSXL_VOLUME_ID DNS_NAME MOUNT_NAME <<< "$SYSTEM_INFO"
+# export FSXL_VOLUME_ID
+# export DNS_NAME
+# export MOUNT_NAME
+
+# # Display the results
+# echo "Selected File System Details:"
+# echo "FileSystemId: $FSXL_VOLUME_ID"
+# echo "DNS Name: $DNS_NAME"
+# echo "Mount Name: $MOUNT_NAME"
+
+# echo "Environment variables FSXL_VOLUME_ID, DNS_NAME, and MOUNT_NAME have been set."
+
+# sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" sysprep-new.yaml
+# sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" sysprep-new.yaml
+# sed -i'' -e "s/MOUNT_NAME/$MOUNT_NAME/g" sysprep-new.yaml
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: sysprep
+spec:  
+  template:
+    metadata:
+      labels:
+        app: sysprep
+    spec:
+      # nodeSelector:
+      #   karpenter.sh/nodepool: sysprep
+      restartPolicy: OnFailure
+      initContainers:
+      - name: cache
+        image: public.ecr.aws/parikshit/lustre-client:latest
+        command: ["bash"]
+        securityContext:
+          privileged: true
+        args: ["-c","echo 'sysprep started' >> /work-dir/sysprep `date` && find /work-dir/Mistral-7B-Instruct-v0.2 -type f -print0 | xargs -0 -n 1 -P 8 lfs hsm_restore && echo 'sysprep done' >> /work-dir/sysprep `date`"]
+        volumeMounts:
+        - name:  persistent-storage
+          mountPath: "/work-dir"
+      containers:
+      - name: validate
+        image: public.ecr.aws/parikshit/lustre-client:latest
+        command: ["bash"]
+        securityContext:
+          privileged: true
+        args: ["-c","echo 'sysprep-validation started' >> /work-dir/sysprep `date` && find /work-dir/Mistral-7B-Instruct-v0.2 -type f -print0 | xargs -0 -n 1 -P 8 lfs hsm_action >> /work-dir/sysprep && echo 'sysprep-validation done' >> /work-dir/sysprep `date`"]
+        volumeMounts:
+        - name:  persistent-storage
+          mountPath: "/work-dir"
+      volumes:
+      - name: persistent-storage
+        persistentVolumeClaim:
+          claimName: fsx-lustre-claim-sysprep
+--- 
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fsx-lustre-claim-sysprep
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: ""
+  resources:
+    requests:
+      storage: 1200Gi
+  volumeName: fsx-pv-sysprep
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: fsx-pv-sysprep
+spec:
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 1200Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  mountOptions:
+    - flock
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: FSXL_VOLUME_ID
+    volumeAttributes:
+      dnsname: DNS_NAME
+      mountname: MOUNT_NAME
+

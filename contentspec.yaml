@@ -1,0 +1,70 @@
+version: 2.0
+
+defaultLocaleCode: en-US
+localeCodes:
+  - en-US
+
+awsAccountConfig:
+  accountSources:
+    - WorkshopStudio
+  serviceLinkedRoles: 
+    - spot.amazonaws.com
+    - spotfleet.amazonaws.com
+    - eks.amazonaws.com
+    - eks-nodegroup.amazonaws.com
+    - fsx.amazonaws.com
+    - ssm.amazonaws.com
+    - autoscaling.amazonaws.com
+  ec2KeyPair: true
+  regionConfiguration:
+    minAccessibleRegions: 2
+    maxAccessibleRegions: 2
+    deployableRegions:
+      optional:
+        #- us-east-2
+        - us-east-1
+        - us-west-1
+        - us-west-2
+        - ap-southeast-2
+        - ap-southeast-1
+        #- af-south-1
+        #- ap-east-1
+        #- ap-south-2
+        - ap-south-1
+        #- ap-northeast-3
+        - ap-northeast-2
+        - ap-northeast-1
+        #- ca-central-1
+        #- eu-central-1
+        - eu-west-1
+        - eu-west-2
+        #- eu-south-1
+        #- eu-west-3
+        #- eu-south-2
+        #- eu-north-1
+    accessibleRegions:
+
+      # [OPTIONAL] Set of regions an event's provisioned account must have access to.
+      required:
+        - us-east-2
+        #- us-west-2
+
+      # [OPTIONAL] Set of regions that should be accessible by an event's provisioned account as a recommendation.
+      recommended:
+        - us-east-2
+
+      # [OPTIONAL] Set of regions an event's cloudformation templates could be deployed to as optional.
+      optional:
+        - us-east-2
+        #- us-west-2
+  participantRole:
+    managedPolicies:
+      - "arn:aws:iam::aws:policy/AdministratorAccess"
+
+infrastructure:
+  cloudformationTemplates:
+    - templateLocation: static/GenAIFSXWorkshopOnEKS.yaml
+      label: GenAI FSx workshop
+      parameters:
+        - templateParameter: Assets
+          defaultValue: "s3://{{.AssetsBucketName}}/{{.AssetsBucketPrefix}}"

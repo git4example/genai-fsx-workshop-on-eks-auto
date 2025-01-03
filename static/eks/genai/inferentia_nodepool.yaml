@@ -1,0 +1,58 @@
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: inferentia
+  labels:
+    intent: genai-apps
+    NodeGroupType: inf2-neuron-karpenter
+spec:
+  template:
+    spec:
+      taints:
+        - key: aws.amazon.com/neuron
+          value: "true"
+          effect: "NoSchedule"
+      requirements:
+        - key: "eks.amazonaws.com/instance-family"
+          operator: In
+          values: ["inf2"]
+        - key: "eks.amazonaws.com/instance-size"
+          operator: In
+          values: [ "xlarge", "2xlarge", "8xlarge", "24xlarge", "48xlarge"]
+        - key: "kubernetes.io/arch"
+          operator: In
+          values: ["amd64"]
+        - key: "karpenter.sh/capacity-type"
+          operator: In
+          values: ["spot", "on-demand"]
+      nodeClassRef:
+        group: eks.amazonaws.com
+        kind: NodeClass
+        name: inferentia
+  limits:
+    cpu: 1000
+    memory: 1000Gi
+  disruption:
+    consolidationPolicy: WhenEmpty
+    consolidateAfter: 180s
+  weight: 100
+---
+apiVersion: eks.amazonaws.com/v1
+kind: NodeClass
+metadata:
+  name: inferentia
+spec:
+  ephemeralStorage:
+    size: "100Gi"    # Range: 1-59000Gi or 1-64000G or 1-58Ti or 1-64T
+    iops: 10000      # Range: 3000-16000
+    throughput: 1000 # Range: 125-1000
+  role: "NODE_ROLE" 
+  subnetSelectorTerms:          
+    - tags:
+        karpenter.sh/discovery: "eksworkshop"
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: "eksworkshop"
+  tags:
+    intent: apps
+    managed-by: karpenter

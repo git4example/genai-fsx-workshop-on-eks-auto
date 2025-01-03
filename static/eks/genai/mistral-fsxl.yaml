@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-mistral-inf2-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vllm-mistral-inf2-server
+  template:
+    metadata:
+      labels:
+        app: vllm-mistral-inf2-server
+    spec:
+      tolerations:
+      - key: "aws.amazon.com/neuron"
+        operator: "Exists"
+        effect: "NoSchedule"
+      containers:
+      - name: inference-server
+        image: public.ecr.aws/u3r1l1j7/eks-genai:neuronrayvllm-100G-root
+        resources:
+          requests:
+            aws.amazon.com/neuron: 1
+          limits:
+            aws.amazon.com/neuron: 1
+        args:
+        - --model=$(MODEL_ID)
+        - --enforce-eager
+        - --gpu-memory-utilization=0.96
+        - --device=neuron
+        - --max-num-seqs=4
+        - --tensor-parallel-size=2
+        - --max-model-len=10240
+        - --served-model-name=mistralai/Mistral-7B-Instruct-v0.2-neuron
+        env:
+        - name: MODEL_ID
+          value: /work-dir/Mistral-7B-Instruct-v0.2/
+        - name: NEURON_COMPILE_CACHE_URL
+          value: /work-dir/Mistral-7B-Instruct-v0.2/neuron-cache/
+        - name: PORT
+          value: "8000"
+        volumeMounts:
+        - name: persistent-storage
+          mountPath: "/work-dir"
+      volumes:
+      - name: persistent-storage
+        persistentVolumeClaim:
+          claimName: fsx-lustre-claim
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-mistral7b-service
+spec:
+  selector:
+    app: vllm-mistral-inf2-server
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8000

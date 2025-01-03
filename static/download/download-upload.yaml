@@ -1,0 +1,62 @@
+
+# CLUSTER_NAME=eksworkshop
+# K8S_VERSION=1.30
+# AWS_ACCOUNTID=$(aws sts get-caller-identity --query "Account" --output text)
+# VPC_ID=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION --query "cluster.resourcesVpcConfig.vpcId" --output text)
+# SUBNET_ID=$(aws eks describe-cluster --name $CLUSTER_NAME --region $AWS_REGION --query "cluster.resourcesVpcConfig.subnetIds[0]" --output text)
+# SECURITY_GROUP_ID=$(aws ec2 describe-security-groups --filters Name=vpc-id,Values=${VPC_ID} Name=group-name,Values="FSxLSecurityGroup01"  --query "SecurityGroups[*].GroupId" --output text)  
+# S3_BUCKET=$(aws s3 ls | grep fsx-lustre | grep -v fsx-lustre-2ndregion | awk '{print$3}')
+# S3_BUCKET_2NDREGION=$(aws s3 ls | grep fsx-lustre-2ndregion | awk '{print$3}')
+
+# sed -i'' -e "s/S3_BUCKET/$S3_BUCKET/g" download-upload.yaml
+# sed -i'' -e "s/AWS_ACCOUNTID/$AWS_ACCOUNTID/g" download-upload.yaml
+
+# cat <<EOF | envsubst | kubectl apply -f -
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download-upload-mistral
+spec:  
+  template:
+    metadata:
+      labels:
+        app: download-upload-mistral
+    spec:
+      serviceAccountName: s3-upload
+      nodeSelector:
+        karpenter.sh/nodepool: download
+      restartPolicy: OnFailure
+      initContainers:
+      - name: download
+        image: public.ecr.aws/parikshit/huggingface-cli 
+        command:
+        - huggingface-cli
+        - download
+        - "enghwa/neuron-mistral7bv0.2"
+        - "--local-dir"
+        - "/work-dir/Mistral-7B-Instruct-v0.2"
+        volumeMounts:
+        - name: workdir
+          mountPath: "/work-dir"
+      containers:
+      - name: upload
+        image: public.ecr.aws/parikshit/s5cmd
+        args:
+        - sync 
+        - /work-dir 
+        - s3://$S3_BUCKET/
+        volumeMounts:
+        - name: workdir
+          mountPath: "/work-dir"
+      volumes:
+      - name: workdir
+        emptyDir: {}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: s3-upload
+  namespace: default
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::$AWS_ACCOUNTID:role/AmazonEKS_S3_Upload
+#EOF

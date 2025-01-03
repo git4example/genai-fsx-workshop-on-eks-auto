@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: fsx-lustre-dynamic-claim
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: fsx-lustre-sc
+  resources:
+    requests:
+      storage: 1200Gi

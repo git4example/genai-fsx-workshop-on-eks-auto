@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fsx-app
+spec:
+  containers:
+  - name: app
+    image: amazonlinux:2023
+    command: ["/bin/sh"]
+    securityContext:
+      privileged: true
+    args: ["-c", "while true; do echo $(date -u) >> /data/out.txt; sleep 5; done"]
+    lifecycle:
+      postStart:
+        exec:
+          command: ["dnf", "install", "lustre-client", "-y"]
+    volumeMounts:
+    - name: persistent-storage
+      mountPath: /data
+  volumes:
+  - name: persistent-storage
+    persistentVolumeClaim:
+      claimName: fsx-lustre-dynamic-claim

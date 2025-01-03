@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: fsx-pv
+spec:
+  persistentVolumeReclaimPolicy: Retain
+  capacity:
+    storage: 1200Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  mountOptions:
+    - flock
+  csi:
+    driver: fsx.csi.aws.com
+    volumeHandle: FSXL_VOLUME_ID
+    volumeAttributes:
+      dnsname: DNS_NAME
+      mountname: MOUNT_NAME
