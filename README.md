@@ -189,7 +189,7 @@ aws s3api create-bucket --bucket $ASSET_BUCKET --region $AWS_REGION
 4. Move needful code to your asset bucket which we will be using for the provisioning resources using CloudFormation in next step. 
 
 ```bash
-aws s3 sync ./genai-fsx-workshop-on-eks s3://${ASSET_BUCKET}/genai-fsx-workshop-on-eks
+aws s3 sync ./genai-fsx-workshop-on-eks-auto s3://${ASSET_BUCKET}/genai-fsx-workshop-on-eks-auto
 ```
 
 
@@ -362,7 +362,7 @@ STACK_NAME=GenAIFSXWorkshopOnEKS
 VSINSTANCE_NAME=VSCodeServerForEKS
 ASSET_BUCKET_ZIPPATH=""
 ASSET_BUCKET=${ASSET_BUCKET}
-ASSET_BUCKET_PATH=genai-fsx-workshop-on-eks
+ASSET_BUCKET_PATH=genai-fsx-workshop-on-eks-auto
 ```
 
 Validate Template : 
