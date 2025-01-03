@@ -171,7 +171,7 @@ git config — global user.email “your_email@example.com”
 2. Git Clone : 
 
 ```bash
-git clone https://github.com/git4example/genai-fsx-workshop-on-eks.git
+git clone https://github.com/git4example/genai-fsx-workshop-on-eks-auto.git
 ```
 
 3. Create s3 bucket for temporary hosting workshop asseets. These asset bucket should be in the same region as of your CFN stack. Note that some of the automation in CFN stack and terraform executing as part of setup will copy over these data to vscode instance and new s3 bucket required to upload/host the workshop data and GenAI model. 
