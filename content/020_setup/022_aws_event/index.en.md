@@ -98,6 +98,8 @@ Run the command below just to see the connectivity to EKS Auto Cluster:
 
 ::code[kubectl get nodes]{language=bash showLineNumbers=false showCopyAction=true}
 
-Initially there will be no nodes in the cluster. As you start creating pods, EKS Auto will auto provision worker nodes as per workload demands. 
+You should see one node provisioned which was provisioned by EKS Auto to run some of the core components required for the workshop.
+
+![get-nodes](/static/images/get-nodes.png)
 
 You now have a VSCode IDE Server environment set-up ready to use your Amazon EKS Cluster! You may now proceed with the next step.

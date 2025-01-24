@@ -114,6 +114,7 @@ module "eks" {
   cluster_endpoint_public_access = true
   enable_cluster_creator_admin_permissions = true
   authentication_mode            = "API"
+  cluster_enabled_log_types = ["api","audit","authenticator","controllerManager","scheduler"]
 
   cluster_compute_config = {
     enabled    = true
@@ -135,11 +136,11 @@ module "eks" {
       }
   }
 
-  cluster_addons = {
+  # cluster_addons = {
     # aws-ebs-csi-driver = { most_recent = true }
     # kube-proxy = { most_recent = true }
     # coredns    = { most_recent = true }
-    eks-pod-identity-agent = {}
+    # eks-pod-identity-agent = {}
     # vpc-cni = {
     #   most_recent    = true
     #   before_compute = true
@@ -150,7 +151,7 @@ module "eks" {
     #     }
     #   })
     # }
-  }
+  # }
 
   vpc_id     = module.vpc.vpc_id
   # subnet_ids = module.vpc.public_subnets
@@ -325,16 +326,19 @@ module "data_addons" {
   #---------------------------------------------------------------
   # Neuron and NVIDIA Device Plugin Add-on
   #---------------------------------------------------------------
-  enable_aws_neuron_device_plugin  = true
-  aws_neuron_device_plugin_helm_config = {
-    create_namespace=true
-  }
-  enable_nvidia_device_plugin = true
-  nvidia_device_plugin_helm_config = {
-    version =  "v0.16.1"
-    name    = "nvidia-device-plugin"
-    values  = [file("${path.module}/helm-values/nvidia-values.yaml")]
-  }
+  # enable_aws_neuron_device_plugin  = true
+  # aws_neuron_device_plugin_helm_config = {
+  #   # version =  "1.1.1"
+  #   create_namespace=true
+  #   values  = [file("${path.module}/helm-values/neuron-values.yaml")]
+  # }
+  
+  # enable_nvidia_device_plugin = true
+  # nvidia_device_plugin_helm_config = {
+  #   # version =  "0.17.0"
+  #   name    = "nvidia-device-plugin"
+  #   values  = [file("${path.module}/helm-values/nvidia-values.yaml")]
+  # }
   depends_on = [
     module.eks
   ]

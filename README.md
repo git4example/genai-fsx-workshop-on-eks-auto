@@ -127,7 +127,6 @@ In this workshop the **Mistral-7B-Instruct** model is stored in an Amazon S3 buc
         └── main.tf
 ```
 
-
 ### Part 1 : Prerequisite of setting up On-demand Workshop
 Here you will do pre-setup before launching cloud formation stack which will provision your workshop. 
 
@@ -183,7 +182,7 @@ export AWS_REGION=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254
 
 ```bash
 ASSET_BUCKET=< new-bucket-name >
-aws s3api create-bucket --bucket $ASSET_BUCKET --region $AWS_REGION
+aws s3api create-bucket --bucket $ASSET_BUCKET --region $AWS_REGION --create-bucket-configuration LocationConstraint=$AWS_REGION
 ```
 
 4. Move needful code to your asset bucket which we will be using for the provisioning resources using CloudFormation in next step. 
@@ -252,7 +251,7 @@ Admin:~/environment $
 
 ```bash
 # For Nitro
-$ sudo growpart /dev/nvme0n1 1
+sudo growpart /dev/nvme0n1 1
 lsblk
 ```
 
@@ -339,11 +338,13 @@ export $(printf "AWS_ACCESS_KEY_ID=%s exp=%s AWS_SESSION_TOKEN=%s" $(aws sts ass
 ::: -->
 
 ```bash
+ASSET_BUCKET_PATH=genai-fsx-workshop-on-eks-auto
+
 docker run -e AWS_DEFAULT_REGION=$AWS_REGION \
   -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
   -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
   -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
-  -v ./work-dir/:/work-dir/  public.ecr.aws/parikshit/s5cmd cp /work-dir/Mistral-7B-Instruct-v0.2/ s3://$ASSET_BUCKET/Mistral-7B-Instruct-v0.2/
+  -v ./work-dir/:/work-dir/  public.ecr.aws/parikshit/s5cmd cp /work-dir/Mistral-7B-Instruct-v0.2/ s3://${ASSET_BUCKET}/${ASSET_BUCKET_PATH}/assets/Mistral-7B-Instruct-v0.2/
 ```
 
 
@@ -457,21 +458,19 @@ aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION
 
 
 ## Query the Amazon EKS cluster:
-Run the command below to see the Kubernetes nodes currently provisioned:
+Run the command below just to see the connectivity to EKS Auto Cluster:
 
 ```bash
 kubectl get nodes
 ```
 
-You should see two nodes provisioned (which are the on-demand nodes used by the Kubernetes controllers), such as the output below:
-
+You should see one node provisioned which was provisioned by EKS Auto to run some of the core components required for the workshop.
 
 ![get-nodes](/static/images/get-nodes.png)
 
-
 You now have a VSCode IDE Server environment set-up ready to use your Amazon EKS Cluster! You may now proceed with the next step.
 
-Now, you can go to next module **[Explore workshop environment](/030_module_explore_karpenter)** to continue with your workshop, once you are done and ready to clean up visit this page and execute commands in Part 4 Clean up below.
+Now, you can go to next module **[Explore EKS Auto](/030_module_explore_eks_auto)** to continue with your workshop, once you are done and ready to clean up visit this page and execute commands in Part 4 Clean up below.
 
 ### Part 4 : Clean up
 
@@ -483,5 +482,7 @@ Note:  sometimes it fails to clean up due to VPC Dependency violations error due
 aws cloudformation delete-stack --stack-name ${STACK_NAME} --region $AWS_REGION
 aws cloudformation wait stack-delete-complete --stack-name ${STACK_NAME} --region $AWS_REGION
 ```
+
+
 
 

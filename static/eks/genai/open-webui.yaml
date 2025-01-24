@@ -40,6 +40,33 @@ spec:
     port: 80
     targetPort: 8080
 ---
+apiVersion: eks.amazonaws.com/v1
+kind: IngressClassParams
+metadata:
+  name: alb
+spec:
+  scheme: internet-facing
+---
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  namespace: alb
+  labels:
+    app.kubernetes.io/name: LoadBalancerController
+  name: alb
+  annotations:
+    # Use this annotation to set an IngressClass as Default
+    # If an Ingress doesn't specify a class, it will use the Default
+    ingressclass.kubernetes.io/is-default-class: "true"
+spec:
+  # Configures the IngressClass to use EKS Auto Mode
+  controller: eks.amazonaws.com/alb
+  parameters:
+    apiGroup: eks.amazonaws.com
+    kind: IngressClassParams
+    # Use the name of the IngressClassParams set in the previous step
+    name: alb
+---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -57,6 +84,8 @@ metadata:
   labels:
     app: open-webui-ingress
 spec:
+  # this matches the name of IngressClass.
+  # this can be omitted if you have a default ingressClass in cluster: the one with ingressclass.kubernetes.io/is-default-class: "true"  annotation
   ingressClassName: alb
   rules:
   - http:

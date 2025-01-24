@@ -64,7 +64,7 @@ export AWS_REGION=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254
 
 ```bash
 ASSET_BUCKET=< new-bucket-name >
-aws s3api create-bucket --bucket $ASSET_BUCKET --region $AWS_REGION
+aws s3api create-bucket --bucket $ASSET_BUCKET --region $AWS_REGION --create-bucket-configuration LocationConstraint=$AWS_REGION
 ```
 
 4. Move needful code to your asset bucket which we will be using for the provisioning resources using CloudFormation in next step. 
@@ -133,7 +133,7 @@ Admin:~/environment $
 
 ```bash
 # For Nitro
-$ sudo growpart /dev/nvme0n1 1
+sudo growpart /dev/nvme0n1 1
 lsblk
 ```
 
@@ -220,11 +220,13 @@ export $(printf "AWS_ACCESS_KEY_ID=%s exp=%s AWS_SESSION_TOKEN=%s" $(aws sts ass
 ::: -->
 
 ```bash
+ASSET_BUCKET_PATH=genai-fsx-workshop-on-eks-auto
+
 docker run -e AWS_DEFAULT_REGION=$AWS_REGION \
   -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
   -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
   -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
-  -v ./work-dir/:/work-dir/  public.ecr.aws/parikshit/s5cmd cp /work-dir/Mistral-7B-Instruct-v0.2/ s3://$ASSET_BUCKET/Mistral-7B-Instruct-v0.2/
+  -v ./work-dir/:/work-dir/  public.ecr.aws/parikshit/s5cmd cp /work-dir/Mistral-7B-Instruct-v0.2/ s3://${ASSET_BUCKET}/${ASSET_BUCKET_PATH}/assets/Mistral-7B-Instruct-v0.2/
 ```
 
 
@@ -343,11 +345,14 @@ Run the command below just to see the connectivity to EKS Auto Cluster:
 ```bash
 kubectl get nodes
 ```
-Initially there will be no nodes in the cluster. As you start creating pods, EKS Auto will auto provision worker nodes as per workload demands. 
+
+You should see one node provisioned which was provisioned by EKS Auto to run some of the core components required for the workshop.
+
+![get-nodes](/static/images/get-nodes.png)
 
 You now have a VSCode IDE Server environment set-up ready to use your Amazon EKS Cluster! You may now proceed with the next step.
 
-Now, you can go to next module **[Configure storage - Host model data on Amazon FSx for Lustre](/100_module1_eks_fsxl)** to continue with your workshop, once you are done and ready to clean up visit this page and execute commands in Part 4 Clean up below.
+Now, you can go to next module **[Explore EKS Auto](/030_module_explore_eks_auto)** to continue with your workshop, once you are done and ready to clean up visit this page and execute commands in Part 4 Clean up below.
 
 ### Part 4 : Clean up
 

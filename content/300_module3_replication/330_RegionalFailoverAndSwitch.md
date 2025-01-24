@@ -38,6 +38,10 @@ Now re-size the neuron-top window, and also the existing WebUI client to your Ch
 
 Ask the Chatbot a question, and then pay close attention to the **NeuronCores V2 utilization section** as your Chatbot processes your input/output tokens. Notice the optimized performance of AWS Inferentia2, which is designed to use all available Neuron core utilization capacity to process a request.
 
+Press `q` to exit from `neuron-top` screen and return back to pod exec shell.
+
+::code[q]{showCopyAction=true showLineNumbers=false language=bash}
+
 ##### Step 2: Inspect model data, and create a test file to replicate
 We will now inspect the layout of the model data on the vLLM. When you run the below command you will see a mount point called **work-dir**, which is the mount location of your Persistent Volume Claim (backed by FSx for Lustre file system).
 
@@ -73,6 +77,9 @@ ls -ll /work-dir/test
 :::
 
 
+Finally exit from the pod.
+
+::code[exit]{showCopyAction=true showLineNumbers=false language=bash}
 
 ##### Step 3: Verify data exported to S3 bucket and replicated across regions
 

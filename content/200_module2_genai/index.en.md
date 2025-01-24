@@ -31,7 +31,7 @@ Large Language Models (LLMs) are a type of machine learning model that is traine
 - Supports chipsets such as: AWS Neuron, NVIDIA GPUs and others,
 
 ## Deploying Mistral-7B-Instruct using a vLLM on Amazon EKS
-To provide text generation inference capability with an OpenAI-compatible endpoint, we will deploy the Mistral-7B-Instruct model using the vLLM framework on Amazon Elastic Kubernetes Service (EKS). We will use Karpenter to spin up the AWS inferentia2 EC2 node (Accelerated Compute designed for Generative AI), where it will launch a vLLM Pod from an container image.
+To provide text generation inference capability with an OpenAI-compatible endpoint, we will deploy the Mistral-7B-Instruct model using the vLLM framework on Amazon Elastic Kubernetes Service (EKS). We will use EKS Auto to spin up the AWS inferentia2 EC2 node (Accelerated Compute designed for Generative AI), where it will launch a vLLM Pod from an container image.
 
 
 ## AWS Inferentia Accelerators

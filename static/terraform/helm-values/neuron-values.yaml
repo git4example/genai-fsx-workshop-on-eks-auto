@@ -1,0 +1,41 @@
+scheduler:
+  enabled: true
+npd:
+  nodeRecovery:
+    enabled: true
+devicePlugin:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: node.kubernetes.io/instance-type
+            operator: In
+            values:
+            - trn1.2xlarge
+            - trn1.32xlarge
+            - trn1n.32xlarge
+            - trn2.3xlarge
+            - trn2.48xlarge
+            - trn2n.48xlarge
+            - inf1.xlarge
+            - inf1.2xlarge
+            - inf1.6xlarge
+            - inf1.24xlarge
+            - inf2.xlarge
+            - inf2.8xlarge
+            - inf2.24xlarge
+            - inf2.48xlarge
+            - ml.inf2.xlarge
+            - ml.inf2.8xlarge
+            - ml.inf2.24xlarge
+            - ml.inf2.48xlarge
+            - ml.trn1.2xlarge
+            - ml.trn1.32xlarge
+            - ml.trn1n.32xlarge
+          - key: eks.amazonaws.com/compute-type
+            operator: NotIn
+            values:
+            - fargate
+            - hybrid
+            
