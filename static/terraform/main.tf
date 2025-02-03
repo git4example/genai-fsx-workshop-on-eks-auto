@@ -43,23 +43,90 @@ provider "aws" {
 provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-  token                  = data.aws_eks_cluster_auth.this.token
+  
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", local.name]
+  }
 }
 
 provider "helm" {
   kubernetes {
     host                   = module.eks.cluster_endpoint
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-    token                  = data.aws_eks_cluster_auth.this.token
+    
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      args        = ["eks", "get-token", "--cluster-name", local.name]
+    }
   }
 }
 
 provider "kubectl" {
-  apply_retry_count      = 10
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
   load_config_file       = false
-  token                  = data.aws_eks_cluster_auth.this.token
+
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", local.name]
+  }
+}
+
+locals {
+  name   = "eksworkshop"
+  region = "--AWS_REGION--"
+  # region = "us-west-1"
+
+  cluster_version = "--EKS_VERSION--"
+  # cluster_version = "1.31"
+
+  vpc_cidr = "10.0.0.0/16"
+  azs = data.aws_availability_zones.available.names 
+
+  tags = {
+    Blueprint = local.name
+  }
+
+  # Following is to check if WSParticipantRole role is present or not, to handle on-demand workshop in private accounts
+    
+  # Base access entries - this will always be created
+  base_access_entries = {}
+  
+  # Define the role ARN
+  ws_participant_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/WSParticipantRole"
+  
+  # Check if role exists first
+  has_ws_participant_role = try(
+    contains(data.aws_iam_roles.all.names, "WSParticipantRole"),
+    false
+  )
+  
+  # Use the check result to conditionally create access entry
+  ws_participant_access = local.has_ws_participant_role ? {
+    super-admin = {
+      principal_arn = local.ws_participant_role_arn
+      policy_associations = {
+        this = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
+    }
+  } : {}
+
+  # Merge access entries
+  access_entries = merge(local.base_access_entries, local.ws_participant_access)
+}
+
+# Add this data source to get all IAM roles
+data "aws_iam_roles" "all" {
+  path_prefix = "/"
 }
 
 
@@ -77,26 +144,8 @@ data "aws_availability_zones" "available" {
 }
 
 data "aws_caller_identity" "current" {}
-
-locals {
-  name   = "eksworkshop"
-  region = "--AWS_REGION--"
-  # region = "us-west-1"
-
-  cluster_version = "--EKS_VERSION--"
-  # cluster_version = "1.31"
-
-  vpc_cidr = "10.0.0.0/16"
-  # azs      = slice(data.aws_availability_zones.available.names, 0, length(data.aws_availability_zones.available.names))
-  sorted_azs = sort(data.aws_availability_zones.available.names)
-  azs      = slice(local.sorted_azs, 0, length(local.sorted_azs))
-
-  tags = {
-    Blueprint = local.name
-  }
-}
-
-
+data "aws_partition" "current" {}
+data "aws_region" "current" {}
 
 ################################################################################
 # EKS Cluster
@@ -120,72 +169,25 @@ module "eks" {
     enabled    = true
     node_pools = ["general-purpose","system"]
   }
-
-  access_entries = {  
-    super-admin = {
-        principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/WSParticipantRole"
-
-        policy_associations = {
-          this = {
-            policy_arn =  "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-            access_scope = {
-              type = "cluster"
-            }
-          }
-        }
-      }
-  }
-
-  # cluster_addons = {
-    # aws-ebs-csi-driver = { most_recent = true }
-    # kube-proxy = { most_recent = true }
-    # coredns    = { most_recent = true }
-    # eks-pod-identity-agent = {}
-    # vpc-cni = {
-    #   most_recent    = true
-    #   before_compute = true
-    #   configuration_values = jsonencode({
-    #     env = {
-    #       ENABLE_PREFIX_DELEGATION = "true"
-    #       WARM_PREFIX_TARGET       = "1"
-    #     }
-    #   })
-    # }
-  # }
+    
+  access_entries = local.access_entries
 
   vpc_id     = module.vpc.vpc_id
-  # subnet_ids = module.vpc.public_subnets
   subnet_ids = module.vpc.private_subnets
 
   create_cloudwatch_log_group   = false
-  create_cluster_security_group = false
+  create_cluster_security_group = true
   create_node_security_group    = false
-
-  # eks_managed_node_groups = {
-  #   managed-ondemand = {
-  #     node_group_name = "managed-ondemand"
-  #     instance_types  = ["m4.xlarge", "m5.xlarge", "m5a.xlarge", "m5ad.xlarge", "m5d.xlarge", "t2.xlarge", "t3.xlarge", "t3a.xlarge"]
-
-  #     create_security_group = false
-
-  #     subnet_ids   = module.vpc.private_subnets
-  #     max_size     = 2
-  #     desired_size = 2
-  #     min_size     = 2
-
-  #     # Launch template configuration
-  #     create_launch_template = true              # false will use the default launch template
-  #     launch_template_os     = "amazonlinux2eks" # amazonlinux2eks or bottlerocket
-
-  #     labels = {
-  #       intent = "control-apps"
-  #     }
-  #   }
-  # }
+  enable_irsa                   = true
 
   tags = merge(local.tags, {
     "karpenter.sh/discovery" = local.name
   })
+
+  depends_on = [
+    module.vpc
+  ]
+
 }
 
 module "eks_blueprints_addons" {
@@ -292,27 +294,27 @@ module "eks_blueprints_addons" {
 # Grafana Admin credentials resources
 # Login to AWS secrets manager with the same role as Terraform to extract the Grafana admin password with the secret name as "grafana"
 #---------------------------------------------------------------
-data "aws_secretsmanager_secret_version" "admin_password_version" {
-  secret_id  = aws_secretsmanager_secret.grafana.id
-  depends_on = [aws_secretsmanager_secret_version.grafana]
-}
+# data "aws_secretsmanager_secret_version" "admin_password_version" {
+#   secret_id  = aws_secretsmanager_secret.grafana.id
+#   depends_on = [aws_secretsmanager_secret_version.grafana]
+# }
 
-resource "random_password" "grafana" {
-  length           = 16
-  special          = true
-  override_special = "@_"
-}
+# resource "random_password" "grafana" {
+#   length           = 16
+#   special          = true
+#   override_special = "@_"
+# }
 
-#tfsec:ignore:aws-ssm-secret-use-customer-key
-resource "aws_secretsmanager_secret" "grafana" {
-  name_prefix             = "${local.name}-oss-grafana"
-  recovery_window_in_days = 0 # Set to zero for this example to force delete during Terraform destroy
-}
+# #tfsec:ignore:aws-ssm-secret-use-customer-key
+# resource "aws_secretsmanager_secret" "grafana" {
+#   name_prefix             = "${local.name}-oss-grafana"
+#   recovery_window_in_days = 0 # Set to zero for this example to force delete during Terraform destroy
+# }
 
-resource "aws_secretsmanager_secret_version" "grafana" {
-  secret_id     = aws_secretsmanager_secret.grafana.id
-  secret_string = random_password.grafana.result
-}
+# resource "aws_secretsmanager_secret_version" "grafana" {
+#   secret_id     = aws_secretsmanager_secret.grafana.id
+#   secret_string = random_password.grafana.result
+# }
 
 #---------------------------------------------------------------
 # Data on EKS Kubernetes Addons
@@ -435,8 +437,8 @@ module "vpc" {
   cidr = local.vpc_cidr
 
   azs             = local.azs
-  public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k)]
-  private_subnets = ["10.0.32.0/19", "10.0.64.0/19", "10.0.96.0/19"]
+  public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 3, k)]
+  private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 3, k + 4)]
 
   enable_nat_gateway   = true
   single_nat_gateway   = true
@@ -588,7 +590,7 @@ resource "aws_security_group" "FSxLSecurityGroup01" {
     from_port        = 988
     to_port          = 988
     protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
+    cidr_blocks      = [local.vpc_cidr]
   }
 
   ingress {
@@ -596,7 +598,7 @@ resource "aws_security_group" "FSxLSecurityGroup01" {
     from_port        = 1018
     to_port          = 1023
     protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
+    cidr_blocks      = [local.vpc_cidr]
   }
 
   egress {
@@ -604,7 +606,7 @@ resource "aws_security_group" "FSxLSecurityGroup01" {
     from_port        = 0
     to_port          = 0
     protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
+    cidr_blocks      = [local.vpc_cidr]
   }
 
 }
@@ -1031,6 +1033,13 @@ resource "kubernetes_job" "sysprep" {
   timeouts {
     create = "30m"
   }
+
+  lifecycle {
+    replace_triggered_by = [
+      kubectl_manifest.sysprep_pvc
+    ]
+  }
+
   depends_on = [
     kubectl_manifest.sysprep_pvc,
     module.eks_blueprints_addons,
