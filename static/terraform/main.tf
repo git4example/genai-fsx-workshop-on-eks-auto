@@ -103,7 +103,7 @@ locals {
 ################################################################################
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = ">= 20.22.0"
+  version = "20.22.0"
 
   providers = {
     aws = aws.region1
