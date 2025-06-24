@@ -3,6 +3,7 @@ title : "Explore workshop environment"
 weight : 30
 ---
 
+
 ## Automation used for the creation of your lab Amazon EKS Cluster
 
 The Amazon Elastic Kubernetes Service (EKS) cluster in this workshop was created with [**Terraform**](https://www.terraform.io/) using the [**EKS Blueprints for Terraform**](https://github.com/aws-ia/terraform-aws-eks-blueprints). You can explore the blueprint by looking into the `~/environment/eksworkshop` folder on your VSCode IDE, to learn how it could be used in a your environment.
