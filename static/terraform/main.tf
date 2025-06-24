@@ -4,19 +4,19 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 5.34"
+      version = "5.99.1"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = ">= 2.10"
+      version = "2.37.1"
     }
     helm = {
       source  = "hashicorp/helm"
-      version = ">= 2.11.0"
+      version = "2.17.0" 
     }    
     kubectl = {
       source  = "gavinbunney/kubectl"
-      version = ">= 1.14"
+      version = ">= 1.19"
     }
   }
 }
@@ -43,14 +43,25 @@ provider "aws" {
 provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-  token                  = data.aws_eks_cluster_auth.this.token
+  # token                  = data.aws_eks_cluster_auth.this.token
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+  }
 }
 
 provider "helm" {
   kubernetes {
     host                   = module.eks.cluster_endpoint
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-    token                  = data.aws_eks_cluster_auth.this.token
+    # token                  = data.aws_eks_cluster_auth.this.token
+    exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+    }
+
   }
 }
 
@@ -59,13 +70,18 @@ provider "kubectl" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
   load_config_file       = false
-  token                  = data.aws_eks_cluster_auth.this.token
+  # token                  = data.aws_eks_cluster_auth.this.token
+  exec {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+    }
 }
 
 
-data "aws_eks_cluster_auth" "this" {
-  name = module.eks.cluster_name
-}
+# data "aws_eks_cluster_auth" "this" {
+#   name = module.eks.cluster_name
+# }
 
 data "aws_ecrpublic_authorization_token" "token" {
   provider = aws.virginia
@@ -80,11 +96,11 @@ data "aws_caller_identity" "current" {}
 
 locals {
   name   = "eksworkshop"
-  region = "--AWS_REGION--"
-  # region = "us-west-1"
+  # region = "--AWS_REGION--"
+  region = "us-west-2"
 
-  cluster_version = "--EKS_VERSION--"
-  # cluster_version = "1.30"
+  # cluster_version = "--EKS_VERSION--"
+  cluster_version = "1.30"
 
   vpc_cidr = "10.0.0.0/16"
   # azs      = slice(data.aws_availability_zones.available.names, 0, length(data.aws_availability_zones.available.names))
@@ -103,7 +119,7 @@ locals {
 ################################################################################
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "20.22.0"
+  version = "20.37.1"
 
   providers = {
     aws = aws.region1
@@ -184,7 +200,7 @@ module "eks" {
 
 module "eks_blueprints_addons" {
   source  = "aws-ia/eks-blueprints-addons/aws"
-  version = ">= 1.16.3"
+  version = "1.21.0"
   
   providers = {
     aws = aws.region1
@@ -313,7 +329,7 @@ resource "aws_secretsmanager_secret_version" "grafana" {
 #---------------------------------------------------------------
 module "data_addons" {
   source  = "aws-ia/eks-data-addons/aws"
-  version = ">= 1.33.0" # ensure to update this to the latest/desired version
+  version = "1.37.2" # ensure to update this to the latest/desired version
 
   oidc_provider_arn = module.eks.oidc_provider_arn
 
@@ -391,7 +407,7 @@ resource "aws_eks_access_entry" "karpenter_node_access_entry" {
 
 module "ebs_csi_driver_irsa" {
   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = ">= 5.20"
+  version = "5.58.0"
 
   role_name_prefix = "${module.eks.cluster_name}-ebs-csi-driver-"
 
@@ -416,7 +432,7 @@ module "ebs_csi_driver_irsa" {
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = ">= 5.0.0"
+  version = "5.21.0"
 
   providers = {
     aws = aws.region1
