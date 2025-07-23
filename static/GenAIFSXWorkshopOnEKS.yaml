@@ -70,7 +70,7 @@ Parameters:
   KubectlDate:
     Description: kubectl version release date to be used. Ref - https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
     Type: String
-    Default: "2024-11-15"
+    Default: "2025-05-01"
     ConstraintDescription: Must be a valid date 
 
   NodeViewerVersion:
