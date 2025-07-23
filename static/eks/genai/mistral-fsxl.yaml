@@ -12,6 +12,7 @@ spec:
       labels:
         app: vllm-mistral-inf2-server
     spec:
+      schedulerName: my-scheduler
       tolerations:
       - key: "aws.amazon.com/neuron"
         operator: "Exists"

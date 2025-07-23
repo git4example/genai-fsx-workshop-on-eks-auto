@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 aws sts get-caller-identity
 TOKEN=`curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
@@ -71,9 +71,42 @@ kubectl annotate serviceaccount -n kube-system fsx-csi-controller-sa eks.amazona
 kubectl get sa/fsx-csi-controller-sa -n kube-system -o yaml
 
 
-FSXL_VOLUME_ID=$(aws fsx describe-file-systems --query 'FileSystems[].FileSystemId' --output text)
-DNS_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].DNSName' --output text)
-MOUNT_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].LustreConfiguration.MountName' --output text)
+# Get all FSx for Lustre file systems in the region
+FSX_SYSTEMS=$(aws fsx describe-file-systems --query 'FileSystems[*].[FileSystemId,DNSName,LustreConfiguration.MountName]' --output json)
+
+# Count the number of file systems
+FSX_COUNT=$(echo $FSX_SYSTEMS | jq length)
+
+if [ "$FSX_COUNT" -eq 0 ]; then
+    echo "No FSx for Lustre file systems found in this region."
+    exit 1
+elif [ "$FSX_COUNT" -eq 1 ]; then
+    echo "Single FSx for Lustre file system found. Using it automatically."
+    SYSTEM_INFO=$(echo $FSX_SYSTEMS | jq -r '.[0] | @tsv')
+else
+    echo "Multiple FSx for Lustre File Systems found:"
+    echo $FSX_SYSTEMS | jq -r '.[] | @tsv' | column -t -s $'\t'
+    
+    # Prompt user to select a file system
+    read -p "Enter the FileSystemId of the FSx file system you want to use: " FSXL_VOLUME_ID
+    
+    # Fetch details for the selected file system
+    SYSTEM_INFO=$(aws fsx describe-file-systems --file-system-ids $FSXL_VOLUME_ID --query 'FileSystems[0].[FileSystemId,DNSName,LustreConfiguration.MountName]' --output text)
+fi
+
+# Parse the output and export variables
+IFS=$'\t' read -r FSXL_VOLUME_ID DNS_NAME MOUNT_NAME <<< "$SYSTEM_INFO"
+export FSXL_VOLUME_ID
+export DNS_NAME
+export MOUNT_NAME
+
+# Display the results
+echo "Selected File System Details:"
+echo "FileSystemId: $FSXL_VOLUME_ID"
+echo "DNS Name: $DNS_NAME"
+echo "Mount Name: $MOUNT_NAME"
+
+echo "Environment variables FSXL_VOLUME_ID, DNS_NAME, and MOUNT_NAME have been set."
 
 sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" fsxL-persistent-volume.yaml
 sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" fsxL-persistent-volume.yaml
