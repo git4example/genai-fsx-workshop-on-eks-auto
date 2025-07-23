@@ -64,7 +64,7 @@ Parameters:
   KubectlVersion:
     Description: kubectl version to be installed on VSCode IDE instance. Ref - https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html
     Type: String
-    Default: 1.31.2
+    Default: 1.33.0
     ConstraintDescription: Must be a valid kubectl version
 
   KubectlDate:
@@ -81,7 +81,7 @@ Parameters:
   EKSClusterVersion:
     Description: EKS Cluster Version
     Type: String
-    Default: "1.31"
+    Default: "1.33"
     ConstraintDescription: Must be a valid eks version
 
   EKSClusterName:
