@@ -33,6 +33,6 @@ The **FSx for Lustre** Container Storage Interface (CSI) driver provides a CSI i
 
 **Static vs Dynamic provisioning of storage resources:**
   - **Static provisioning** - This involves a two step process to create and use storage:
-    - 1/An administrator creates the backend storage volume on the storage instance (i.e. a new FSx for Lustre instance), and then creates a corresponding Persistent Volume (PV) definition for the FSx for Lustre Instance on the Kubernetes cluster.
-    - 2/The application developer then submits a PVC request to use the Persistent Volume in their Pod.
+    1. An administrator creates the backend storage volume on the storage instance (i.e. a new FSx for Lustre instance), and then creates a corresponding Persistent Volume (PV) definition for the FSx for Lustre Instance on the Kubernetes cluster.
+    2. The application developer then submits a PVC request to use the Persistent Volume in their Pod.
   - **Dynamic provisioning** - Dynamic provisioning eliminates the need for administrators to pre-provision storage to the EKS cluster. Instead, users can create and use persistent storage on-demand, where it automatically provisions a Persistent Volume (and its associated FSx for Lustre instance) when a user makes a Persistent Volume Claim (PVC) request.

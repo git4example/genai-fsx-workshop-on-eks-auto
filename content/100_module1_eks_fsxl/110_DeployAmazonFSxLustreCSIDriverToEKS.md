@@ -109,7 +109,7 @@ Copy the output of this ROLE_ARN into your notepad file
 
 Copy and the run the following command to deploy the CSI driver for FSx for Lustre
 
-::code[kubectl apply -k "github.com/kubernetes-sigs/aws-fsx-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.2"]{language=bash showLineNumbers=false showCopyAction=true}
+::code[kubectl apply -k "github.com/kubernetes-sigs/aws-fsx-csi-driver/deploy/kubernetes/overlays/stable/?ref=v1.4.0"]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 Verify that the CSI driver has been installed successfully with the following command.
@@ -120,10 +120,10 @@ Verify that the CSI driver has been installed successfully with the following co
 ::::expand{header="You should see the results as below, click to expand"}
 
 :::code[]{language=bash showLineNumbers=false showCopyAction=false}
-fsx-csi-controller-c7d98b5b-j47bq   4/4     Running   0          45s
-fsx-csi-controller-c7d98b5b-kdgs9   4/4     Running   0          45s
-fsx-csi-node-ckqjr                  3/3     Running   0          45s
-fsx-csi-node-jxscw                  3/3     Running   0          45s
+NAME                                 READY   STATUS    RESTARTS   AGE
+fsx-csi-controller-5d8ff465d-2z78r   4/4     Running   0          3m9s
+fsx-csi-controller-5d8ff465d-9cvpb   4/4     Running   0          2m59s
+fsx-csi-node-xczbr                   3/3     Running   0          3m9s
 :::
 
 ::::
@@ -159,6 +159,13 @@ secrets:
 :::
 
 ::::
+
+##### Step 7 : Restart pods
+
+We will restart controller pods to make sure they use correct role credentials via service account.
+
+::code[kubectl rollout restart deploy fsx-csi-controller -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
+
 
 ## Summary
 
