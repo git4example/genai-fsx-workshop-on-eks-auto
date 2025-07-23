@@ -16,7 +16,7 @@ Go to the correct working directory.
 ::code[cd /home/participant/environment/eks/FSxL]{language=bash showLineNumbers=false showCopyAction=true}
 
 
-Run the below command and write down the output shown for availability zone of the FSx for Lustre Instance (i.e. "us-west-2c")
+Run the below command and write down the output shown for availability zone of the FSx for Lustre Instance.
 
 ::code[aws ec2 describe-subnets --subnet-id $SUBNET_ID --region $AWS_REGION | jq .Subnets[0].AvailabilityZone]{language=bash showLineNumbers=false showCopyAction=true}
 

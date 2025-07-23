@@ -66,11 +66,5 @@ infrastructure:
     - templateLocation: static/GenAIFSXWorkshopOnEKS.yaml
       label: GenAI FSx workshop
       parameters:
-        - templateParameter: ParticipantRoleName
-          defaultValue: "{{.ParticipantRoleName}}"
-        - templateParameter: ParticipantRoleArn
-          defaultValue: "{{.ParticipantRoleArn}}"
-        - templateParameter: ParticipantAssumedRoleArn
-          defaultValue: "{{.ParticipantAssumedRoleArn}}"
         - templateParameter: Assets
           defaultValue: "s3://{{.AssetsBucketName}}/{{.AssetsBucketPrefix}}"

@@ -139,7 +139,7 @@ Copy and run the below command to apply and create the PVC.
 
 ::code[kubectl describe pvc/fsx-lustre-dynamic-claim]{language=bash showLineNumbers=false showCopyAction=true}
 
-4. Lets check that status of the PVC request. You can see the PVC claim you just requested for "fsx-lustre-dynamic-claim" is in a pending state, where it is bound to the fsx-lustre-sc StorageClass you created earlier.
+4. Lets check that status of the PVC request. You can see the PVC claim you just requested for "fsx-lustre-dynamic-claim" is in a pending state, where it is using fsx-lustre-sc StorageClass you created earlier.
 
 ::code[kubectl get pvc]{language=bash showLineNumbers=false showCopyAction=true}
 
@@ -167,7 +167,7 @@ fsx-lustre-dynamic-claim   Bound    pvc-15dXXXXXX-11ea-a836-02468c18769e   1200G
 
 
 
-::::expand{header="If you see the below output, it means that your volume creation is not expected to have issues. Otherwise, there might be problems that you need to troubleshoot, click to expand"}
+::::expand{header="If you see the below output when you describe pvc, it means that your volume creation is not expected to have issues. Otherwise, there might be problems that you need to troubleshoot, click to expand"}
 
 :::code[]{language=yaml showLineNumbers=true showCopyAction=false}
 Name:          fsx-lustre-claim

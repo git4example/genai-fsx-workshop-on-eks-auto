@@ -94,14 +94,12 @@ Before you can start running all the Kubernetes commands included in this worksh
 
 
 ## Query the Amazon EKS cluster:
-Run the command below to see the Kubernetes nodes currently provisioned:
+Run the command below just to see the connectivity to EKS Auto Cluster:
 
 ::code[kubectl get nodes]{language=bash showLineNumbers=false showCopyAction=true}
 
-You should see two nodes provisioned (which are the on-demand nodes used by the Kubernetes controllers), such as the output below:
-
+You should see one node provisioned which was provisioned by EKS Auto to run some of the core components required for the workshop.
 
 ![get-nodes](/static/images/get-nodes.png)
-
 
 You now have a VSCode IDE Server environment set-up ready to use your Amazon EKS Cluster! You may now proceed with the next step.

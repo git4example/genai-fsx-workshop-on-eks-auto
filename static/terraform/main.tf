@@ -43,7 +43,7 @@ provider "aws" {
 provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-  # token                  = data.aws_eks_cluster_auth.this.token
+  
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
@@ -55,33 +55,84 @@ provider "helm" {
   kubernetes {
     host                   = module.eks.cluster_endpoint
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-    # token                  = data.aws_eks_cluster_auth.this.token
+    
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
       command     = "aws"
       args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
     }
-
   }
 }
 
 provider "kubectl" {
-  apply_retry_count      = 10
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
   load_config_file       = false
-  # token                  = data.aws_eks_cluster_auth.this.token
+
   exec {
-      api_version = "client.authentication.k8s.io/v1beta1"
-      command     = "aws"
-      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+  }
+}
+
+locals {
+  name   = "eksworkshop"
+  region = "--AWS_REGION--"
+  # region = "us-west-1"
+
+  cluster_version = "--EKS_VERSION--"
+  # cluster_version = "1.33"
+
+  vpc_cidr = "10.0.0.0/16"
+  azs = data.aws_availability_zones.available.names 
+
+  tags = {
+    Blueprint = local.name
+  }
+
+  # Following is to check if WSParticipantRole role is present or not, to handle on-demand workshop in private accounts
+    
+  # Base access entries - this will always be created
+  base_access_entries = {}
+  
+  # Define the role ARN
+  ws_participant_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/WSParticipantRole"
+  
+  # Check if role exists first
+  has_ws_participant_role = try(
+    contains(data.aws_iam_roles.all.names, "WSParticipantRole"),
+    false
+  )
+  
+  # Use the check result to conditionally create access entry
+  ws_participant_access = local.has_ws_participant_role ? {
+    super-admin = {
+      principal_arn = local.ws_participant_role_arn
+      policy_associations = {
+        this = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
     }
+  } : {}
+
+  # Merge access entries
+  access_entries = merge(local.base_access_entries, local.ws_participant_access)
+}
+
+# Add this data source to get all IAM roles
+data "aws_iam_roles" "all" {
+  path_prefix = "/"
 }
 
 
-# data "aws_eks_cluster_auth" "this" {
-#   name = module.eks.cluster_name
-# }
+data "aws_eks_cluster_auth" "this" {
+  name = module.eks.cluster_name
+}
 
 data "aws_ecrpublic_authorization_token" "token" {
   provider = aws.virginia
@@ -93,26 +144,8 @@ data "aws_availability_zones" "available" {
 }
 
 data "aws_caller_identity" "current" {}
-
-locals {
-  name   = "eksworkshop"
-  # region = "--AWS_REGION--"
-  region = "us-west-2"
-
-  # cluster_version = "--EKS_VERSION--"
-  cluster_version = "1.30"
-
-  vpc_cidr = "10.0.0.0/16"
-  # azs      = slice(data.aws_availability_zones.available.names, 0, length(data.aws_availability_zones.available.names))
-  sorted_azs = sort(data.aws_availability_zones.available.names)
-  azs      = slice(local.sorted_azs, 0, length(local.sorted_azs))
-
-  tags = {
-    Blueprint = local.name
-  }
-}
-
-
+data "aws_partition" "current" {}
+data "aws_region" "current" {}
 
 ################################################################################
 # EKS Cluster
@@ -130,72 +163,31 @@ module "eks" {
   cluster_endpoint_public_access = true
   enable_cluster_creator_admin_permissions = true
   authentication_mode            = "API"
+  cluster_enabled_log_types = ["api","audit","authenticator","controllerManager","scheduler"]
 
-  access_entries = {  
-    super-admin = {
-        principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/WSParticipantRole"
-
-        policy_associations = {
-          this = {
-            policy_arn =  "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-            access_scope = {
-              type = "cluster"
-            }
-          }
-        }
-      }
+  cluster_compute_config = {
+    enabled    = true
+    node_pools = ["general-purpose","system"]
   }
-
-  cluster_addons = {
-    # aws-ebs-csi-driver = { most_recent = true }
-    kube-proxy = { most_recent = true }
-    coredns    = { most_recent = true }
-    eks-pod-identity-agent = {}
-    vpc-cni = {
-      most_recent    = true
-      before_compute = true
-      configuration_values = jsonencode({
-        env = {
-          ENABLE_PREFIX_DELEGATION = "true"
-          WARM_PREFIX_TARGET       = "1"
-        }
-      })
-    }
-  }
+    
+  access_entries = local.access_entries
 
   vpc_id     = module.vpc.vpc_id
-  # subnet_ids = module.vpc.public_subnets
   subnet_ids = module.vpc.private_subnets
 
   create_cloudwatch_log_group   = false
-  create_cluster_security_group = false
+  create_cluster_security_group = true
   create_node_security_group    = false
-
-  eks_managed_node_groups = {
-    managed-ondemand = {
-      node_group_name = "managed-ondemand"
-      instance_types  = ["m4.xlarge", "m5.xlarge", "m5a.xlarge", "m5ad.xlarge", "m5d.xlarge", "t2.xlarge", "t3.xlarge", "t3a.xlarge"]
-
-      create_security_group = false
-
-      subnet_ids   = module.vpc.private_subnets
-      max_size     = 2
-      desired_size = 2
-      min_size     = 2
-
-      # Launch template configuration
-      create_launch_template = true              # false will use the default launch template
-      launch_template_os     = "amazonlinux2eks" # amazonlinux2eks or bottlerocket
-
-      labels = {
-        intent = "control-apps"
-      }
-    }
-  }
+  enable_irsa                   = true
 
   tags = merge(local.tags, {
     "karpenter.sh/discovery" = local.name
   })
+
+  depends_on = [
+    module.vpc
+  ]
+
 }
 
 module "eks_blueprints_addons" {
@@ -221,35 +213,35 @@ module "eks_blueprints_addons" {
   #---------------------------------------
   # ebs csi driver for EKS Cluster
   #---------------------------------------
-  eks_addons = {
-    aws-ebs-csi-driver = {
-      service_account_role_arn = module.ebs_csi_driver_irsa.iam_role_arn
-    }
-  }
+  # eks_addons = {
+  #   aws-ebs-csi-driver = {
+  #     service_account_role_arn = module.ebs_csi_driver_irsa.iam_role_arn
+  #   }
+  # }
 
   #---------------------------------------
   # Karpenter Autoscaler for EKS Cluster
   #---------------------------------------
-  enable_karpenter = true
-  karpenter_enable_spot_termination          = true
+  # enable_karpenter = true
+  # karpenter_enable_spot_termination          = true
   karpenter_enable_instance_profile_creation = true
-  karpenter = {
-    chart_version       = "1.0.1"     # https://gallery.ecr.aws/karpenter/karpenter
-    repository_username = data.aws_ecrpublic_authorization_token.token.user_name
-    repository_password = data.aws_ecrpublic_authorization_token.token.password
-  }
+  # karpenter = {
+  #   chart_version       = "1.0.1"     # https://gallery.ecr.aws/karpenter/karpenter
+  #   repository_username = data.aws_ecrpublic_authorization_token.token.user_name
+  #   repository_password = data.aws_ecrpublic_authorization_token.token.password
+  # }
  
-  karpenter_node = {
-    iam_role_use_name_prefix = false
-    iam_role_additional_policies = {
-      AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-    }
-  }
+  # karpenter_node = {
+  #   iam_role_use_name_prefix = false
+  #   iam_role_additional_policies = {
+  #     AmazonSSMManagedInstanceCore = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  #   }
+  # }
 
   #---------------------------------------
   # AWS Load Balancer Controller Add-on
   #---------------------------------------
-  enable_aws_load_balancer_controller = true
+  # enable_aws_load_balancer_controller = true
   # turn off the mutating webhook for services because if you are using
   # service.beta.kubernetes.io/aws-load-balancer-type: external
   # aws_load_balancer_controller = {
@@ -276,21 +268,21 @@ module "eks_blueprints_addons" {
   # 3- Get sexret name from Terrafrom output: `terraform output grafana_secret_name`
   # 3- Get admin user password: `aws secretsmanager get-secret-value --secret-id <REPLACE_WIRTH_SECRET_ID> --region $AWS_REGION --query "SecretString" --output text`
   #---------------------------------------------------------------
-  enable_kube_prometheus_stack = true
-  kube_prometheus_stack = {
-    values = [
-      templatefile("${path.module}/helm-values/kube-prometheus.yaml", {
-        storage_class_type = kubernetes_storage_class.default_gp3.id
-      })
-    ]
-    chart_version = "48.1.1"
-    set_sensitive = [
-      {
-        name  = "grafana.adminPassword"
-        value = data.aws_secretsmanager_secret_version.admin_password_version.secret_string
-      }
-    ],
-  }
+  # enable_kube_prometheus_stack = true
+  # kube_prometheus_stack = {
+  #   values = [
+  #     templatefile("${path.module}/helm-values/kube-prometheus.yaml", {
+  #       storage_class_type = kubernetes_storage_class.default_gp3.id
+  #     })
+  #   ]
+  #   chart_version = "48.1.1"
+  #   set_sensitive = [
+  #     {
+  #       name  = "grafana.adminPassword"
+  #       value = data.aws_secretsmanager_secret_version.admin_password_version.secret_string
+  #     }
+  #   ],
+  # }
 
   tags = local.tags
   depends_on = [
@@ -302,27 +294,27 @@ module "eks_blueprints_addons" {
 # Grafana Admin credentials resources
 # Login to AWS secrets manager with the same role as Terraform to extract the Grafana admin password with the secret name as "grafana"
 #---------------------------------------------------------------
-data "aws_secretsmanager_secret_version" "admin_password_version" {
-  secret_id  = aws_secretsmanager_secret.grafana.id
-  depends_on = [aws_secretsmanager_secret_version.grafana]
-}
+# data "aws_secretsmanager_secret_version" "admin_password_version" {
+#   secret_id  = aws_secretsmanager_secret.grafana.id
+#   depends_on = [aws_secretsmanager_secret_version.grafana]
+# }
 
-resource "random_password" "grafana" {
-  length           = 16
-  special          = true
-  override_special = "@_"
-}
+# resource "random_password" "grafana" {
+#   length           = 16
+#   special          = true
+#   override_special = "@_"
+# }
 
-#tfsec:ignore:aws-ssm-secret-use-customer-key
-resource "aws_secretsmanager_secret" "grafana" {
-  name_prefix             = "${local.name}-oss-grafana"
-  recovery_window_in_days = 0 # Set to zero for this example to force delete during Terraform destroy
-}
+# #tfsec:ignore:aws-ssm-secret-use-customer-key
+# resource "aws_secretsmanager_secret" "grafana" {
+#   name_prefix             = "${local.name}-oss-grafana"
+#   recovery_window_in_days = 0 # Set to zero for this example to force delete during Terraform destroy
+# }
 
-resource "aws_secretsmanager_secret_version" "grafana" {
-  secret_id     = aws_secretsmanager_secret.grafana.id
-  secret_string = random_password.grafana.result
-}
+# resource "aws_secretsmanager_secret_version" "grafana" {
+#   secret_id     = aws_secretsmanager_secret.grafana.id
+#   secret_string = random_password.grafana.result
+# }
 
 #---------------------------------------------------------------
 # Data on EKS Kubernetes Addons
@@ -336,16 +328,19 @@ module "data_addons" {
   #---------------------------------------------------------------
   # Neuron and NVIDIA Device Plugin Add-on
   #---------------------------------------------------------------
-  enable_aws_neuron_device_plugin  = true
-  aws_neuron_device_plugin_helm_config = {
-    create_namespace=true
-  }
-  enable_nvidia_device_plugin = true
-  nvidia_device_plugin_helm_config = {
-    version =  "v0.16.1"
-    name    = "nvidia-device-plugin"
-    values  = [file("${path.module}/helm-values/nvidia-values.yaml")]
-  }
+  # enable_aws_neuron_device_plugin  = true
+  # aws_neuron_device_plugin_helm_config = {
+  #   # version =  "1.1.1"
+  #   create_namespace=true
+  #   values  = [file("${path.module}/helm-values/neuron-values.yaml")]
+  # }
+  
+  # enable_nvidia_device_plugin = true
+  # nvidia_device_plugin_helm_config = {
+  #   # version =  "0.17.0"
+  #   name    = "nvidia-device-plugin"
+  #   values  = [file("${path.module}/helm-values/nvidia-values.yaml")]
+  # }
   depends_on = [
     module.eks
   ]
@@ -391,40 +386,40 @@ resource "kubernetes_storage_class" "default_gp3" {
 
 
 
-resource "aws_eks_access_entry" "karpenter_node_access_entry" {
-  provider          = aws.region1
-  cluster_name      = module.eks.cluster_name
-  principal_arn     = module.eks_blueprints_addons.karpenter.node_iam_role_arn
-  kubernetes_groups = []
-  type              = "EC2_LINUX"
-  lifecycle {
-    ignore_changes =  all 
-  }
-  depends_on = [
-    module.eks_blueprints_addons
-  ]
-}
+# resource "aws_eks_access_entry" "karpenter_node_access_entry" {
+#   provider          = aws.region1
+#   cluster_name      = module.eks.cluster_name
+#   principal_arn     = module.eks_blueprints_addons.karpenter.node_iam_role_arn
+#   kubernetes_groups = []
+#   type              = "EC2_LINUX"
+#   lifecycle {
+#     ignore_changes =  all 
+#   }
+#   depends_on = [
+#     module.eks_blueprints_addons
+#   ]
+# }
 
-module "ebs_csi_driver_irsa" {
-  source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  version = "5.58.0"
+# module "ebs_csi_driver_irsa" {
+#   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+#   version = ">= 5.20"
 
-  role_name_prefix = "${module.eks.cluster_name}-ebs-csi-driver-"
+#   role_name_prefix = "${module.eks.cluster_name}-ebs-csi-driver-"
 
-  attach_ebs_csi_policy = true
+#   attach_ebs_csi_policy = true
 
-  oidc_providers = {
-    main = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
-    }
-  }
+#   oidc_providers = {
+#     main = {
+#       provider_arn               = module.eks.oidc_provider_arn
+#       namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
+#     }
+#   }
 
-  tags = local.tags
-  depends_on = [
-    module.eks
-  ]
-}
+#   tags = local.tags
+#   depends_on = [
+#     module.eks
+#   ]
+# }
 
 ################################################################################
 # Network Resources
@@ -442,8 +437,8 @@ module "vpc" {
   cidr = local.vpc_cidr
 
   azs             = local.azs
-  public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k)]
-  private_subnets = ["10.0.32.0/19", "10.0.64.0/19", "10.0.96.0/19"]
+  public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 3, k)]
+  private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 3, k + 4)]
 
   enable_nat_gateway   = true
   single_nat_gateway   = true
@@ -595,7 +590,7 @@ resource "aws_security_group" "FSxLSecurityGroup01" {
     from_port        = 988
     to_port          = 988
     protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
+    cidr_blocks      = [local.vpc_cidr]
   }
 
   ingress {
@@ -603,7 +598,7 @@ resource "aws_security_group" "FSxLSecurityGroup01" {
     from_port        = 1018
     to_port          = 1023
     protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
+    cidr_blocks      = [local.vpc_cidr]
   }
 
   egress {
@@ -611,7 +606,7 @@ resource "aws_security_group" "FSxLSecurityGroup01" {
     from_port        = 0
     to_port          = 0
     protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
+    cidr_blocks      = [local.vpc_cidr]
   }
 
 }
@@ -652,6 +647,10 @@ resource "aws_fsx_data_repository_association" "fsx_lustre_association" {
       events = ["NEW", "CHANGED", "DELETED"]
     }
   }
+  depends_on = [    
+    module.fsx-lustre-bucket,
+    aws_fsx_lustre_file_system.fsx_lustre
+  ]
 }
 
 
@@ -674,6 +673,18 @@ resource "helm_release" "fsx_csi_driver" {
 ################################################################################
 # Kubernetes Manifests
 ################################################################################
+
+resource "kubectl_manifest" "neuron-healthcheck-system-namespace" {
+  yaml_body = <<-YAML
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+      name: neuron-healthcheck-system
+    YAML
+  depends_on = [
+    module.eks
+  ]
+}
 
 # ---- kubeops ----
 # resource "kubectl_manifest" "kube_ops_view_deployment" {
@@ -825,72 +836,72 @@ resource "helm_release" "fsx_csi_driver" {
 # }
 
 # ---- karpenter nodepool ----
-resource "kubectl_manifest" "nodepool_default" {
-  yaml_body = <<-YAML
-    apiVersion: karpenter.sh/v1
-    kind: NodePool
-    metadata:
-      name: default
-    spec:
-      template:
-        spec:
-          requirements:
-            - key: kubernetes.io/arch
-              operator: In
-              values: ["amd64"]
-            - key: kubernetes.io/os
-              operator: In
-              values: ["linux"]
-            - key: karpenter.sh/capacity-type
-              operator: In
-              values: ["on-demand"]
-            - key: karpenter.k8s.aws/instance-category
-              operator: In
-              values: ["c", "m", "r"]
-            - key: karpenter.k8s.aws/instance-generation
-              operator: Gt
-              values: ["4"]
-          nodeClassRef:
-            group: karpenter.k8s.aws
-            kind: EC2NodeClass
-            name: default
-      limits:
-        cpu: 1000
-      disruption:
-        consolidationPolicy: WhenEmpty
-        consolidateAfter: 180s
-      weight: 100
-  YAML
+# resource "kubectl_manifest" "nodepool_default" {
+#   yaml_body = <<-YAML
+#     apiVersion: karpenter.sh/v1
+#     kind: NodePool
+#     metadata:
+#       name: default
+#     spec:
+#       template:
+#         spec:
+#           requirements:
+#             - key: kubernetes.io/arch
+#               operator: In
+#               values: ["amd64"]
+#             - key: kubernetes.io/os
+#               operator: In
+#               values: ["linux"]
+#             - key: karpenter.sh/capacity-type
+#               operator: In
+#               values: ["on-demand"]
+#             - key: karpenter.k8s.aws/instance-category
+#               operator: In
+#               values: ["c", "m", "r"]
+#             - key: karpenter.k8s.aws/instance-generation
+#               operator: Gt
+#               values: ["4"]
+#           nodeClassRef:
+#             group: karpenter.k8s.aws
+#             kind: EC2NodeClass
+#             name: default
+#       limits:
+#         cpu: 1000
+#       disruption:
+#         consolidationPolicy: WhenEmpty
+#         consolidateAfter: 180s
+#       weight: 100
+#   YAML
 
-  depends_on = [
-    module.eks_blueprints_addons
-  ]
-}
+#   depends_on = [
+#     module.eks_blueprints_addons
+#   ]
+# }
 
 # ---- karpenter ec2nodeclass ----
-resource "kubectl_manifest" "ec2nodeclass_default" {
-  yaml_body = <<-YAML
-    apiVersion: karpenter.k8s.aws/v1
-    kind: EC2NodeClass
-    metadata:
-      name: default
-    spec:
-      amiFamily: AL2 
-      role: "Karpenter-eksworkshop" 
-      subnetSelectorTerms:          
-        - tags:
-            karpenter.sh/discovery: "eksworkshop"
-      securityGroupSelectorTerms:
-        - tags:
-            karpenter.sh/discovery: "eksworkshop"
-      amiSelectorTerms:
-        - alias: al2@v20240917
-  YAML
+# resource "kubectl_manifest" "ec2nodeclass_default" {
+#   yaml_body = <<-YAML
+#     apiVersion: karpenter.k8s.aws/v1
+#     kind: EC2NodeClass
+#     metadata:
+#       name: default
+#     spec:
+#       amiFamily: AL2 
+#       role: "Karpenter-eksworkshop" 
+#       subnetSelectorTerms:          
+#         - tags:
+#             karpenter.sh/discovery: "eksworkshop"
+#       securityGroupSelectorTerms:
+#         - tags:
+#             karpenter.sh/discovery: "eksworkshop"
+#       amiSelectorTerms:
+#         - alias: al2@v20240917
+#   YAML
 
-  depends_on = [
-    module.eks_blueprints_addons
-  ]
-}
+#   depends_on = [
+#     module.eks_blueprints_addons
+#   ]
+# }
 
 
 
@@ -900,81 +911,75 @@ resource "kubectl_manifest" "ec2nodeclass_default" {
 ################################################################################
 
 # ---- karpenter nodepool for sysprep ----
-resource "kubectl_manifest" "nodepool_sysprep" {
-  yaml_body = <<-YAML
-    apiVersion: karpenter.sh/v1
-    kind: NodePool
-    metadata:
-      name: sysprep
-    spec:
-      template:
-        spec:
-          requirements:
-            - key: kubernetes.io/arch
-              operator: In
-              values: ["amd64"]
-            - key: kubernetes.io/os
-              operator: In
-              values: ["linux"]
-            - key: karpenter.sh/capacity-type
-              operator: In
-              values: ["on-demand"]
-            - key: karpenter.k8s.aws/instance-category
-              operator: In
-              values: ["c", "m", "r"]
-            - key: karpenter.k8s.aws/instance-generation
-              operator: Gt
-              values: ["4"]
-          nodeClassRef:
-            group: karpenter.k8s.aws
-            kind: EC2NodeClass
-            name: sysprep
-      limits:
-        cpu: 1000
-      disruption:
-        consolidationPolicy: WhenEmpty
-        # expireAfter: 720h # 30 * 24h = 720h
-        consolidateAfter: 180s
-      weight: 100
-  YAML
+# resource "kubectl_manifest" "nodepool_sysprep" {
+#   yaml_body = <<-YAML
+#     apiVersion: karpenter.sh/v1
+#     kind: NodePool
+#     metadata:
+#       name: sysprep
+#     spec:
+#       template:
+#         spec:
+#           requirements:
+#             - key: kubernetes.io/arch
+#               operator: In
+#               values: ["amd64"]
+#             - key: kubernetes.io/os
+#               operator: In
+#               values: ["linux"]
+#             - key: karpenter.sh/capacity-type
+#               operator: In
+#               values: ["on-demand"]
+#             - key: eks.amazonaws.com/instance-category
+#               operator: In
+#               values: ["c", "m", "r"]
+#             - key: eks.amazonaws.com/instance-generation
+#               operator: Gt
+#               values: ["4"]
+#           nodeClassRef:
+#             group: eks.amazonaws.com
+#             kind: NodeClass
+#             name: sysprep
+#       limits:
+#         cpu: 1000
+#       disruption:
+#         consolidationPolicy: WhenEmpty
+#         # expireAfter: 720h # 30 * 24h = 720h
+#         consolidateAfter: 180s
+#       weight: 100
+#   YAML
 
-  depends_on = [
-    module.eks_blueprints_addons
-  ]
-}
+#   depends_on = [
+#     module.eks_blueprints_addons
+#   ]
+# }
 
 # ---- karpenter nodeclass for sysprep ----
-resource "kubectl_manifest" "ec2nodeclass_sysprep" {
-  yaml_body = <<-YAML
-    apiVersion: karpenter.k8s.aws/v1
-    kind: EC2NodeClass
-    metadata:
-      name: sysprep
-    spec:
-      amiFamily: AL2 # Amazon Linux 2
-      blockDeviceMappings:
-        - deviceName: /dev/xvda
-          ebs:
-            deleteOnTermination: true
-            volumeSize: 100Gi
-            volumeType: gp3
-            iops: 10000
-            throughput: 1000
-      role: "Karpenter-eksworkshop" 
-      subnetSelectorTerms:          
-        - tags:
-            karpenter.sh/discovery: "eksworkshop"
-      securityGroupSelectorTerms:
-        - tags:
-            karpenter.sh/discovery: "eksworkshop"
-      amiSelectorTerms:
-        - alias: al2@v20240917
-  YAML
+# resource "kubectl_manifest" "nodeclass_sysprep" {
+#   yaml_body = <<-YAML
+#     apiVersion: eks.amazonaws.com/v1
+#     kind: NodeClass
+#     metadata:
+#       name: sysprep
+#     spec:
+#       # amiFamily: AL2 # Amazon Linux 2
+#       ephemeralStorage:
+#         size: "100Gi"    # Range: 1-59000Gi or 1-64000G or 1-58Ti or 1-64T
+#         iops: 10000      # Range: 3000-16000
+#         throughput: 1000 # Range: 125-1000
+#       role: "${module.eks.node_iam_role_name}"
+#       subnetSelectorTerms:          
+#         - tags:
+#             karpenter.sh/discovery: "eksworkshop"
+#       securityGroupSelectorTerms:
+#         - tags:
+#             karpenter.sh/discovery: "eksworkshop"
+#   YAML
 
-  depends_on = [
-    module.eks_blueprints_addons
-  ]
-}
+#   depends_on = [
+#     module.eks_blueprints_addons
+#   ]
+# }
 
 
 # ---- k8s job for sysprep ----
@@ -990,9 +995,9 @@ resource "kubernetes_job" "sysprep" {
         }
       }
       spec {
-        node_selector = {
-          "karpenter.sh/nodepool" = "sysprep"
-        }
+        # node_selector = {
+        #   "karpenter.sh/nodepool" = "sysprep"
+        # }
         restart_policy = "OnFailure"
         init_container {
           name    = "sysprep"
@@ -1028,9 +1033,17 @@ resource "kubernetes_job" "sysprep" {
   timeouts {
     create = "30m"
   }
+
+  lifecycle {
+    replace_triggered_by = [
+      kubectl_manifest.sysprep_pvc
+    ]
+  }
+
   depends_on = [
     kubectl_manifest.sysprep_pvc,
-    module.eks_blueprints_addons
+    module.eks_blueprints_addons,
+    aws_fsx_data_repository_association.fsx_lustre_association
   ]
 }
 
@@ -1093,4 +1106,9 @@ resource "kubectl_manifest" "sysprep_pv" {
 output "configure_kubectl" {
   description = "Configure kubectl: make sure you're logged in with the correct AWS profile and run the following command to update your kubeconfig"
   value       = "aws eks --region ${local.region} update-kubeconfig --name ${module.eks.cluster_name}"
+}
+
+output "eks_node_iam_role_name" {
+  description = "IAM role name for EKS nodes"
+  value       = module.eks.node_iam_role_name
 }
