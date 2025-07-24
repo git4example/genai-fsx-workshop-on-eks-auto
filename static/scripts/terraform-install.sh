@@ -14,12 +14,8 @@ echo '=== Create EKS Cluster and FSx Filesystem ==='
 terraform apply -target="aws_fsx_lustre_file_system.fsx_lustre" -target="module.eks" --auto-approve
 
 
-echo "Applying Terraform configuration..."
+echo "Terraform Apply for rest of the resources ..."
 terraform apply --auto-approve
-
-
-
-
 
 echo "Running sysprep job"
 terraform apply -var="create_one_off_job=true" --auto-approve
