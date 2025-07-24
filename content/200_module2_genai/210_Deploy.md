@@ -10,17 +10,22 @@ Please note that we will install Neuron Device Plugin, Neuron Scheduler, and Nod
 
 :::code{showCopyAction=true showLineNumbers=true language=bash}
 cd /home/participant/environment/terraform
-helm upgrade --install neuron-helm-chart oci://public.ecr.aws/neuron/neuron-helm-chart -n kube-system -f ./helm-values/neuron-values.yaml 
+
+helm upgrade --install neuron-helm-chart \
+    oci://public.ecr.aws/neuron/neuron-helm-chart \
+    --namespace kube-system \
+    --version 1.2.0 \                           
+    -f ./helm-values/neuron-values.yaml
 :::
 
 You should see an output similar to the one below.
 
 :::code{showCopyAction=false showLineNumbers=false language=bash}
 Release "neuron-helm-chart" does not exist. Installing it now.
-Pulled: public.ecr.aws/neuron/neuron-helm-chart:1.1.1
-Digest: sha256:05b0f6edfb14466c5dd232e8c4cf431f6d7fb7c536bd51470a08b7b936999c4a
+Pulled: public.ecr.aws/neuron/neuron-helm-chart:1.2.0
+Digest: sha256:892b10353badc5e970519bfef42441f72c69ff48437f43a49948e18e4fef87c3
 NAME: neuron-helm-chart
-LAST DEPLOYED: Thu Jan  9 05:35:33 2025
+LAST DEPLOYED: Thu Jul 24 01:57:53 2025
 NAMESPACE: kube-system
 STATUS: deployed
 REVISION: 1

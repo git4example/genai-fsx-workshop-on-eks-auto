@@ -109,8 +109,21 @@ Copy the output of this ROLE_ARN into your notepad file
 
 Copy and the run the following command to deploy the CSI driver for FSx for Lustre
 
-::code[kubectl apply -k "github.com/kubernetes-sigs/aws-fsx-csi-driver/deploy/kubernetes/overlays/stable/?ref=v1.4.0"]{language=bash showLineNumbers=false showCopyAction=true}
+**Add repository**
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
+helm repo add aws-fsx-csi-driver https://kubernetes-sigs.github.io/aws-fsx-csi-driver
+helm repo update
+:::
 
+**Install with IRSA configuration**
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
+helm upgrade --install aws-fsx-csi-driver aws-fsx-csi-driver/aws-fsx-csi-driver \
+    --namespace kube-system \
+    --version 1.11.0 \
+    --set serviceAccount.create=true \
+    --set serviceAccount.name=fsx-csi-controller-sa \
+    --set controller.serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=$ROLE_ARN
+:::
 
 Verify that the CSI driver has been installed successfully with the following command.
 
@@ -120,52 +133,13 @@ Verify that the CSI driver has been installed successfully with the following co
 ::::expand{header="You should see the results as below, click to expand"}
 
 :::code[]{language=bash showLineNumbers=false showCopyAction=false}
-NAME                                 READY   STATUS    RESTARTS   AGE
-fsx-csi-controller-5d8ff465d-2z78r   4/4     Running   0          3m9s
-fsx-csi-controller-5d8ff465d-9cvpb   4/4     Running   0          2m59s
-fsx-csi-node-xczbr                   3/3     Running   0          3m9s
+NAME                                  READY   STATUS    RESTARTS   AGE
+fsx-csi-controller-659fd7dcd4-dvrn5   4/4     Running   0          38s
+fsx-csi-controller-659fd7dcd4-wtzsl   4/4     Running   0          38s
+fsx-csi-node-2pcvt                    3/3     Running   0          38s
 :::
 
 ::::
-
-##### Step 6: Annotate service account that we created in step 4 above
-
-Copy and the run the following commands to add IAM role to the service account
-
-:::code[]{language=bash showLineNumbers=false showCopyAction=true}
-kubectl annotate serviceaccount -n kube-system fsx-csi-controller-sa eks.amazonaws.com/role-arn=$ROLE_ARN --overwrite=true
-:::
-
-You can verify this was successful by checking the service account contents
-
-::code[kubectl get sa/fsx-csi-controller-sa -n kube-system -o yaml]{language=bash showLineNumbers=false showCopyAction=true}
-
-::::expand{header="You can see the Service account has the annotation to the IAM Role created just now, click to expand"}
-
-:::code[]{language=yaml showLineNumbers=true showCopyAction=false}
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::0048XXXXXXXX:role/eksctl-FSx-eks-cluster-addon-iamserviceaccount-Role1-1MCAGIVMRJ8SZ
-...
-  labels:
-    app.kubernetes.io/managed-by: eksctl
-    app.kubernetes.io/name: aws-fsx-csi-driver
-  name: fsx-csi-controller-sa
-  namespace: kube-system
-secrets:
-- name: fsx-csi-controller-sa-token-XXX
-:::
-
-::::
-
-##### Step 7 : Restart pods
-
-We will restart controller pods to make sure they use correct role credentials via service account.
-
-::code[kubectl rollout restart deploy fsx-csi-controller -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
-
 
 ## Summary
 

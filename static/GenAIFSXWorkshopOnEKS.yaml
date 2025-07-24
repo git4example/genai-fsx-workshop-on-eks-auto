@@ -2082,12 +2082,12 @@ Resources:
                   echo '=== Create VPC for EKS Cluster ==='
                   cd /home/${VSCodeUser}/environment/terraform/
                   ls -la
-                  terraform apply -target="module.vpc" -auto-approve 
+                  terraform apply -target="module.vpc" --auto-approve 
 
                   # Create EKS Cluster and FSx Filesystem
                   echo '=== Create EKS Cluster and FSx Filesystem ==='
                   echo 'EKS Cluster version - ${EKSClusterVersion} will be created in region ${AWS::Region}'
-                  terraform apply -target="aws_fsx_lustre_file_system.fsx_lustre" -target="module.eks" -auto-approve
+                  terraform apply -target="aws_fsx_lustre_file_system.fsx_lustre" -target="module.eks" --auto-approve
 
   RunCreateEKSClusterResource:
     DependsOn: [RunCreateVPCEKSClusterAndFSxL]
@@ -2139,32 +2139,31 @@ Resources:
                   echo "Applying Terraform configuration..."
                   terraform apply --auto-approve
 
-                  echo "Waiting for 60 seconds to allow ALB controller to start..."
-                  sleep 60
+                  # echo "Waiting for 60 seconds to allow ALB controller to start..."
+                  # sleep 60
 
-                  echo "Applying Terraform configuration again..."
-                  terraform apply --auto-approve
+                  # echo "Applying Terraform configuration again..."
+                  # terraform apply --auto-approve
 
-                  echo "Deleting FSx Lustre sysprep resources..."
-                  echo "Deleting sysprep sysprep job, pv and pvc"
+                  echo "Running sysprep job"
+                  terraform apply -var="create_one_off_job=true" --auto-approve
+                  
+                  echo "Deleting FSx Lustre sysprep resources...Deleting sysprep sysprep job, pv, pvc and fsx csi driver"
 
-                  echo "Destroying kubernetes_job.sysprep..."
-                  terraform destroy --target kubernetes_job.sysprep --auto-approve 
+                  echo "Deleting with create_one_off_job=false --> kubernetes_job.sysprep, kubectl_manifest.sysprep_pvc, kubectl_manifest.sysprep_pv, helm_release.fsx_csi_driver..."
+                  terraform apply -var="create_one_off_job=false" --auto-approve 
 
-                  echo "Destroying kubectl_manifest.sysprep_pvc..."
-                  terraform destroy --target kubectl_manifest.sysprep_pvc --auto-approve 
+                  # echo "Destroying kubernetes_job.sysprep..."
+                  # terraform destroy --target kubernetes_job.sysprep --auto-approve 
+                 
+                  # echo "Destroying kubectl_manifest.sysprep_pvc..."
+                  # terraform destroy --target kubectl_manifest.sysprep_pvc --auto-approve 
 
-                  echo "Destroying kubectl_manifest.sysprep_pv..."
-                  terraform destroy --target kubectl_manifest.sysprep_pv --auto-approve 
+                  # echo "Destroying kubectl_manifest.sysprep_pv..."
+                  # terraform destroy --target kubectl_manifest.sysprep_pv --auto-approve 
 
-                  # echo "Destroying kubectl_manifest.nodepool_sysprep..."
-                  # terraform destroy --target kubectl_manifest.nodepool_sysprep --auto-approve 
-
-                  # echo "Destroying kubectl_manifest.ec2nodeclass_sysprep..."
-                  # terraform destroy --target kubectl_manifest.ec2nodeclass_sysprep --auto-approve 
-
-                  echo "Destroying helm_release.fsx_csi_driver..."
-                  terraform destroy --target helm_release.fsx_csi_driver --auto-approve 
+                  # echo "Destroying helm_release.fsx_csi_driver..."
+                  # terraform destroy --target helm_release.fsx_csi_driver --auto-approve 
 
                   echo "Cleanup completed."
 

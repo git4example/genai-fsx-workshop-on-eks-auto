@@ -78,11 +78,11 @@ provider "kubectl" {
 
 locals {
   name   = "eksworkshop"
-  region = "--AWS_REGION--"
-  # region = "us-west-1"
+  # region = "--AWS_REGION--"
+  region = "us-west-1"
 
-  cluster_version = "--EKS_VERSION--"
-  # cluster_version = "1.33"
+  # cluster_version = "--EKS_VERSION--"
+  cluster_version = "1.33"
 
   vpc_cidr = "10.0.0.0/16"
   azs = data.aws_availability_zones.available.names 
@@ -210,21 +210,13 @@ module "eks_blueprints_addons" {
   #---------------------------------------
   enable_metrics_server = true
 
-  #---------------------------------------
-  # ebs csi driver for EKS Cluster
-  #---------------------------------------
-  # eks_addons = {
-  #   aws-ebs-csi-driver = {
-  #     service_account_role_arn = module.ebs_csi_driver_irsa.iam_role_arn
-  #   }
-  # }
 
   #---------------------------------------
   # Karpenter Autoscaler for EKS Cluster
   #---------------------------------------
   # enable_karpenter = true
   # karpenter_enable_spot_termination          = true
-  karpenter_enable_instance_profile_creation = true
+  # karpenter_enable_instance_profile_creation = true
   # karpenter = {
   #   chart_version       = "1.0.1"     # https://gallery.ecr.aws/karpenter/karpenter
   #   repository_username = data.aws_ecrpublic_authorization_token.token.user_name
@@ -255,7 +247,7 @@ module "eks_blueprints_addons" {
   # enable_aws_fsx_csi_driver = true
   # aws_fsx_csi_driver = {
   #   namespace     = "aws-fsx-csi-driver"
-  #   chart_version = "1.6.0"
+  #   chart_version = "1.11.0"
   #   role_policies = <ADDITIONAL_IAM_POLICY_ARN>
   # }
 
@@ -268,21 +260,21 @@ module "eks_blueprints_addons" {
   # 3- Get sexret name from Terrafrom output: `terraform output grafana_secret_name`
   # 3- Get admin user password: `aws secretsmanager get-secret-value --secret-id <REPLACE_WIRTH_SECRET_ID> --region $AWS_REGION --query "SecretString" --output text`
   #---------------------------------------------------------------
-  # enable_kube_prometheus_stack = true
-  # kube_prometheus_stack = {
-  #   values = [
-  #     templatefile("${path.module}/helm-values/kube-prometheus.yaml", {
-  #       storage_class_type = kubernetes_storage_class.default_gp3.id
-  #     })
-  #   ]
-  #   chart_version = "48.1.1"
-  #   set_sensitive = [
-  #     {
-  #       name  = "grafana.adminPassword"
-  #       value = data.aws_secretsmanager_secret_version.admin_password_version.secret_string
-  #     }
-  #   ],
-  # }
+  enable_kube_prometheus_stack = true
+  kube_prometheus_stack = {
+    values = [
+      templatefile("${path.module}/helm-values/kube-prometheus.yaml", {
+        storage_class_type = kubernetes_storage_class.default_gp3.id
+      })
+    ]
+    chart_version = "75.13.0"
+    set_sensitive = [
+      {
+        name  = "grafana.adminPassword"
+        value = data.aws_secretsmanager_secret_version.admin_password_version.secret_string
+      }
+    ],
+  }
 
   tags = local.tags
   depends_on = [
@@ -294,27 +286,27 @@ module "eks_blueprints_addons" {
 # Grafana Admin credentials resources
 # Login to AWS secrets manager with the same role as Terraform to extract the Grafana admin password with the secret name as "grafana"
 #---------------------------------------------------------------
-# data "aws_secretsmanager_secret_version" "admin_password_version" {
-#   secret_id  = aws_secretsmanager_secret.grafana.id
-#   depends_on = [aws_secretsmanager_secret_version.grafana]
-# }
+data "aws_secretsmanager_secret_version" "admin_password_version" {
+  secret_id  = aws_secretsmanager_secret.grafana.id
+  depends_on = [aws_secretsmanager_secret_version.grafana]
+}
 
-# resource "random_password" "grafana" {
-#   length           = 16
-#   special          = true
-#   override_special = "@_"
-# }
+resource "random_password" "grafana" {
+  length           = 16
+  special          = true
+  override_special = "@_"
+}
 
-# #tfsec:ignore:aws-ssm-secret-use-customer-key
-# resource "aws_secretsmanager_secret" "grafana" {
-#   name_prefix             = "${local.name}-oss-grafana"
-#   recovery_window_in_days = 0 # Set to zero for this example to force delete during Terraform destroy
-# }
+#tfsec:ignore:aws-ssm-secret-use-customer-key
+resource "aws_secretsmanager_secret" "grafana" {
+  name_prefix             = "${local.name}-oss-grafana"
+  recovery_window_in_days = 0 # Set to zero for this example to force delete during Terraform destroy
+}
 
-# resource "aws_secretsmanager_secret_version" "grafana" {
-#   secret_id     = aws_secretsmanager_secret.grafana.id
-#   secret_string = random_password.grafana.result
-# }
+resource "aws_secretsmanager_secret_version" "grafana" {
+  secret_id     = aws_secretsmanager_secret.grafana.id
+  secret_string = random_password.grafana.result
+}
 
 #---------------------------------------------------------------
 # Data on EKS Kubernetes Addons
@@ -383,43 +375,6 @@ resource "kubernetes_storage_class" "default_gp3" {
 
   depends_on = [kubernetes_annotations.disable_gp2]
 }
-
-
-
-# resource "aws_eks_access_entry" "karpenter_node_access_entry" {
-#   provider          = aws.region1
-#   cluster_name      = module.eks.cluster_name
-#   principal_arn     = module.eks_blueprints_addons.karpenter.node_iam_role_arn
-#   kubernetes_groups = []
-#   type              = "EC2_LINUX"
-#   lifecycle {
-#     ignore_changes =  all 
-#   }
-#   depends_on = [
-#     module.eks_blueprints_addons
-#   ]
-# }
-
-# module "ebs_csi_driver_irsa" {
-#   source  = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-#   version = ">= 5.20"
-
-#   role_name_prefix = "${module.eks.cluster_name}-ebs-csi-driver-"
-
-#   attach_ebs_csi_policy = true
-
-#   oidc_providers = {
-#     main = {
-#       provider_arn               = module.eks.oidc_provider_arn
-#       namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
-#     }
-#   }
-
-#   tags = local.tags
-#   depends_on = [
-#     module.eks
-#   ]
-# }
 
 ################################################################################
 # Network Resources
@@ -611,8 +566,6 @@ resource "aws_security_group" "FSxLSecurityGroup01" {
 
 }
 
-
-
 ################################################################################
 # FSx Lustre filesystem for static provisioning
 ################################################################################
@@ -654,22 +607,6 @@ resource "aws_fsx_data_repository_association" "fsx_lustre_association" {
 }
 
 
-resource "helm_release" "fsx_csi_driver" {
-  name       = "aws-fsx-csi-driver"
-  namespace  = "kube-system"
-  repository = "https://kubernetes-sigs.github.io/aws-fsx-csi-driver"
-  chart      = "aws-fsx-csi-driver"
-  version    = "1.9.0" 
-  set {
-    name  = "csi.enableFSxNInstances"
-    value = true
-  }
-  depends_on = [
-    module.eks
-  ]
-}
-
-
 ################################################################################
 # Kubernetes Manifests
 ################################################################################
@@ -683,418 +620,6 @@ resource "kubectl_manifest" "neuron-healthcheck-system-namespace" {
     YAML
   depends_on = [
     module.eks
-  ]
-}
-
-# ---- kubeops ----
-# resource "kubectl_manifest" "kube_ops_view_deployment" {
-#   yaml_body = <<-YAML
-#     apiVersion: apps/v1
-#     kind: Deployment
-#     metadata:
-#       labels:
-#         application: kube-ops-view
-#         component: frontend
-#       name: kube-ops-view
-#     spec:
-#       replicas: 1
-#       selector:
-#         matchLabels:
-#           application: kube-ops-view
-#           component: frontend
-#       template:
-#         metadata:
-#           labels:
-#             application: kube-ops-view
-#             component: frontend
-#         spec:
-#           nodeSelector:
-#             intent: control-apps
-#           serviceAccountName: kube-ops-view
-#           containers:
-#           - name: service
-#             image: hjacobs/kube-ops-view:20.4.0
-#             ports:
-#             - containerPort: 8080
-#               protocol: TCP
-#             readinessProbe:
-#               httpGet:
-#                 path: /health
-#                 port: 8080
-#               initialDelaySeconds: 5
-#               timeoutSeconds: 1
-#             livenessProbe:
-#               httpGet:
-#                 path: /health
-#                 port: 8080
-#               initialDelaySeconds: 30
-#               periodSeconds: 30
-#               timeoutSeconds: 10
-#               failureThreshold: 5
-#             resources:
-#               limits:
-#                 cpu: 400m
-#                 memory: 400Mi
-#               requests:
-#                 cpu: 400m
-#                 memory: 400Mi
-#             securityContext:
-#               readOnlyRootFilesystem: true
-#               runAsNonRoot: true
-#               runAsUser: 1000
-#   YAML
-
-#   depends_on = [
-#     module.eks
-#   ]
-# }
-
-# resource "kubectl_manifest" "kube_ops_view_sa" {
-#   yaml_body = <<-YAML
-#     apiVersion: v1
-#     kind: ServiceAccount
-#     metadata:
-#       name: kube-ops-view
-#   YAML
-
-#   depends_on = [
-#     module.eks
-#   ]
-# }
-
-# resource "kubectl_manifest" "kube_ops_view_clusterrole" {
-#   yaml_body = <<-YAML
-#     kind: ClusterRole
-#     apiVersion: rbac.authorization.k8s.io/v1
-#     metadata:
-#       name: kube-ops-view
-#     rules:
-#     - apiGroups: [""]
-#       resources: ["nodes", "pods"]
-#       verbs:
-#         - list
-#     - apiGroups: ["metrics.k8s.io"]
-#       resources: ["nodes", "pods"]
-#       verbs:
-#         - get
-#         - list
-#   YAML
-
-#   depends_on = [
-#     module.eks
-#   ]
-# }
-
-# resource "kubectl_manifest" "kube_ops_view_clusterrole_binding" {
-#   yaml_body = <<-YAML
-#     kind: ClusterRoleBinding
-#     apiVersion: rbac.authorization.k8s.io/v1
-#     metadata:
-#       name: kube-ops-view
-#     roleRef:
-#       apiGroup: rbac.authorization.k8s.io
-#       kind: ClusterRole
-#       name: kube-ops-view
-#     subjects:
-#     - kind: ServiceAccount
-#       name: kube-ops-view
-#       namespace: default
-#   YAML
-
-#   depends_on = [
-#     module.eks
-#   ]
-# }
-
-# resource "kubectl_manifest" "kube_ops_view_service" {
-#   yaml_body = <<-YAML
-#     apiVersion: v1
-#     kind: Service
-#     metadata:
-#       labels:
-#         application: kube-ops-view
-#         component: frontend
-#       name: kube-ops-view
-#       annotations:
-#         service.beta.kubernetes.io/aws-load-balancer-type: external
-#         service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
-#         service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
-#     spec:
-#       selector:
-#         application: kube-ops-view
-#         component: frontend
-#       type: LoadBalancer
-#       ports:
-#       - port: 80
-#         protocol: TCP
-#         targetPort: 8080
-#   YAML
-
-#   depends_on = [
-#     module.eks
-#   ]
-# }
-
-# ---- karpenter nodepool ----
-# resource "kubectl_manifest" "nodepool_default" {
-#   yaml_body = <<-YAML
-#     apiVersion: karpenter.sh/v1
-#     kind: NodePool
-#     metadata:
-#       name: default
-#     spec:
-#       template:
-#         spec:
-#           requirements:
-#             - key: kubernetes.io/arch
-#               operator: In
-#               values: ["amd64"]
-#             - key: kubernetes.io/os
-#               operator: In
-#               values: ["linux"]
-#             - key: karpenter.sh/capacity-type
-#               operator: In
-#               values: ["on-demand"]
-#             - key: karpenter.k8s.aws/instance-category
-#               operator: In
-#               values: ["c", "m", "r"]
-#             - key: karpenter.k8s.aws/instance-generation
-#               operator: Gt
-#               values: ["4"]
-#           nodeClassRef:
-#             group: karpenter.k8s.aws
-#             kind: EC2NodeClass
-#             name: default
-#       limits:
-#         cpu: 1000
-#       disruption:
-#         consolidationPolicy: WhenEmpty
-#         consolidateAfter: 180s
-#       weight: 100
-#   YAML
-
-#   depends_on = [
-#     module.eks_blueprints_addons
-#   ]
-# }
-
-# ---- karpenter ec2nodeclass ----
-# resource "kubectl_manifest" "ec2nodeclass_default" {
-#   yaml_body = <<-YAML
-#     apiVersion: karpenter.k8s.aws/v1
-#     kind: EC2NodeClass
-#     metadata:
-#       name: default
-#     spec:
-#       amiFamily: AL2 
-#       role: "Karpenter-eksworkshop" 
-#       subnetSelectorTerms:          
-#         - tags:
-#             karpenter.sh/discovery: "eksworkshop"
-#       securityGroupSelectorTerms:
-#         - tags:
-#             karpenter.sh/discovery: "eksworkshop"
-#       amiSelectorTerms:
-#         - alias: al2@v20240917
-#   YAML
-
-#   depends_on = [
-#     module.eks_blueprints_addons
-#   ]
-# }
-
-
-
-
-################################################################################
-# loading FSx Lustre filesystem with Mistral model
-################################################################################
-
-# ---- karpenter nodepool for sysprep ----
-# resource "kubectl_manifest" "nodepool_sysprep" {
-#   yaml_body = <<-YAML
-#     apiVersion: karpenter.sh/v1
-#     kind: NodePool
-#     metadata:
-#       name: sysprep
-#     spec:
-#       template:
-#         spec:
-#           requirements:
-#             - key: kubernetes.io/arch
-#               operator: In
-#               values: ["amd64"]
-#             - key: kubernetes.io/os
-#               operator: In
-#               values: ["linux"]
-#             - key: karpenter.sh/capacity-type
-#               operator: In
-#               values: ["on-demand"]
-#             - key: eks.amazonaws.com/instance-category
-#               operator: In
-#               values: ["c", "m", "r"]
-#             - key: eks.amazonaws.com/instance-generation
-#               operator: Gt
-#               values: ["4"]
-#           nodeClassRef:
-#             group: eks.amazonaws.com
-#             kind: NodeClass
-#             name: sysprep
-#       limits:
-#         cpu: 1000
-#       disruption:
-#         consolidationPolicy: WhenEmpty
-#         # expireAfter: 720h # 30 * 24h = 720h
-#         consolidateAfter: 180s
-#       weight: 100
-#   YAML
-
-#   depends_on = [
-#     module.eks_blueprints_addons
-#   ]
-# }
-
-# ---- karpenter nodeclass for sysprep ----
-# resource "kubectl_manifest" "nodeclass_sysprep" {
-#   yaml_body = <<-YAML
-#     apiVersion: eks.amazonaws.com/v1
-#     kind: NodeClass
-#     metadata:
-#       name: sysprep
-#     spec:
-#       # amiFamily: AL2 # Amazon Linux 2
-#       ephemeralStorage:
-#         size: "100Gi"    # Range: 1-59000Gi or 1-64000G or 1-58Ti or 1-64T
-#         iops: 10000      # Range: 3000-16000
-#         throughput: 1000 # Range: 125-1000
-#       role: "${module.eks.node_iam_role_name}"
-#       subnetSelectorTerms:          
-#         - tags:
-#             karpenter.sh/discovery: "eksworkshop"
-#       securityGroupSelectorTerms:
-#         - tags:
-#             karpenter.sh/discovery: "eksworkshop"
-#   YAML
-
-#   depends_on = [
-#     module.eks_blueprints_addons
-#   ]
-# }
-
-
-# ---- k8s job for sysprep ----
-resource "kubernetes_job" "sysprep" {
-  metadata {
-    name = "sysprep"
-  }
-  spec {
-    template {
-      metadata {
-        labels = {
-          app = "sysprep"
-        }
-      }
-      spec {
-        # node_selector = {
-        #   "karpenter.sh/nodepool" = "sysprep"
-        # }
-        restart_policy = "OnFailure"
-        init_container {
-          name    = "sysprep"
-          image   = "public.ecr.aws/parikshit/lustre-client:latest"
-          command = ["/bin/bash"]
-          args    = ["-c","echo 'sysprep started' >> /work-dir/sysprep `date` && find /work-dir/Mistral-7B-Instruct-v0.2 -type f -print0 | xargs -0 -n 1 -P 8 lfs hsm_restore && echo 'sysprep done' >> /work-dir/sysprep `date`"]
-          volume_mount {
-            name       = "persistent-storage"
-            mount_path = "/work-dir"
-          }
-        }
-        container {
-          name    = "validate"
-          image   = "public.ecr.aws/parikshit/lustre-client:latest"
-          command = ["/bin/bash"]
-          args    = ["-c","echo 'sysprep-validation started' >> /work-dir/sysprep `date` && find /work-dir/Mistral-7B-Instruct-v0.2 -type f -print0 | xargs -0 -n 1 -P 8 lfs hsm_action >> /work-dir/sysprep && echo 'sysprep-validation done' >> /work-dir/sysprep `date`"]
-          volume_mount {
-            name       = "persistent-storage"
-            mount_path = "/work-dir"
-          }
-        }
-        volume {
-          name = "persistent-storage"
-          persistent_volume_claim {
-            claim_name = "fsx-lustre-claim-sysprep"
-          }
-        }
-      }
-    }
-    completions = 1
-  }
-  wait_for_completion = true 
-  timeouts {
-    create = "30m"
-  }
-
-  lifecycle {
-    replace_triggered_by = [
-      kubectl_manifest.sysprep_pvc
-    ]
-  }
-
-  depends_on = [
-    kubectl_manifest.sysprep_pvc,
-    module.eks_blueprints_addons,
-    aws_fsx_data_repository_association.fsx_lustre_association
-  ]
-}
-
-# ---- PVC for sysprep ----
-resource "kubectl_manifest" "sysprep_pvc" {
-  yaml_body = <<-YAML
-    apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata:
-      name: fsx-lustre-claim-sysprep
-    spec:
-      accessModes:
-        - ReadWriteMany
-      storageClassName: ""
-      resources:
-        requests:
-          storage: 1200Gi
-      volumeName: fsx-pv-sysprep
-  YAML
-
-  depends_on = [
-    kubectl_manifest.sysprep_pv
-  ]
-}
-
-# ---- PV for sysprep ----
-resource "kubectl_manifest" "sysprep_pv" {
-  yaml_body = <<-YAML
-    apiVersion: v1
-    kind: PersistentVolume
-    metadata:
-      name: fsx-pv-sysprep
-    spec:
-      persistentVolumeReclaimPolicy: Retain
-      capacity:
-        storage: 1200Gi
-      volumeMode: Filesystem
-      accessModes:
-        - ReadWriteMany
-      mountOptions:
-        - flock
-      csi:
-        driver: fsx.csi.aws.com
-        volumeHandle: ${aws_fsx_lustre_file_system.fsx_lustre.id}
-        volumeAttributes:
-          dnsname: ${aws_fsx_lustre_file_system.fsx_lustre.dns_name}
-          mountname: ${aws_fsx_lustre_file_system.fsx_lustre.mount_name}
-  YAML
-
-  depends_on = [
-    aws_fsx_lustre_file_system.fsx_lustre
   ]
 }
 
