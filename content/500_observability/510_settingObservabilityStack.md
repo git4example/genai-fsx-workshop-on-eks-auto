@@ -25,11 +25,23 @@ helm repo update
 
 
 #### Basic install
+
+Get the password and store it in a variable:
+
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
-helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
+SECRET_NAME=$(aws secretsmanager list-secrets --query 'SecretList[?contains(Name, `oss-grafana`)].Name' --output text)
+GRAFANA_PASSWORD=$(aws secretsmanager get-secret-value \
+    --secret-id $SECRET_NAME \
+    --query 'SecretString' \
+    --output text)
+:::
+
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
+helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
     --namespace monitoring \
     --version 75.13.0 \
-    --set grafana.adminPassword=your-secure-password
+    --set grafana.adminPassword=$GRAFANA_PASSWORD
+
 :::
 
 ::code[kubectl get pods -n monitoring]{language=bash showLineNumbers=false showCopyAction=true}
@@ -58,18 +70,22 @@ Each component serves a specific purpose:
 
 # Grafana Stack
 
+::code[helm upgrade -i grafana-operator oci://ghcr.io/grafana/helm-charts/grafana-operator --version v5.18.0 --namespace monitoring]{language=bash showLineNumbers=false showCopyAction=true}
+
+
+
 
 Our Grafana setup includes both the Grafana server and Grafana Operator to provision Dashboards using YAML files:
 
-    Check Grafana Server deployment
+Check Grafana Server deployment
+
+::code[kubectl get pods -l "app.kubernetes.io/name=grafana" -n monitoring]{language=bash showLineNumbers=false showCopyAction=true}
 
 
-kubectl get pods -l "app.kubernetes.io/name=grafana" -n monitoring
+Check Grafana Operator deployment
 
-    Check Grafana Operator deployment
+::code[kubectl get pods -l "app.kubernetes.io/name=grafana-operator" -n monitoring]{language=bash showLineNumbers=false showCopyAction=true}
 
-
-kubectl get pods -l "app.kubernetes.io/name=grafana-operator" -n monitoring
 
 Grafana Operator
 

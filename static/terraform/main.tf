@@ -78,11 +78,11 @@ provider "kubectl" {
 
 locals {
   name   = "eksworkshop"
-  # region = "--AWS_REGION--"
-  region = "us-west-1"
+  region = "--AWS_REGION--"
+  # region = "us-west-1"
 
-  # cluster_version = "--EKS_VERSION--"
-  cluster_version = "1.33"
+  cluster_version = "--EKS_VERSION--"
+  # cluster_version = "1.33"
 
   vpc_cidr = "10.0.0.0/16"
   azs = data.aws_availability_zones.available.names 
