@@ -115,7 +115,7 @@ helm repo add aws-fsx-csi-driver https://kubernetes-sigs.github.io/aws-fsx-csi-d
 helm repo update
 :::
 
-**Install with IRSA configuration**
+**Install**
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 helm upgrade --install aws-fsx-csi-driver aws-fsx-csi-driver/aws-fsx-csi-driver \
     --namespace kube-system \

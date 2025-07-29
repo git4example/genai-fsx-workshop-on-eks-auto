@@ -90,9 +90,9 @@ Check Grafana Operator deployment
 Grafana Operator
 
 Grafana Operator is being used to create Grafana dashboards using custom resources. Use the following command to check the configuration:
+::code[kubectl get Grafana external-grafana -n monitoring -o yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 
-kubectl get Grafana external-grafana -n monitoring -o yaml
 
 Configuring Neuron Monitor
 
