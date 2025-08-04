@@ -260,21 +260,21 @@ module "eks_blueprints_addons" {
   # 3- Get sexret name from Terrafrom output: `terraform output grafana_secret_name`
   # 3- Get admin user password: `aws secretsmanager get-secret-value --secret-id <REPLACE_WIRTH_SECRET_ID> --region $AWS_REGION --query "SecretString" --output text`
   #---------------------------------------------------------------
-  enable_kube_prometheus_stack = true
-  kube_prometheus_stack = {
-    values = [
-      templatefile("${path.module}/helm-values/kube-prometheus.yaml", {
-        storage_class_type = kubernetes_storage_class.default_gp3.id
-      })
-    ]
-    chart_version = "75.13.0"
-    set_sensitive = [
-      {
-        name  = "grafana.adminPassword"
-        value = data.aws_secretsmanager_secret_version.admin_password_version.secret_string
-      }
-    ],
-  }
+  # enable_kube_prometheus_stack = true
+  # kube_prometheus_stack = {
+  #   values = [
+  #     templatefile("${path.module}/helm-values/kube-prometheus.yaml", {
+  #       storage_class_type = kubernetes_storage_class.default_gp3.id
+  #     })
+  #   ]
+  #   chart_version = "75.13.0"
+  #   set_sensitive = [
+  #     {
+  #       name  = "grafana.adminPassword"
+  #       value = data.aws_secretsmanager_secret_version.admin_password_version.secret_string
+  #     }
+  #   ],
+  # }
 
   tags = local.tags
   depends_on = [
