@@ -69,6 +69,9 @@ Replace **< your-new-bucket-name >** with your own **S3 bucket name**
 
 ```bash
 export ASSET_BUCKET=<your-new-bucket-name>
+```
+
+```bash
 aws s3api create-bucket --bucket $ASSET_BUCKET --region $AWS_REGION --create-bucket-configuration LocationConstraint=$AWS_REGION
 ```
 
