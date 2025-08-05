@@ -61,14 +61,14 @@ git clone https://github.com/git4example/genai-fsx-workshop-on-eks-auto.git
 
 
 ```bash
-TOKEN=`curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
+export TOKEN=`curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
 export AWS_REGION=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
 ```
 
-Replace **< new-bucket-name >** with your own **S3 bucket name**
+Replace **< your-new-bucket-name >** with your own **S3 bucket name**
 
 ```bash
-ASSET_BUCKET= <your-new-bucket-name>
+export ASSET_BUCKET=<your-new-bucket-name>
 aws s3api create-bucket --bucket $ASSET_BUCKET --region $AWS_REGION --create-bucket-configuration LocationConstraint=$AWS_REGION
 ```
 
@@ -88,12 +88,13 @@ sudo docker run -v ./work-dir/:/work-dir/ --entrypoint huggingface-cli public.ec
 
 **Get the IAM role name associated with your EC2 instance:**
 ```bash
-ROLE_NAME=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/iam/security-credentials/)
+export TOKEN=`curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
+export ROLE_NAME=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/iam/security-credentials/)
 ```
 
 **Get the credentials:**
 ```bash
-CREDENTIALS=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/iam/security-credentials/$ROLE_NAME)
+export CREDENTIALS=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/iam/security-credentials/$ROLE_NAME)
 ```
 
 **Extract and export the credentials into variables to use:**
@@ -117,7 +118,7 @@ export $(printf "AWS_ACCESS_KEY_ID=%s exp=%s AWS_SESSION_TOKEN=%s" $(aws sts ass
 
 **Copy Mistral-7B LLM model to asset bucket:** (This can take a few minutes to upload the model data to your S3 bucket)
 ```bash
-ASSET_BUCKET_PATH=genai-fsx-workshop-on-eks-auto
+export ASSET_BUCKET_PATH=genai-fsx-workshop-on-eks-auto
 
 sudo docker run -e AWS_DEFAULT_REGION=$AWS_REGION \
   -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \

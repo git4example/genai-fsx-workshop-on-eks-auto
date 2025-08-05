@@ -63,7 +63,10 @@ export AWS_REGION=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254
 ```
 
 ```bash
-ASSET_BUCKET=< new-bucket-name >
+ASSET_BUCKET=< your-new-bucket-name >
+```
+
+```bash
 aws s3api create-bucket --bucket $ASSET_BUCKET --region $AWS_REGION --create-bucket-configuration LocationConstraint=$AWS_REGION
 ```
 
