@@ -85,7 +85,7 @@ resource "kubernetes_job" "sysprep" {
     kubectl_manifest.sysprep_pvc,
     module.eks_blueprints_addons,
     aws_fsx_data_repository_association.fsx_lustre_association,
-    helm_helm_release.fsx_csi_driver
+    helm_release.fsx_csi_driver
   ]
 }
 
@@ -109,7 +109,7 @@ resource "kubectl_manifest" "sysprep_pvc" {
 
   depends_on = [
     kubectl_manifest.sysprep_pv,
-    helm_helm_release.fsx_csi_driver
+    helm_release.fsx_csi_driver
   ]
 }
 
@@ -140,6 +140,6 @@ resource "kubectl_manifest" "sysprep_pv" {
 
   depends_on = [
     aws_fsx_lustre_file_system.fsx_lustre,
-    helm_helm_release.fsx_csi_driver
+    helm_release.fsx_csi_driver
   ]
 }
