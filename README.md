@@ -97,8 +97,6 @@ In this workshop the **Mistral-7B-Instruct** model is stored in an Amazon S3 buc
     │   ├── check.yaml
     │   ├── download-upload.yaml
     │   ├── s3-upload.json
-    │   ├── sysprep-new.yaml
-    │   ├── sysprep-nodepool.yaml
     │   └── sysprep.yaml
     ├── eks
     │   ├── FSxL
@@ -124,6 +122,7 @@ In this workshop the **Mistral-7B-Instruct** model is stored in an Amazon S3 buc
         ├── helm-values
         │   ├── kube-prometheus.yaml
         │   └── nvidia-values.yaml
+        ├── sysprep.tf
         └── main.tf
 ```
 

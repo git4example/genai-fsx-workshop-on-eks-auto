@@ -57,19 +57,28 @@ aws iam create-policy \
 
 eksctl create iamserviceaccount \
     --region $AWS_REGION \
-    --name fsx-csi-controller-sa \
+    --cluster=$CLUSTER_NAME \
     --namespace kube-system \
-    --cluster $CLUSTER_NAME \
+    --name=fsx-csi-controller-sa \
     --attach-policy-arn arn:aws:iam::$AWS_ACCOUNTID:policy/Amazon_FSx_Lustre_CSI_Driver \
-    --approve
+    --role-name=fsx-csi-controller-sa \
+    --role-only \
+    --approve   
 
 export ROLE_ARN=$(aws cloudformation describe-stacks --stack-name "eksctl-${CLUSTER_NAME}-addon-iamserviceaccount-kube-system-fsx-csi-controller-sa" --query "Stacks[0].Outputs[0].OutputValue"  --region $AWS_REGION --output text)
 echo $ROLE_ARN
 
-kubectl apply -k "github.com/kubernetes-sigs/aws-fsx-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-1.2"
-kubectl annotate serviceaccount -n kube-system fsx-csi-controller-sa eks.amazonaws.com/role-arn=$ROLE_ARN --overwrite=true
-kubectl get sa/fsx-csi-controller-sa -n kube-system -o yaml
+helm repo add aws-fsx-csi-driver https://kubernetes-sigs.github.io/aws-fsx-csi-driver
+helm repo update
 
+helm upgrade --install aws-fsx-csi-driver aws-fsx-csi-driver/aws-fsx-csi-driver \
+    --namespace kube-system \
+    --version 1.11.0 \
+    --set serviceAccount.create=true \
+    --set serviceAccount.name=fsx-csi-controller-sa \    
+    --set controller.serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=$ROLE_ARN
+
+kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-fsx-csi-driver
 
 # Get all FSx for Lustre file systems in the region
 FSX_SYSTEMS=$(aws fsx describe-file-systems --query 'FileSystems[*].[FileSystemId,DNSName,LustreConfiguration.MountName]' --output json)
@@ -126,12 +135,11 @@ ASSET_BUCKET=$ASSET_BUCKET/static
 aws s3 sync $ASSET_BUCKET/download/ /home/participant/environment/download    
 cd /home/participant/environment/download
 
-sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" sysprep-new.yaml
-sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" sysprep-new.yaml
-sed -i'' -e "s/MOUNT_NAME/$MOUNT_NAME/g" sysprep-new.yaml
+sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" sysprep.yaml
+sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" sysprep.yaml
+sed -i'' -e "s/MOUNT_NAME/$MOUNT_NAME/g" sysprep.yaml
 
-kubectl apply -f sysprep-nodepool.yaml
-kubectl apply -f sysprep-new.yaml
+kubectl apply -f sysprep.yaml
 
 sed -i'' -e "s/FSXL_VOLUME_ID/$FSXL_VOLUME_ID/g" check.yaml
 sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" check.yaml

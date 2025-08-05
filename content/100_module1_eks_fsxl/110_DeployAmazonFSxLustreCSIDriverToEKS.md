@@ -77,23 +77,16 @@ Copy and run the below command to create the service account and attach the IAM 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 eksctl create iamserviceaccount \
     --region $AWS_REGION \
-    --name fsx-csi-controller-sa \
+    --cluster=$CLUSTER_NAME \
     --namespace kube-system \
-    --cluster $CLUSTER_NAME \
+    --name=fsx-csi-controller-sa \
     --attach-policy-arn arn:aws:iam::$AWS_ACCOUNTID:policy/Amazon_FSx_Lustre_CSI_Driver \
-    --approve
+    --role-name=fsx-csi-controller-sa \
+    --role-only \
+    --approve   
 :::
 
 ::alert[you need to wait for 30 to 60 secs for the above command to complete]
-
-::::expand{header="You’ll see several lines of output as the service account is created. The last line of output is similar to the following example line, click to expand"}
-
-:::code[]{language=bash showLineNumbers=false showCopyAction=false}
-(...)
-2023-09-29 07:40:56 [ℹ]  created serviceaccount "kube-system/fsx-csi-controller-sa"
-:::
-
-::::
 
 ##### Step 4: Save the Role ARN that was created into a variable
 
