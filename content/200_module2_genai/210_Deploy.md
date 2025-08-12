@@ -4,9 +4,9 @@ weight : 210
 ---
 
 
-##### Step 1: Neuron Device Plugin, Neuron Scheduler, and Node Problem Detector 
+##### Step 1: Install Neuron Device Plugin & Neuron Scheduler
 
-Please note that we will install Neuron Device Plugin, Neuron Scheduler, and Node Problem Detector using helm chart. For better understanding use of [AWS Neuron Helm Chart](https://aws.amazon.com/blogs/containers/announcing-aws-neuron-helm-chart/).
+In order to use the AWS Inferentia accelerated compute nodes to host our Mistral LLM mode, we need to install the Neuron Device Plugin, Neuron Scheduler, and Node Problem Detector on the EKS Cluster using helm chart. Click on this link to learn more about the [AWS Neuron Helm Chart](https://aws.amazon.com/blogs/containers/announcing-aws-neuron-helm-chart/).
 
 :::code{showCopyAction=true showLineNumbers=true language=bash}
 cd /home/participant/environment/terraform
@@ -14,7 +14,7 @@ cd /home/participant/environment/terraform
 helm upgrade --install neuron-helm-chart \
     oci://public.ecr.aws/neuron/neuron-helm-chart \
     --namespace kube-system \
-    --version 1.2.0 \                           
+    --version 1.2.0 \
     -f ./helm-values/neuron-values.yaml
 :::
 
@@ -31,11 +31,11 @@ STATUS: deployed
 REVISION: 1
 :::
 
-Lets take a moment to understand each of these components. 
+Lets take a moment to understand each of these components.
 
 ###### Neuron Device plugin
 
-Neuron device plugin exposes Neuron cores & devices to kubernetes as a resource. `aws.amazon.com/neuroncore` and `aws.amazon.com/neuron` are the resources that the neuron device plugin registers with the kubernetes. `aws.amazon.com/neuroncore` is used for allocating neuron cores to the container. `aws.amazon.com/neuron` is used for allocating neuron devices to the container. When resource name ‘neuron’ is used, all the cores belonging to the device will be allocated to container in your pod.
+The Neuron device plugin exposes Neuron cores & devices to kubernetes as a resource. `aws.amazon.com/neuroncore` and `aws.amazon.com/neuron` are the resources that the neuron device plugin registers with the kubernetes. `aws.amazon.com/neuroncore` is used for allocating neuron cores to the container. `aws.amazon.com/neuron` is used for allocating neuron devices to the container. When resource name ‘neuron’ is used, all the cores belonging to the device will be allocated to container in your pod.
 
 For more informaiton on this, please refer [Neuron Device Plugin](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/kubernetes-getting-started.html#neuron-device-plugin)
 
@@ -47,20 +47,18 @@ The Neuron scheduler extension finds sets of directly connected devices with min
 
 For more informaiton on this, please refer [Neuron Scheduler Extension](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/kubernetes-getting-started.html#neuron-scheduler-extension)
 
-###### Node Problem Detector 
+###### Node Problem Detector
 
-The Neuron Problem Detector Plugin facilitates error detection and recovery by continuously monitoring the health of Neuron devices across all Kubernetes nodes. It publishes CloudWatch metrics for node errors and can optionally trigger automatic recovery of affected nodes. 
+The Neuron Problem Detector Plugin facilitates error detection and recovery by continuously monitoring the health of Neuron devices across all Kubernetes nodes. It publishes CloudWatch metrics for node errors and can optionally trigger automatic recovery of affected nodes.
 
 For more informaiton on this, please refer [Neuron Problem Detector Plugin](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/kubernetes-getting-started.html#neuron-scheduler-extension)
 
-#####  Step 2: Create EKS Auto NodePool and EC2 NodeClass for AWS Inferentia Accelerators
+#####  Step 2: Create EKS Auto Mode NodePool and EC2 NodeClass for AWS Inferentia Accelerators
 
-EKS Auto configuration comes in the form of a NodePool Custom Resource (CR). The NodePool sets constraints on the nodes that can be created by EKS Auto and the pods that can run on those nodes. The NodePool can be set to do things like limiting node creation to certain computer architectures or be flexible to use multiple. A single EKS Auto NodePool is capable of handling many different pod shapes. EKS Auto makes scheduling and provisioning decisions based on pod attributes such as labels and affinity. A cluster may have more than one NodePool, but for the moment we will declare additional one: the inferentia NodePool.
+The EKS Auto Mode configuration comes in the form of a NodePool Custom Resource (CR). The NodePool sets constraints on the EC2 nodes that can be used by EKS Auto Mode, and the pods that can run on those EC2 nodes. Multiple NodePools may point to the same EC2NodeClass.The NodePool can be set to do things like; limiting node creation to certain compute architectures, or be flexible to use multiple. A single EKS Auto Mode NodePool is capable of handling many different pod shapes. EKS Auto Mode makes scheduling and provisioning decisions based on pod attributes such as labels and affinity. A cluster may have more than one NodePool, for this workshop we will declare an additional inferentia NodePool.
 
 
-1. A EKS Auto NodePool sets constraints on the nodes that can be created by EKS Auto and the pods that can run on those nodes. AWS-specific settings can be set up with NodeClasses. Multiple NodePools may point to the same EC2NodeClass.
-
-2. Change to the working directory in your VSCode IDE terminal
+1. Run the following command to create the EKS Auto Mode inferentia NodePool definition
 
 :::code[]{language=bash showLineNumbers=false showCopyAction=true}
 NODE_ROLE=$(cd /home/participant/environment/terraform && terraform output --raw eks_node_iam_role_name)
@@ -68,19 +66,18 @@ cd /home/participant/environment/eks/genai
 sed -i'' -e "s/NODE_ROLE/$NODE_ROLE/g" inferentia_nodepool.yaml
 :::
 
-3. Lets take a look at the EKS Auto NodePool definition that we will deploy. It will create a new nodepool for AWS Inferentia INF2 Accelerated Compute nodes that we will use to power our Generative AI application (vLLM pod)
+2. Lets take a look at the EKS Auto NodePool definition for the inferentia NodePool before we apply it. This configuration will create a new nodepool for AWS Inferentia (using "INF2" type for instance-family), where the AWS INF2 compute nodes will power Generative AI application (vLLM pod).
 
 ::code[cat inferentia_nodepool.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
-4. Let's deploy the EKS Auto NodePool definition for AWS Inferentia INF2 Accelerated Compute nodes
-
+4. Let's deploy the inferentia NodePool
 
 ::code[kubectl apply -f inferentia_nodepool.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 5. Verify NodePool and NodeClass:
 ::code[kubectl get nodepool,nodeclass inferentia]{language=bash showLineNumbers=false showCopyAction=true}
 
-You should see an output similar to the one below.
+You should see an output similar to the one below. **Note** that you will initially see 0 nodes in the pool, that's because we haven't deployed any pods that need this accelerated compute node.
 
 :::code{showCopyAction=false showLineNumbers=false language=bash}
 NAME                               NODECLASS    NODES   READY   AGE
@@ -104,9 +101,17 @@ You will now deploy the vLLM pod which will provide you with model serving capab
 
 ::code[kubectl apply -f mistral-fsxl.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
-2. The vLLM deployment will take approx. 7-8 minutes. (**You can continue to the next steps, and don't need to wait for this step to complete**).
 
-3. Run the below command to inspect the vLLM's mistral-fsxl.yaml deployment file. 
+2. Now run the below command, and you will see the Inferentia node count increase to 1, as we have deployed a pod that requires the accelerated compute node.
+::code[kubectl get nodepool,nodeclass inferentia]{language=bash showLineNumbers=false showCopyAction=true}
+
+
+
+**Note** The vLLM deployment will take approx. 6-7 minutes. (**You can continue to the next steps, and don't need to wait for this step to complete**).
+
+
+
+3. Run the below command to inspect the vLLM's mistral-fsxl.yaml deployment file.
 
 Please note, in this workshop we are using single Neuron resource so we may choose to not use Neuron Scheduler, however to demostrate and as a best practice we are using Neuron Scheduler.
 
@@ -156,7 +161,7 @@ spec:
 ![vllm_pod](/static/images/vllm_pod_1.png)
 
 
-5. Navigate to the [Amazon EKS cluster Console](https://console.aws.amazon.com/eks)
+5. While you are waiting for the vLLM pod to deploy, lets go check out the EKS NodePools by navigating to the [Amazon EKS cluster Console](https://console.aws.amazon.com/eks)
 
 6. Click on your cluster name (i.e. eksworkshop)
 
