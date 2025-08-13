@@ -86,6 +86,7 @@ locals {
 
   vpc_cidr = "10.0.0.0/16"
   azs = data.aws_availability_zones.available.names 
+  az_count = length(data.aws_availability_zones.available.names)  # Get number of AZs in the region
 
   tags = {
     Blueprint = local.name
@@ -391,9 +392,14 @@ module "vpc" {
   name = local.name
   cidr = local.vpc_cidr
 
+  # azs             = local.azs
+  # public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 3, k)]
+  # private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 3, k + 4)]
+
   azs             = local.azs
-  public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 3, k)]
-  private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 3, k + 4)]
+  public_subnets  = [for i in range(local.az_count) : cidrsubnet(local.vpc_cidr, 4, i)]
+  private_subnets = [for i in range(local.az_count) : cidrsubnet(local.vpc_cidr, 4, i + local.az_count)]
+
 
   enable_nat_gateway   = true
   single_nat_gateway   = true

@@ -83,7 +83,7 @@ helm upgrade --install aws-fsx-csi-driver aws-fsx-csi-driver/aws-fsx-csi-driver 
     --namespace kube-system \
     --version 1.11.0 \
     --set serviceAccount.create=true \
-    --set serviceAccount.name=fsx-csi-controller-sa \    
+    --set serviceAccount.name=fsx-csi-controller-sa \
     --set controller.serviceAccount.annotations."eks\.amazonaws\.com/role-arn"=$ROLE_ARN
 
 kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-fsx-csi-driver
