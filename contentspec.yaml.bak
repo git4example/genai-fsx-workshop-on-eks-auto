@@ -52,11 +52,6 @@ awsAccountConfig:
       # [OPTIONAL] Set of regions that should be accessible by an event's provisioned account as a recommendation.
       recommended:
         - us-east-2
-        - us-east-1
-        - us-west-1
-        - us-west-2
-        - ap-southeast-2
-        - ap-southeast-1
 
       # [OPTIONAL] Set of regions an event's cloudformation templates could be deployed to as optional.
       optional:
