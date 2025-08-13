@@ -85,8 +85,19 @@ locals {
   # cluster_version = "1.33"
 
   vpc_cidr = "10.0.0.0/16"
+  
+  # Map of unsupported AZ IDs for EKS per region
+  unsupported_az_ids = {
+    "us-east-1"     = ["use1-az3"]
+    "us-west-1"     = ["usw1-az2"]
+    "ca-central-1"  = ["cac1-az3"]
+  }
+
+  # Get current region's unsupported AZ IDs
+  region_unsupported_az_ids = lookup(local.unsupported_az_ids, data.aws_region.current.name, [])
+
   azs = data.aws_availability_zones.available.names 
-  az_count = length(data.aws_availability_zones.available.names)  # Get number of AZs in the region
+  az_count = length(local.azs) # Get number of AZs in the region
 
   tags = {
     Blueprint = local.name
@@ -142,6 +153,8 @@ data "aws_ecrpublic_authorization_token" "token" {
 data "aws_availability_zones" "available" {
   provider = aws.region1
   state    = "available"
+  # This line tells Terraform to ignore these specific AZ IDs.
+  exclude_zone_ids = local.region_unsupported_az_ids
 }
 
 data "aws_caller_identity" "current" {}
@@ -391,10 +404,6 @@ module "vpc" {
 
   name = local.name
   cidr = local.vpc_cidr
-
-  # azs             = local.azs
-  # public_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 3, k)]
-  # private_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 3, k + 4)]
 
   azs             = local.azs
   public_subnets  = [for i in range(local.az_count) : cidrsubnet(local.vpc_cidr, 4, i)]
