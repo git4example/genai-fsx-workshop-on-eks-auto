@@ -54,21 +54,21 @@ awsAccountConfig:
         - us-east-2
         # - us-east-1
         # - us-west-1
-        - us-west-2
-        - ap-southeast-2
+        # - us-west-2
+        # - ap-southeast-2
         # - ap-southeast-1
-        - eu-west-1
+        # - eu-west-1
 
       # [OPTIONAL] Set of regions an event's cloudformation templates could be deployed to as optional.
       optional:
         - us-east-2
         # - us-east-1
         # - us-west-1
-        - us-west-2
-        - ap-southeast-2
+        # - us-west-2
+        # - ap-southeast-2
         # - ap-southeast-1
         #- us-west-2
-        - eu-west-1
+        # - eu-west-1
   participantRole:
     managedPolicies:
       - "arn:aws:iam::aws:policy/AdministratorAccess"
