@@ -15,10 +15,6 @@ For monitoring LLM inference workloads, we will need to deploy several key compo
 
 The Kube Prometheus Stack provides a complete monitoring solution. Let's start by installing kube prometheus stack :
 
-:::code[]{language=bash showLineNumbers=true showCopyAction=true}
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm repo update
-:::
 
 #### Create namespace
 ::code[kubectl create namespace monitoring]{language=bash showLineNumbers=false showCopyAction=true}
@@ -26,7 +22,9 @@ helm repo update
 
 #### Install kube prometheus stack
 
-Get the password and store it in a variable:
+The Kube Prometheus Stack provides a complete monitoring solution. Lets deploy it in our cluster.
+
+Get the grafana password, which we are going to use during helm install.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 SECRET_NAME=$(aws secretsmanager list-secrets --query 'SecretList[?contains(Name, `oss-grafana`)].Name' --output text)
@@ -36,14 +34,29 @@ GRAFANA_PASSWORD=$(aws secretsmanager get-secret-value \
     --output text)
 :::
 
+
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+cd /home/participant/environment/eks/genai/observability/
+:::
+
+
+
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
     --namespace monitoring \
     --version 75.13.0 \
-    --set grafana.adminPassword=$GRAFANA_PASSWORD
-
+    -f kube-prom-stack.yaml \
+    --set grafana.adminPassword=$GRAFANA_PASSWORD \
+    --set grafana.service.type=LoadBalancer \
+    --set grafana.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-scheme"=internet-facing \
+    --set prometheus.service.type=LoadBalancer \
+    --set prometheus.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-scheme"=internet-facing
 :::
 
+
+Check monitoring namespace for successful kube prometheus stack deployment and its components 
 ::code[kubectl get pods -n monitoring]{language=bash showLineNumbers=false showCopyAction=true}
 
 
@@ -52,6 +65,9 @@ Each component serves a specific purpose:
   - Prometheus Server: Central metrics collection and storage
   - Node Exporter: Collects hardware and OS metrics from each node (runs as DaemonSet)
   - Kube State Metrics: Generates metrics about Kubernetes objects
+  - This includes Grafana setup, with Grafana server exposed via NLB
+
+
 
 #### Check Prometheus deployment
 
@@ -68,10 +84,76 @@ Each component serves a specific purpose:
 
 
 
-# Grafana Stack
+#### Grafana Stack
+
+Get grafana loadbalancer 
+::code[kubectl get svc -n monitoring kube-prometheus-stack-grafana]{language=bash showLineNumbers=false showCopyAction=true}
+
+```bash
+NAME                            TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)        AGE
+kube-prometheus-stack-grafana   LoadBalancer   172.20.211.49   a0b4c567b25944afb889f19b945efad4-1467842165.us-west-2.elb.amazonaws.com   80:30387/TCP   18m
+```
+
+Open loadbalancer and use "admin" as username and password from following output. 
+
+```bash
+echo $GRAFANA_PASSWORD
+```
+
+### Conclusion
+
+In this section, we have:
+
+✅ Verified our existing monitoring stack components:
+
+    Kube Prometheus Stack
+    Grafana 
+    Alert Manager
+    Node Exporter
+    Kube State Metrics
+
+
+
+#### Next Steps
+
+In the following sections, we will:
+
+    Configure Grafana dashboards for Neuron monitoring
+    Learn how to monitor LLM inference workloads using these tools for both vLLM and Ray
+
+You can now proceed to the next module to learn about setting up custom dashboards for monitoring your GPU workloads.
+
+
+
+
+
+
+# Following is still work in progress. Go to next page to setup model monitoring.
+
+
+### Grafana operator 
 
 ::code[helm upgrade -i grafana-operator oci://ghcr.io/grafana/helm-charts/grafana-operator --version v5.18.0 --namespace monitoring]{language=bash showLineNumbers=false showCopyAction=true}
 
+
+```bash
+cat << EOF | kubectl apply -f -
+apiVersion: grafana.integreatly.org/v1beta1
+kind: Grafana
+metadata:
+  name: grafana
+  namespace: monitoring
+  labels:
+    dashboards: "grafana"
+spec:
+  config:
+    log:
+      mode: "console"
+    security:
+      admin_user: admin
+      admin_password: $GRAFANA_PASSWORD
+EOF
+```
 
 
 
@@ -94,161 +176,3 @@ Grafana Operator is being used to create Grafana dashboards using custom resourc
 
 
 
-Configuring Neuron Monitor
-
-Neuron Monitor runs on AWS Neuron-enabled instances to collect and expose hardware metrics (like utilization, memory usage, and temperature) from AWS Inferentia and Trainium chips through a Prometheus-compatible endpoint for monitoring and optimization of ML workloads. Let's deploy neuron monitor DaemonSet to expose these metrics to Prometheus using ServiceMonitor:
-
-
-cat <<EOF > neuron-monitor.yaml
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: neuron-monitor
-  namespace: monitoring
-  labels:
-    app: neuron-monitor
-spec:
-  selector:
-    matchLabels:
-      app: neuron-monitor
-  template:
-    metadata:
-      labels:
-        app: neuron-monitor
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9010"
-    spec:
-      containers:
-        - name: app
-          image: public.ecr.aws/neuron/neuron-monitor:1.3.0
-          command: ["/bin/sh"]
-          args:
-            - "-c"
-            - "neuron-monitor | neuron-monitor-prometheus.py --port 9010"
-          ports:
-            - name: metrics
-              containerPort: 9010
-              hostPort: 9010
-          resources:
-            limits:
-              cpu: 200m
-              memory: 200Mi
-            requests:
-              cpu: 100m
-              memory: 100Mi
-          volumeMounts:
-            - name: dev
-              mountPath: /dev
-          securityContext:
-            privileged: true
-      tolerations:
-        - key: aws.amazon.com/neuron
-          operator: Exists
-          effect: NoSchedule
-      nodeSelector:
-        instanceType: trn1.2xlarge
-        provisionerType: Karpenter
-        neuron.amazonaws.com/neuron-device: "true"
-      volumes:
-        - name: dev
-          hostPath:
-            path: /dev
-      restartPolicy: Always
----
-apiVersion: v1
-kind: Service
-metadata:
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/app-metrics: "true"
-    prometheus.io/port: "9010"
-  name: neuron-monitor
-  namespace: monitoring
-  labels:
-    app: neuron-monitor
-spec:
-  clusterIP: None
-  ports:
-    - name: metrics
-      port: 9010
-      protocol: TCP
-  selector:
-    app: neuron-monitor
-  type: ClusterIP
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: neuron-monitor
-  namespace: monitoring
-  labels:
-    release: kube-prometheus-stack
-spec:
-  namespaceSelector:
-    matchNames:
-      - monitoring
-  selector:
-    matchLabels:
-      app: neuron-monitor
-  endpoints:
-    - port: metrics
-      interval: 30s
-      path: /metrics
-      scheme: http
-EOF
-kubectl apply -f neuron-monitor.yaml
-
-Verify that neuron-monitor is collecting Neuron metrics correctly:
-
-    Get the name of a neuron-monitor pod
-
-1
-2
-3
-NAME=$(kubectl get pods -l "app=neuron-monitor" \
-                       -n monitoring \
-                       -o "jsonpath={ .items[0].metadata.name}")
-
-    Set up port forwarding to access the metrics endpoint
-
-1
-kubectl port-forward -n monitoring $NAME 9010:9010
-
-    In another terminal, query the metrics endpoint
-
-1
-curl -sL http://127.0.0.1:9010/metrics
-
-Conclusion
-
-In this section, we have:
-
-✅ Verified our existing monitoring stack components:
-
-    Kube Prometheus Stack
-    Grafana and Grafana Operator
-    Alert Manager
-    Node Exporter
-    Kube State Metrics
-
-✅ Successfully installed Neuron Monitor:
-
-    Configured it to run only on Trainium nodes
-    Added proper node selectors and tolerations
-    Enabled Prometheus ServiceMonitor integration
-
-✅ Confirmed Neuron metrics collection:
-
-    Verified Neuron Monitor daemon set deployment
-    Accessed the metrics endpoint
-    Validated Neuron telemetry data
-
-Next Steps
-
-In the following sections, we will:
-
-    Configure Grafana dashboards for Neuron monitoring
-    Learn how to monitor LLM inference workloads using these tools for both vLLM and Ray
-
-You can now proceed to the next module to learn about setting up custom dashboards for monitoring your GPU workloads.

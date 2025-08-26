@@ -53,10 +53,13 @@ apiVersion: v1
 kind: Service
 metadata:
   name: vllm-mistral7b-service
+  labels:
+    app: vllm-mistral-inf2-server
 spec:
   selector:
     app: vllm-mistral-inf2-server
   ports:
-  - protocol: TCP
+  - name: http
+    protocol: TCP
     port: 80
     targetPort: 8000
