@@ -60,7 +60,7 @@ Run the automated deployment script :
 
 ```bash
 # Download and run the deployment script
-curl -O https://raw.githubusercontent.com/git4example/genai-fsx-workshop-on-eks-auto/main/static/scripts/quick-deploy-on-demand.sh
+curl -O https://raw.githubusercontent.com/git4example/genai-fsx-workshop-on-eks-auto/mainline/static/scripts/quick-deploy-on-demand.sh
 chmod +x quick-deploy-on-demand.sh
 ./quick-deploy-on-demand.sh
 ```
