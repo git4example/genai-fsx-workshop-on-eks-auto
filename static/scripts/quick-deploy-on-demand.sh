@@ -246,7 +246,12 @@ fi
 # Install Docker if not present
 if ! check_command docker; then
     log_info "Installing Docker..."
-    sudo yum install -y docker
+    # Try dnf first (AL2023), then yum (AL2) as fallback
+    if command -v dnf &> /dev/null; then
+        sudo dnf install -y docker
+    else
+        sudo yum install -y docker
+    fi
     sudo service docker start
     sudo usermod -a -G docker participant
 else
@@ -265,7 +270,12 @@ sudo docker ps
 # Install Git if not present
 if ! check_command git; then
     log_info "Installing Git..."
-    sudo yum install git -y
+    # Try dnf first (AL2023), then yum (AL2) as fallback
+    if command -v dnf &> /dev/null; then
+        sudo dnf install git -y
+    else
+        sudo yum install git -y
+    fi
 else
     log_info "Git already installed"
 fi
@@ -273,7 +283,12 @@ fi
 # Install jq if not present
 if ! check_command jq; then
     log_info "Installing jq..."
-    sudo yum install jq -y
+    # Try dnf first (AL2023), then yum (AL2) as fallback
+    if command -v dnf &> /dev/null; then
+        sudo dnf install jq -y
+    else
+        sudo yum install jq -y
+    fi
 else
     log_info "jq already installed"
 fi
