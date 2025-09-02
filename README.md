@@ -115,9 +115,10 @@ In this workshop the **Mistral-7B-Instruct** model is stored in an Amazon S3 buc
     │   
     │   └── vllm_pod_1.png
     ├── scripts
-    │   ├── cleanup.sh
-    │   ├── install.sh
-    │   └── sysprep.sh
+    │   ├── cleanup-on-demand.sh
+    │   ├── cleanup-sponsored.sh
+    │   ├── quick-deploy-on-demand.sh
+    │   └── quick-deploy-sponsored.sh
     └── terraform
         ├── helm-values
         │   ├── kube-prometheus.yaml
@@ -136,167 +137,66 @@ Here some of step you may feel as duplication of data, however its to align it w
 :::
 
 
-1. You will need a Linux based Amazon EC2 jump-box that is configured with an Amazon EBS GP3 based volume that has at least 100GB FREE. The Linux based Amazon EC2 jump-box also needs to have the required account access and permissions in-order to run the commands outline below, along with being able to create AWS resources required for this workshop.  
-
-Logon onto to your Amazon EC2 instance and follow run the below commands to install the items: awscli, docker and git.
-
- **Note**: The example commands provided are for Amazon Linux 2 based EC2 instances, if you are using a different OS then follow these steps (https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+You will need a Linux based Amazon Linux 2023 based EC2 jump-box that is configured with an Amazon EBS GP3 based volume that has at least 100GB FREE. This EC2 jump-box also needs to have the required account access and permissions in-order to run the commands outline below, along with being able to create AWS resources required for this workshop.  
 
 
-- Run the below commands to install AWSCLI:
+ **Note**: You may need IAM permissions attached to this EC2 instance role with following broad indicative permissions to provision workshop resouces
 
-```bash
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-sudo ./aws/install
-```
-- Run the below commands to install Docker:
+Here's a broad IAM policy that you may includes all the required permissions for both CloudFormation and Terraform deployments:
 
-```bash
-sudo yum install -y docker
-sudo service docker start
-sudo usermod -a -G docker participant
-sudo docker ps
-```
-
-- Run the below commands to install Git :
-```bash
-sudo yum install git -y
-sudo yum install jq
-git --version
-git config --global user.name “Your Name”
-git config --global user.email “your_email@example.com”
-```
-
-2. Run the below commands to perform a git clone of the workshop package:
-
-```bash
-git clone https://github.com/git4example/genai-fsx-workshop-on-eks-auto.git
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "sts:GetCallerIdentity",
+                "s3:*",
+                "cloudformation:*",
+                "ec2:*",
+                "eks:*",
+                "iam:*",
+                "fsx:*",
+                "cloudfront:*",
+                "lambda:*",
+                "ssm:*",
+                "logs:*",
+                "secretsmanager:*"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
 ```
 
-3. Follow the below commands to create a new Amazon S3 bucket (using AWSCLI or the Amazon S3 console), this will be for temporarily hosting workshop assets. This S3 asset bucket should be in the same region where your Amazon EC2 Jump-box is and where you will deploy the workshops AWS CloudFormation stack.
-
-**Note**: The automation in AWS CloudFormation stack and its Terraform modules, as part of the initial deployment setup, will copy over workshop data into a VScode instance (which will become your IDE for the workshop), and also create an additional temporary S3 bucket. This S3 bucket will be used by the workshop to host the workshop data and the Mistral-7B LLM  model that is used in the workshop by the Generative AI chatbot.
+Alternative for simplicity, you may like to use AWS managed policies: `AdministratorAccess` 
 
 
-```bash
-export TOKEN=`curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
-export AWS_REGION=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
-```
+### Part 2 : Automated Workshop Deployment
 
-Replace **< your-new-bucket-name >** with your own **S3 bucket name**
+
+Run the automated deployment script :
 
 ```bash
-export ASSET_BUCKET=<your-new-bucket-name>
+# Download and run the deployment script
+curl -O https://raw.githubusercontent.com/git4example/genai-fsx-workshop-on-eks-auto/main/static/scripts/quick-deploy-on-demand.sh
+chmod +x quick-deploy-on-demand.sh
+./quick-deploy-on-demand.sh
 ```
 
-```bash
-aws s3api create-bucket --bucket $ASSET_BUCKET --region $AWS_REGION --create-bucket-configuration LocationConstraint=$AWS_REGION
-```
+**Time**: ~45-60 minutes (complete infrastructure deployment)
 
-4. Move the workshop code to your asset S3 bucket, which will be used for the provisioning resources using CloudFormation in next step.
-
-```bash
-aws s3 sync ./genai-fsx-workshop-on-eks-auto s3://${ASSET_BUCKET}/genai-fsx-workshop-on-eks-auto
-```
-
-
-5. Download the Mistral-7B LLM model
-```bash
-sudo docker run -v ./work-dir/:/work-dir/ --entrypoint huggingface-cli public.ecr.aws/parikshit/huggingface-cli:slim download "enghwa/neuron-mistral7bv0.2" --local-dir /work-dir/Mistral-7B-Instruct-v0.2
-```
-
-6. Upload LLM model to the S3 asset bucket you created previously. In following command replace the credentials to allow access to s3 assets bucket.
-
-**Get the IAM role name associated with your EC2 instance:**
-```bash
-export TOKEN=`curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
-export ROLE_NAME=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/iam/security-credentials/)
-```
-
-**Get the credentials:**
-```bash
-export CREDENTIALS=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/iam/security-credentials/$ROLE_NAME)
-```
-
-**Extract and export the credentials into variables to use:**
-```bash
-export AWS_ACCESS_KEY_ID=$(echo $CREDENTIALS | jq -r '.AccessKeyId')
-export AWS_SECRET_ACCESS_KEY=$(echo $CREDENTIALS | jq -r '.SecretAccessKey')
-export AWS_SESSION_TOKEN=$(echo $CREDENTIALS | jq -r '.Token')
-```
-
-**View and verify the credentials:**
-```bash
-echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
-echo "AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY"
-echo "AWS_SESSION_TOKEN: $AWS_SESSION_TOKEN"
-```
+The workshop automated deployment script that handles all setup tasks including:
+- Tool installation (AWS CLI, Docker, Git, jq)
+- Repository cloning
+- S3 bucket creation and file uploads
+- Mistral-7B model download and upload
+- CloudFormation stack deployment with monitoring
+- Deployment validation and access information
 
 
-<!-- ```bash
-export $(printf "AWS_ACCESS_KEY_ID=%s exp=%s AWS_SESSION_TOKEN=%s" $(aws sts assume-role --role-arn <role-arn> --role-session-name <session-name> --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" --output text))
-::: -->
-
-**Copy Mistral-7B LLM model to asset bucket:** (This can take a few minutes to upload the model data to your S3 bucket)
-```bash
-export ASSET_BUCKET_PATH=genai-fsx-workshop-on-eks-auto
-
-sudo docker run -e AWS_DEFAULT_REGION=$AWS_REGION \
-  -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-  -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-  -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
-  -v ./work-dir/:/work-dir/  public.ecr.aws/parikshit/s5cmd cp /work-dir/Mistral-7B-Instruct-v0.2/ s3://${ASSET_BUCKET}/${ASSET_BUCKET_PATH}/assets/Mistral-7B-Instruct-v0.2/
-```
-
-
-### Part 2 : Provision workshop resources
-
-:::alert{header="Note" type="info"}
-The CloudFormation stack for the workshop will take up-to 45 - 60 mins to successfully provision the workshop components.
-
-**Note:** Any stack creation/deletion failures can be investigated by looking at Cloudformation stack along with `/aws/lambda/GenAIFSXWorkshopOnEKS-XXX` and `/aws/ssm/GenAIFSXWorkshopOnEKS-XXX` log groups in AWS Cloudwatch Logs
-:::
-
-Run the following commands to provision the workshop resources
-
-**Set parameter values :**
-```bash
-STACK_NAME=GenAIFSXWorkshopOnEKS
-VSINSTANCE_NAME=VSCodeServerForEKS
-ASSET_BUCKET_ZIPPATH=""
-ASSET_BUCKET=${ASSET_BUCKET}
-ASSET_BUCKET_PATH=genai-fsx-workshop-on-eks-auto
-```
-
-**Validate Template:**
-```bash
-aws cloudformation validate-template --template-url https://${ASSET_BUCKET}.s3.amazonaws.com/${ASSET_BUCKET_PATH}/static/GenAIFSXWorkshopOnEKS.yaml > validate_cfn.txt
-```
-View the contents of the output (and verify no errors are shown) in-order to validate that the above link to CloudFormation template worked.
-```bash
-cat validate_cfn.txt
-```
-
-**Create stack:**
-```bash
-aws cloudformation create-stack \
-  --stack-name ${STACK_NAME} \
-  --template-url https://${ASSET_BUCKET}.s3.amazonaws.com/${ASSET_BUCKET_PATH}/static/GenAIFSXWorkshopOnEKS.yaml \
-  --region $AWS_REGION \
-  --parameters \
-  ParameterKey=VSCodeUser,ParameterValue=participant \
-  ParameterKey=InstanceName,ParameterValue=${VSINSTANCE_NAME} \
-  ParameterKey=InstanceVolumeSize,ParameterValue=100 \
-  ParameterKey=InstanceType,ParameterValue=t4g.medium \
-  ParameterKey=InstanceOperatingSystem,ParameterValue=AmazonLinux-2023 \
-  ParameterKey=HomeFolder,ParameterValue=environment \
-  ParameterKey=DevServerPort,ParameterValue=8081 \
-  ParameterKey=AssetZipS3Path,ParameterValue=${ASSET_BUCKET_ZIPPATH} \
-  ParameterKey=Assets,ParameterValue=s3://${ASSET_BUCKET}/${ASSET_BUCKET_PATH}/assets/ \
-  --disable-rollback \
-  --capabilities CAPABILITY_NAMED_IAM
-```
+You have now completed the workshop deployment and have a VSCode IDE Server environment ready to use with your Amazon EKS Cluster! 
 
 ### Part 3: Access your workshop
 
@@ -378,16 +278,29 @@ You now now completed the workshop deployment and have a VSCode IDE Server envir
 
 **Note:** Once you have completed the workshop, navigate back to this page, and the below section to perform the **Clean up** tasks.
 
-### Part 4 : Clean up
+### Part 3 : Workshop Cleanup
 
-1. Run the below command (replacing STACK_NAME with your CloudFormation Stack name) to delete the AWS CloudFormation Stack and remove the provisioned workshop, note this will take can take up-to 30 mins.
-
-Note: If you have created any AWS resources outside of the CloudFormation templates provisioned resources, or have modified resources deployed by the original CloudFormation template, then you might encounter errors when deleting the CloudFormation stack. If that occurs, refer to the errors shown and action and/or delete resources as outlined by the CloudFormation  delete stack job.
+When you're finished with the workshop, use the cleanup script to remove all resources:
 
 ```bash
-aws cloudformation delete-stack --stack-name ${STACK_NAME} --region $AWS_REGION
-aws cloudformation wait stack-delete-complete --stack-name ${STACK_NAME} --region $AWS_REGION
+# Navigate to scripts directory (if not already there)
+cd genai-fsx-workshop-on-eks-auto/static/scripts
+
+# Run cleanup script
+./cleanup-on-demand.sh
 ```
 
+**Cleanup Features**:
+- Interactive confirmation for each cleanup step
+- CloudFormation stack deletion with progress monitoring
+- Optional S3 bucket and contents removal
+- Local files and temporary data cleanup
+- Verification commands to confirm resource removal
+
+**Time**: ~30-60 minutes (CloudFormation deletion of complex resources)
+
+:::alert{header="Important" type="warning"}
+Always run the cleanup script after completing the workshop to avoid unexpected AWS charges.
+:::
 
 
