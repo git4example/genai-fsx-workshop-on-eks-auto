@@ -526,7 +526,6 @@ Resources:
               runCommand:
                 - '#!/bin/bash'
                 - curl -fsSL https://rpm.nodesource.com/setup_{{ NodeVersion }}.x | bash -
-                # - dnf install -y nodejs npm
                 - dnf install -y nodejs
                 - npm install -g npm@latest
                 - echo "Node and npm installed. Checking configuration"
