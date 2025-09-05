@@ -80,3 +80,6 @@ infrastructure:
       parameters:
         - templateParameter: Assets
           defaultValue: "s3://{{.AssetsBucketName}}/{{.AssetsBucketPrefix}}"
+      participantVisibleStackOutputs:
+        - URL
+        - Password
