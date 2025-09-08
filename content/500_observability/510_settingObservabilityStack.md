@@ -16,10 +16,6 @@ For monitoring LLM inference workloads, we will need to deploy several key compo
 The Kube Prometheus Stack provides a complete monitoring solution. Let's start by installing kube prometheus stack :
 
 
-#### Create namespace
-::code[kubectl create namespace monitoring]{language=bash showLineNumbers=false showCopyAction=true}
-
-
 #### Install kube prometheus stack
 
 The Kube Prometheus Stack provides a complete monitoring solution. Lets deploy it in our cluster.
@@ -45,7 +41,7 @@ cd /home/participant/environment/eks/genai/observability/
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
-    --namespace monitoring \
+    --namespace kube-system \
     --version 75.13.0 \
     -f kube-prom-stack.yaml \
     --set grafana.adminPassword=$GRAFANA_PASSWORD \
@@ -57,7 +53,7 @@ helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheu
 
 
 Check monitoring namespace for successful kube prometheus stack deployment and its components 
-::code[kubectl get pods -n monitoring]{language=bash showLineNumbers=false showCopyAction=true}
+::code[kubectl get pods -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 
@@ -71,15 +67,15 @@ Each component serves a specific purpose:
 
 #### Check Prometheus deployment
 
-::code[kubectl get pods -l "app.kubernetes.io/name=prometheus" -n monitoring]{language=bash showLineNumbers=false showCopyAction=true}
+::code[kubectl get pods -l "app.kubernetes.io/name=prometheus" -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
 
 #### Check Node Exporter DaemonSet
 
-::code[kubectl get pods -l "app.kubernetes.io/name=prometheus-node-exporter" -n monitoring]{language=bash showLineNumbers=false showCopyAction=true}
+::code[kubectl get pods -l "app.kubernetes.io/name=prometheus-node-exporter" -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
 
 #### Check Kube State Metrics deployment
 
-::code[kubectl get pods -l "app.kubernetes.io/name=kube-state-metrics" -n monitoring]{language=bash showLineNumbers=false showCopyAction=true}
+::code[kubectl get pods -l "app.kubernetes.io/name=kube-state-metrics" -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 
@@ -87,7 +83,7 @@ Each component serves a specific purpose:
 #### Grafana Stack
 
 Get grafana loadbalancer 
-::code[kubectl get svc -n monitoring kube-prometheus-stack-grafana]{language=bash showLineNumbers=false showCopyAction=true}
+::code[kubectl get svc -n kube-system kube-prometheus-stack-grafana]{language=bash showLineNumbers=false showCopyAction=true}
 
 ```bash
 NAME                            TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)        AGE
@@ -133,7 +129,59 @@ You can now proceed to the next module to learn about setting up custom dashboar
 
 ### Grafana operator 
 
-::code[helm upgrade -i grafana-operator oci://ghcr.io/grafana/helm-charts/grafana-operator --version v5.18.0 --namespace monitoring]{language=bash showLineNumbers=false showCopyAction=true}
+h
+
+#### Install Grafana Operator using Helm (run this command separately)
+:::code[]{language=bash showLineNumbers=false showCopyAction=true}
+ helm upgrade -i grafana-operator oci://ghcr.io/grafana/helm-charts/grafana-operator \
+   --version v5.18.0 \
+   --namespace kube-system
+:::
+
+
+
+
+```bash
+cat << EOF | kubectl apply -f -
+apiVersion: grafana.integreatly.org/v1beta1
+kind: Grafana
+metadata:
+  name: grafana-operator-instance
+  namespace: monitoring
+  labels:
+    dashboards: "grafana"
+spec:
+  config:
+    log:
+      mode: "console"
+      level: "info"
+    security:
+      admin_user: admin
+      admin_password: "${GRAFANA_PASSWORD}"
+    server:
+      root_url: "http://localhost:3000"
+    datasources:
+      datasources.yaml:
+        apiVersion: 1
+        datasources:
+          - name: Prometheus
+            type: prometheus
+            url: http://kube-prometheus-stack-prometheus:9090
+            access: proxy
+            isDefault: true
+  service:
+    metadata:
+      annotations:
+        service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+    spec:
+      type: LoadBalancer
+      ports:
+        - name: grafana
+          port: 3000
+          protocol: TCP
+          targetPort: 3000
+EOF
+```
 
 
 ```bash
@@ -161,18 +209,18 @@ Our Grafana setup includes both the Grafana server and Grafana Operator to provi
 
 Check Grafana Server deployment
 
-::code[kubectl get pods -l "app.kubernetes.io/name=grafana" -n monitoring]{language=bash showLineNumbers=false showCopyAction=true}
+::code[kubectl get pods -l "app.kubernetes.io/name=grafana" -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 Check Grafana Operator deployment
 
-::code[kubectl get pods -l "app.kubernetes.io/name=grafana-operator" -n monitoring]{language=bash showLineNumbers=false showCopyAction=true}
+::code[kubectl get pods -l "app.kubernetes.io/name=grafana-operator" -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 Grafana Operator
 
 Grafana Operator is being used to create Grafana dashboards using custom resources. Use the following command to check the configuration:
-::code[kubectl get Grafana external-grafana -n monitoring -o yaml]{language=bash showLineNumbers=false showCopyAction=true}
+::code[kubectl get Grafana external-grafana -n kube-system -o yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 
