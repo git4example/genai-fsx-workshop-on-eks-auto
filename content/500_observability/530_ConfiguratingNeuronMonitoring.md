@@ -19,7 +19,7 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: neuron-monitor
-  namespace: monitoring
+  namespace: kube-system
   labels:
     app: neuron-monitor
 spec:
@@ -62,9 +62,8 @@ spec:
           operator: Exists
           effect: NoSchedule
       nodeSelector:
-        instanceType: trn1.2xlarge
-        provisionerType: Karpenter
-        neuron.amazonaws.com/neuron-device: "true"
+        karpenter.sh/nodepool: inferentia
+        eks.amazonaws.com/instance-family: inf2
       volumes:
         - name: dev
           hostPath:
@@ -79,7 +78,7 @@ metadata:
     prometheus.io/app-metrics: "true"
     prometheus.io/port: "9010"
   name: neuron-monitor
-  namespace: monitoring
+  namespace: kube-system
   labels:
     app: neuron-monitor
 spec:
@@ -96,13 +95,13 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: neuron-monitor
-  namespace: monitoring
+  namespace: kube-system
   labels:
     release: kube-prometheus-stack
 spec:
   namespaceSelector:
     matchNames:
-      - monitoring
+      - kube-system
   selector:
     matchLabels:
       app: neuron-monitor
@@ -116,36 +115,21 @@ EOF
 
 ```bash
 kubectl apply -f neuron-monitor.yaml
+
 ```
 
-Verify that neuron-monitor is collecting Neuron metrics correctly:
-
-    Get the name of a neuron-monitor pod
 
 ```bash
-NAME=$(kubectl get pods -l "app=neuron-monitor" \
-                       -n monitoring \
-                       -o "jsonpath={ .items[0].metadata.name}")
+kubectl apply -f neuron-monitoring-configmap.yaml 
 ```
 
-Set up port forwarding to access the metrics endpoint
-
-```bash
-kubectl port-forward -n monitoring $NAME 9010:9010
-```
-
-In another terminal, query the metrics endpoint
-
-```bash
-curl -sL http://127.0.0.1:9010/metrics
-```
-
+Verify dashboard on grafana "AWS Neuron Hardware Monitoring (ConfigMap)" 
 
 
 
 ✅ Successfully installed Neuron Monitor:
 
-    Configured it to run only on Trainium nodes
+    Configured it to run only on Inferantia nodes
     Added proper node selectors and tolerations
     Enabled Prometheus ServiceMonitor integration
 
