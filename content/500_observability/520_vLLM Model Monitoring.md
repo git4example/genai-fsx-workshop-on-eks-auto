@@ -6,39 +6,18 @@ weight : 520
 vLLM Model Monitoring
 
 
-### Deploy serviceMonitor 
+### Deploy Service Monitor to scrape metrics
 
 Now deploy serviceMonitor configuration so that prometheus can scrape metrics from mistral service endpoint.
 
 ```bash
-cat << EOF | kubectl apply -f -
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: vllm-mistral-servicemonitor
-  namespace: monitoring
-  labels:
-    release: kube-prometheus-stack   # Make sure this matches the Prometheus release label selector
-    app: vllm-mistral-inf2-server
-spec:
-  selector:
-    matchLabels:
-      app: vllm-mistral-inf2-server    # Label on your Kubernetes service
-  namespaceSelector:
-    matchNames:
-      - default          # Namespace where your service is running
-  endpoints:
-  - port: http    # The port name exposed by your service for metrics
-    path: /metrics        # Metrics endpoint path
-    interval: 15s         # Scrape interval
-EOF
+kubectl apply -f vllm-servicemonitor.yaml
+
 ```
 
 
 
 ### Deploy Dashboard 
-
-
 
 ```bash
 cd /home/participant/environment/eks/genai/observability/

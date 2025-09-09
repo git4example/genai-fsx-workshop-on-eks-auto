@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: neuron-monitor
+  namespace: kube-system
+  labels:
+    release: kube-prometheus-stack
+spec:
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  selector:
+    matchLabels:
+      app: neuron-monitor
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+      scheme: http

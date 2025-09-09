@@ -1,0 +1,76 @@
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: neuron-monitor
+  namespace: kube-system
+  labels:
+    app: neuron-monitor
+spec:
+  selector:
+    matchLabels:
+      app: neuron-monitor
+  template:
+    metadata:
+      labels:
+        app: neuron-monitor
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9010"
+    spec:
+      containers:
+        - name: app
+          image: public.ecr.aws/neuron/neuron-monitor:1.3.0
+          command: ["/bin/sh"]
+          args:
+            - "-c"
+            - "neuron-monitor | neuron-monitor-prometheus.py --port 9010"
+          ports:
+            - name: metrics
+              containerPort: 9010
+              hostPort: 9010
+          resources:
+            limits:
+              cpu: 200m
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          volumeMounts:
+            - name: dev
+              mountPath: /dev
+          securityContext:
+            privileged: true
+      tolerations:
+        - key: aws.amazon.com/neuron
+          operator: Exists
+          effect: NoSchedule
+      nodeSelector:
+        karpenter.sh/nodepool: inferentia
+        eks.amazonaws.com/instance-family: inf2
+      volumes:
+        - name: dev
+          hostPath:
+            path: /dev
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/app-metrics: "true"
+    prometheus.io/port: "9010"
+  name: neuron-monitor
+  namespace: kube-system
+  labels:
+    app: neuron-monitor
+spec:
+  clusterIP: None
+  ports:
+    - name: metrics
+      port: 9010
+      protocol: TCP
+  selector:
+    app: neuron-monitor
+  type: ClusterIP
