@@ -249,6 +249,110 @@ validate_aws_region() {
     fi
 }
 
+# Function to get FSx Lustre filesystem by tags
+get_fsx_by_tags() {
+    local blueprint_tag="eksworkshop"
+    
+    log_info "Looking for FSx Lustre filesystem with Blueprint tag: $blueprint_tag"
+    
+    # Get FSx filesystems filtered by tags
+    local fsx_systems=$(aws fsx describe-file-systems \
+        --query "FileSystems[?FileSystemType==\`LUSTRE\` && Tags[?Key==\`Blueprint\` && Value==\`$blueprint_tag\`]].[FileSystemId,DNSName,LustreConfiguration.MountName]" \
+        --output json)
+    
+    # Count the number of matching file systems
+    local fsx_count=$(echo $fsx_systems | jq length)
+    
+    if [ "$fsx_count" -eq 0 ]; then
+        log_error "No FSx for Lustre file systems found with Blueprint tag: $blueprint_tag"
+        log_info "Available FSx Lustre file systems:"
+        aws fsx describe-file-systems --query 'FileSystems[?FileSystemType==`LUSTRE`].[FileSystemId,Tags[?Key==`Blueprint`].Value|[0]]' --output table
+        return 1
+    elif [ "$fsx_count" -eq 1 ]; then
+        log_info "Found FSx for Lustre file system with Blueprint tag: $blueprint_tag"
+        echo $fsx_systems | jq -r '.[0] | @tsv'
+        return 0
+    else
+        log_warn "Multiple FSx for Lustre file systems found with Blueprint tag: $blueprint_tag"
+        echo $fsx_systems | jq -r '.[] | @tsv' | column -t -s $'\t'
+        
+        # For workshop consistency, use the first one
+        log_info "Using the first matching filesystem for workshop consistency"
+        echo $fsx_systems | jq -r '.[0] | @tsv'
+        return 0
+    fi
+}
+
+# Function to get FSx Lustre AZ based on filesystem ID
+get_fsx_lustre_az() {
+    local fsx_id=$1
+    
+    log_info "Detecting FSx Lustre availability zone for filesystem: $fsx_id"
+    
+    # Get the subnet ID of the FSx filesystem
+    local subnet_id=$(aws fsx describe-file-systems --file-system-ids $fsx_id --query 'FileSystems[0].SubnetIds[0]' --output text)
+    
+    if [[ -z "$subnet_id" || "$subnet_id" == "None" ]]; then
+        log_error "Failed to get subnet ID for FSx filesystem $fsx_id"
+        return 1
+    fi
+    
+    # Get the AZ from the subnet
+    local az=$(aws ec2 describe-subnets --subnet-ids $subnet_id --query 'Subnets[0].AvailabilityZone' --output text)
+    
+    if [[ -z "$az" || "$az" == "None" ]]; then
+        log_error "Failed to get availability zone for subnet $subnet_id"
+        return 1
+    fi
+    
+    log_info "FSx Lustre filesystem $fsx_id is in availability zone: $az"
+    echo "$az"
+    return 0
+}
+
+# Function to validate FSx filesystem belongs to current cluster
+validate_fsx_cluster_association() {
+    local fsx_id=$1
+    local cluster_name=$2
+    
+    log_info "Validating FSx filesystem belongs to cluster: $cluster_name"
+    
+    # Check if FSx has Blueprint tag matching cluster
+    local blueprint_value=$(aws fsx describe-file-systems --file-system-ids $fsx_id \
+        --query 'FileSystems[0].Tags[?Key==`Blueprint`].Value | [0]' --output text)
+    
+    if [[ "$blueprint_value" == "$cluster_name" ]]; then
+        log_info "✓ FSx filesystem correctly tagged for cluster: $cluster_name"
+        return 0
+    else
+        log_warn "⚠ FSx filesystem Blueprint tag ($blueprint_value) doesn't match cluster ($cluster_name)"
+        return 1
+    fi
+}
+
+# Function to validate AZ has Inferentia capacity
+validate_inferentia_az() {
+    local az=$1
+    
+    log_info "Validating Inferentia availability in AZ: $az"
+    
+    # Check if there are any inf2 instances available in this AZ
+    local inf2_available=$(aws ec2 describe-instance-type-offerings \
+        --location-type availability-zone \
+        --filters Name=location,Values=$az Name=instance-type,Values=inf2.* \
+        --query 'InstanceTypeOfferings[].InstanceType' \
+        --output text)
+    
+    if [[ -n "$inf2_available" ]]; then
+        log_info "✓ Inferentia instances available in AZ $az: $inf2_available"
+        return 0
+    else
+        log_warn "⚠ No Inferentia instances found in AZ $az"
+        log_warn "  This may cause scheduling issues for the Mistral deployment"
+        return 1
+    fi
+}
+
 # Function to check if kubectl is working
 check_kubectl_access() {
     if kubectl cluster-info &>/dev/null; then
@@ -500,54 +604,52 @@ safe_kubectl kubectl get pods -n kube-system -l app.kubernetes.io/name=aws-fsx-c
 log_info "Setting up FSx Lustre Persistent Volume..."
 cd /home/participant/environment/eks/FSxL
 
-log_info "Checking for existing FSx for Lustre file systems..."
-FSX_SYSTEMS=$(aws fsx describe-file-systems --query 'FileSystems[?FileSystemType==`LUSTRE`].[FileSystemId,DNSName,LustreConfiguration.MountName]' --output json)
+log_info "Checking for FSx for Lustre file systems using Blueprint tags..."
 
-# Count the number of file systems
-FSX_COUNT=$(echo $FSX_SYSTEMS | jq length)
-
-if [ "$FSX_COUNT" -eq 0 ]; then
-    log_error "No FSx for Lustre file systems found in this region."
-    log_error "Please create an FSx for Lustre file system first."
+# Get FSx filesystem info using tags
+SYSTEM_INFO=$(get_fsx_by_tags)
+if [[ $? -ne 0 ]]; then
+    log_error "Failed to find FSx Lustre filesystem with required tags"
     exit 1
-elif [ "$FSX_COUNT" -eq 1 ]; then
-    log_info "Single FSx for Lustre file system found. Using it automatically."
-    SYSTEM_INFO=$(echo $FSX_SYSTEMS | jq -r '.[0] | @tsv')
-else
-    log_info "Multiple FSx for Lustre File Systems found:"
-    echo $FSX_SYSTEMS | jq -r '.[] | @tsv' | column -t -s $'\t'
-    
-    # Prompt user to select a file system
-    read -p "Enter the FileSystemId of the FSx file system you want to use: " FSXL_VOLUME_ID
-    
-    # Validate the selected file system exists
-    if ! aws fsx describe-file-systems --file-system-ids $FSXL_VOLUME_ID &>/dev/null; then
-        log_error "Invalid FileSystemId: $FSXL_VOLUME_ID"
-        exit 1
-    fi
-    
-    # Fetch details for the selected file system
-    SYSTEM_INFO=$(aws fsx describe-file-systems --file-system-ids $FSXL_VOLUME_ID --query 'FileSystems[0].[FileSystemId,DNSName,LustreConfiguration.MountName]' --output text)
 fi
 
 # Parse the output and export variables
 IFS=$'\t' read -r FSXL_VOLUME_ID DNS_NAME MOUNT_NAME <<< "$SYSTEM_INFO"
 export FSXL_VOLUME_ID
-export DNS_NAME
+export DNS_NAME  
 export MOUNT_NAME
 
+# Get FSx Lustre AZ
+FSX_LUSTRE_AZ=$(get_fsx_lustre_az "$FSXL_VOLUME_ID")
+if [[ $? -ne 0 || -z "$FSX_LUSTRE_AZ" ]]; then
+    log_error "Failed to detect FSx Lustre availability zone"
+    exit 1
+fi
+export FSX_LUSTRE_AZ
+
+# Validate FSx belongs to current cluster
+validate_fsx_cluster_association "$FSXL_VOLUME_ID" "$CLUSTER_NAME"
+
+# Validate Inferentia availability in the FSx AZ
+validate_inferentia_az "$FSX_LUSTRE_AZ"
+
 # Validate that all variables are set
-if [[ -z "$FSXL_VOLUME_ID" || -z "$DNS_NAME" || -z "$MOUNT_NAME" ]]; then
+if [[ -z "$FSXL_VOLUME_ID" || -z "$DNS_NAME" || -z "$MOUNT_NAME" || -z "$FSX_LUSTRE_AZ" ]]; then
     log_error "Failed to retrieve FSx file system details"
     exit 1
 fi
 
 # Display the results
-log_info "Selected File System Details:"
+log_info "Selected File System Details (Blueprint: eksworkshop):"
 echo "FileSystemId: $FSXL_VOLUME_ID"
 echo "DNS Name: $DNS_NAME"
 echo "Mount Name: $MOUNT_NAME"
-log_info "Environment variables FSXL_VOLUME_ID, DNS_NAME, and MOUNT_NAME have been set."
+echo "Availability Zone: $FSX_LUSTRE_AZ"
+log_info "Environment variables FSXL_VOLUME_ID, DNS_NAME, MOUNT_NAME, and FSX_LUSTRE_AZ have been set."
+
+# Verify the filesystem has the expected tags
+log_info "Verifying FSx filesystem tags..."
+aws fsx describe-file-systems --file-system-ids $FSXL_VOLUME_ID --query 'FileSystems[0].Tags' --output table
 
 # FSXL_VOLUME_ID=$(aws fsx describe-file-systems --query 'FileSystems[].FileSystemId' --output text)
 # DNS_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].DNSName' --output text)
@@ -689,7 +791,19 @@ if check_kubectl_access && kubectl get deployment vllm-mistral-inf2-deployment &
 else
     if check_kubectl_access; then
         log_info "Applying vLLM Mistral deployment..."
-        kubectl apply -f mistral-fsxl.yaml
+        
+        # Create a temporary copy of the deployment file with AZ replacement
+        cp mistral-fsxl.yaml mistral-fsxl-temp.yaml
+        
+        # Replace the FSX_LUSTRE_AZ placeholder with the actual AZ
+        sed -i'' -e "s/FSX_LUSTRE_AZ/$FSX_LUSTRE_AZ/g" mistral-fsxl-temp.yaml
+        
+        log_info "Configured vLLM deployment for FSx Lustre AZ: $FSX_LUSTRE_AZ"
+        
+        kubectl apply -f mistral-fsxl-temp.yaml
+        
+        # Clean up temporary file
+        rm -f mistral-fsxl-temp.yaml
         
         # Wait for deployment to be available (but not pod readiness - that can take 5-10 minutes)
         log_info "Waiting for vLLM deployment to be available..."
@@ -705,7 +819,13 @@ else
         log_warn "Skipping vLLM deployment - cluster not accessible"
     fi
 fi
-cat mistral-fsxl.yaml
+
+# Show the final deployment configuration (with AZ replaced)
+log_info "Final vLLM deployment configuration:"
+cp mistral-fsxl.yaml mistral-fsxl-display.yaml
+sed -i'' -e "s/FSX_LUSTRE_AZ/$FSX_LUSTRE_AZ/g" mistral-fsxl-display.yaml
+cat mistral-fsxl-display.yaml
+rm -f mistral-fsxl-display.yaml
 
 safe_kubectl kubectl get pod
 

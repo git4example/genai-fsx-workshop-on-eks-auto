@@ -97,12 +97,22 @@ To save you time in the lab, the Mistral-7B model has already been downloaded & 
 
 You will now deploy the vLLM pod which will provide you with model serving capability, and inference endpoint. Once the vLLM Pod is online, it will load the Mistral-7B model (29GB) into its memory from your FSx for Lustre based Persistent Volume, then it will be ready to use.
 
-1. Run the below command to deploy your vLLM Pod.
+1. As we are running single AZ Lustre filesystem deployed we want to run our model in the same AZ for better performance. Run the below command to get FSx Lustre Filesystem AZ updated for nodeAffinity.
+
+:::code[]{language=bash showLineNumbers=false showCopyAction=true}
+FSX_LUSTRE_AZ=$(aws fsx describe-file-systems  --region $AWS_REGION --query 'FileSystems[0].SubnetIds[0]' --output text | xargs -I {} aws ec2 describe-subnets --subnet-ids {} --query 'Subnets[0].AvailabilityZone' --output text)
+cd /home/participant/environment/eks/genai
+sed -i'' -e "s/FSX_LUSTRE_AZ/$FSX_LUSTRE_AZ/g" mistral-fsxl.yaml
+:::
+  
+  
+2. Run the below command to deploy your vLLM Pod.
+
 
 ::code[kubectl apply -f mistral-fsxl.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 
-2. Now run the below command, and you will see the Inferentia node count increase to 1, as we have deployed a pod that requires the accelerated compute node.
+3. Now run the below command, and you will see the Inferentia node count increase to 1, as we have deployed a pod that requires the accelerated compute node.
 ::code[kubectl get nodepool,nodeclass inferentia]{language=bash showLineNumbers=false showCopyAction=true}
 
 
@@ -139,6 +149,15 @@ spec:
         app: vllm-mistral-inf2-server
     spec:
       schedulerName: my-scheduler                               # <<<<< we are using Neuron Scheduler
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values:
+                - FSX_LUSTRE_AZ                                 # <<<<< Replace with your FSx Lustre AZ
       tolerations:
       - key: "aws.amazon.com/neuron"
         operator: "Exists"

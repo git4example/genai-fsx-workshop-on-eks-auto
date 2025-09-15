@@ -212,7 +212,7 @@ main() {
                 2)
                     log_info "Deleting FSx PV completely..."
                     safe_kubectl kubectl delete pv fsx-pv
-                    wait_for_deletion "pv" "fsx-pv" "" 300
+                    wait_for_deletion "pv" fsx-pv "" 300
                     log_warn "PV deleted - you'll need to recreate it for future deployments"
                     ;;
                 3|*)
@@ -234,7 +234,7 @@ main() {
             if [[ "$DELETE_PV" =~ ^[Yy]$ ]]; then
                 log_info "Deleting FSx PV..."
                 safe_kubectl kubectl delete pv fsx-pv
-                wait_for_deletion "pv" "fsx-pv" "" 300
+                wait_for_deletion "pv" fsx-pv "" 300
             else
                 log_info "Preserving FSx PV"
             fi
@@ -378,6 +378,13 @@ main() {
     
     log_info "Note: EKS cluster and core infrastructure remain intact"
     log_info "Workshop environment is ready for re-deployment if needed"
+    echo ""
+    
+    # Clean up any temporary files that might have been left behind
+    log_info "Cleaning up temporary files..."
+    cd /home/participant/environment/eks/genai 2>/dev/null || true
+    rm -f mistral-fsxl-temp.yaml mistral-fsxl-display.yaml 2>/dev/null || true
+    log_info "Temporary files cleaned up"
     echo ""
     
     log_info "To re-deploy workshop components, run:"
