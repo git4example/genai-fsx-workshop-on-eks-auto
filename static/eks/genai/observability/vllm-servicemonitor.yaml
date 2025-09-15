@@ -17,3 +17,5 @@ spec:
   - port: http    # The port name exposed by your service for metrics
     path: /metrics        # Metrics endpoint path
     interval: 15s         # Scrape interval
+    scheme: http
+    targetPort: 8000

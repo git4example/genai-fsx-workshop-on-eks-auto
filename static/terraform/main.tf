@@ -101,6 +101,7 @@ locals {
 
   tags = {
     Blueprint = local.name
+    auto-delete = "no"
   }
 
   # Following is to check if WSParticipantRole role is present or not, to handle on-demand workshop in private accounts
@@ -217,7 +218,7 @@ module "eks_blueprints_addons" {
   cluster_version   = module.eks.cluster_version
   oidc_provider_arn = module.eks.oidc_provider_arn
 
-  create_delay_dependencies = [for prof in module.eks.eks_managed_node_groups : prof.node_group_arn]
+  # create_delay_dependencies = [for prof in module.eks.eks_managed_node_groups : prof.node_group_arn]
 
   #---------------------------------------
   # metrics server for EKS Cluster

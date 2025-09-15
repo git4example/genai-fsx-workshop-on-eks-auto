@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-mistral
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vllm-mistral
+  template:
+    metadata:
+      labels:
+        app: vllm-mistral
+    spec:
+      securityContext:
+        runAsUser: 0      # Run as root
+        runAsGroup: 0     # Run as root group
+        fsGroup: 0        # Ensure volume access
+      schedulerName: my-scheduler
+      tolerations:
+        - key: "aws.amazon.com/neuron"
+          operator: "Exists"
+          effect: "NoSchedule"
+      containers:
+        - name: inference-server
+          image: public.ecr.aws/u3r1l1j7/eks-genai:vllm-neuronx-0.9.1
+          resources:
+            requests:
+              aws.amazon.com/neuron: 1
+              # memory: "32Gi" # Use more memory for faster compilation
+              # cpu: "8" # Use more CPU for faster compilation
+            limits:
+              aws.amazon.com/neuron: 1
+              # memory: "125Gi" # Generous memory limit for inf2.8xlarge
+              # cpu: "12" # More CPU for compilation
+          args:
+            # - /opt/conda/bin/vllm
+            # - serve
+            - $(MODEL_ID)
+            - --enforce-eager
+            - --gpu-memory-utilization=0.96 # Higher utilization for better performance
+            - --device=neuron
+            - --max-num-seqs=4 # Slightly higher for better throughput
+            - --tensor-parallel-size=2 # Use TP=2 for better performance (will create cache for inf2.xlarge)
+            - --max-model-len=10240 # Reasonable context size
+            - --served-model-name=mistralai/Mistral-7B-Instruct-v0.3-neuron
+            - --host=0.0.0.0
+            - --port=8000
+            # - --disable-log-requests
+            # - --swap-space=0
+          env:
+            - name: MODEL_ID
+              value: /work-dir/Mistral-7B-Instruct-v0.3/
+            - name: NEURON_COMPILE_CACHE_URL
+              value: /work-dir/Mistral-7B-Instruct-v0.3/neuron-cache/
+            - name: PORT
+              value: "8000"
+            # Optimized for faster compilation on inf2.8xlarge
+            - name: MALLOC_ARENA_MAX
+              value: "4" # More arenas for parallel compilation
+            - name: MALLOC_MMAP_THRESHOLD_
+              value: "262144" # Larger threshold for better performance
+            - name: MALLOC_TRIM_THRESHOLD_
+              value: "262144"
+            - name: NEURON_RT_NUM_CORES
+              value: "2" # Use both cores for TP=2
+            - name: NEURON_RT_VISIBLE_CORES
+              value: "0,1"
+            # Compilation optimization flags
+            - name: NEURON_CC_FLAGS
+              value: "--model-type=transformer --auto-cast=none --optlevel=2" # Higher optimization
+            - name: NEURONX_COMPILE_FLAGS
+              value: "--enable-mixed-precision-accumulation --enable-saturate-infinity"
+            - name: NEURON_COMPILE_CACHE_ENABLED
+              value: "1"
+            - name: NEURON_CACHE_PATH
+              value: /work-dir/Mistral-7B-Instruct-v0.3/neuron-cache/
+            # Parallel compilation settings
+            - name: OMP_NUM_THREADS
+              value: "8" # More threads for compilation
+            - name: NEURON_FRAMEWORK_DEBUG
+              value: "0" # Disable debug for faster compilation
+          ports:
+            - containerPort: 8000
+              name: http
+          volumeMounts:
+            - name: persistent-storage
+              mountPath: "/work-dir"
+            - name: shm-volume
+              mountPath: /dev/shm
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 1200 # 20 minutes for faster compilation
+            periodSeconds: 60
+            timeoutSeconds: 30
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 600 # 10 minutes for faster compilation
+            periodSeconds: 30
+            timeoutSeconds: 30
+            failureThreshold: 20
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 180
+            periodSeconds: 60
+            timeoutSeconds: 30
+            failureThreshold: 25 # Allow up to 25 minutes for compilation
+      volumes:
+        - name: persistent-storage
+          persistentVolumeClaim:
+            claimName: fsx-lustre-claim
+        - name: shm-volume
+          emptyDir:
+            medium: Memory
+            sizeLimit: 4Gi # Larger shared memory for compilation
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-mistral-service
+  labels:
+    app: vllm-mistral
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  selector:
+    app: vllm-mistral
