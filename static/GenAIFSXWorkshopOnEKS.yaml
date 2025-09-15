@@ -2219,6 +2219,9 @@ Resources:
 
                 echo "Terraform destroy operation completed."
 
+                # Delete the existing KMS alias
+                aws kms delete-alias --alias-name alias/eks/eksworkshop
+
                 # Commented out individual resource deletion commands:
                 # echo "Deleting kubernetes_job.sysprep"
                 # terraform destroy --target kubernetes_job.sysprep --auto-approve -lock=false
