@@ -741,7 +741,7 @@ data:
       },
       "timepicker": {},
       "timezone": "",
-      "title": "vLLM Mistral 7B Monitoring (ConfigMap)",
+      "title": "vLLM Mistral 7B Monitoring - v2",
       "uid": "vllm-mistral-dashboard-configmap",
       "version": 1
     }

@@ -80,22 +80,6 @@ Each component serves a specific purpose:
 
 
 
-#### Grafana Stack
-
-Get grafana loadbalancer 
-::code[kubectl get svc -n kube-system kube-prometheus-stack-grafana]{language=bash showLineNumbers=false showCopyAction=true}
-
-```bash
-NAME                            TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)        AGE
-kube-prometheus-stack-grafana   LoadBalancer   172.20.211.49   a0b4c567b25944afb889f19b945efad4-1467842165.us-west-2.elb.amazonaws.com   80:30387/TCP   18m
-```
-
-Open loadbalancer and use "admin" as username and password from following output. 
-
-```bash
-echo $GRAFANA_PASSWORD
-```
-
 ### Conclusion
 
 In this section, we have:
@@ -114,9 +98,8 @@ In this section, we have:
 
 In the following sections, we will:
 
-    Configure Grafana dashboards for Neuron monitoring
-    Learn how to monitor LLM inference workloads using these tools for both vLLM and Ray
-
+    Learn how to monitor LLM inference workloads using configure Grafana dashboards for vLLM and Neuron monitoring
+    
 You can now proceed to the next module to learn about setting up custom dashboards for monitoring your GPU workloads.
 
 

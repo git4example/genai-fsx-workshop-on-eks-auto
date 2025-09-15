@@ -2,14 +2,8 @@
 title : "Configuring Neuron Monitoring Dashboard"
 weight : 530
 ---
-# Following is still work in progress. Go to next page to setup model monitoring.
 
-Configuring Neuron Monitoring Dashboard
-
-
-
-
-Configuring Neuron Monitor
+### Configuring Neuron Monitor
 
 Neuron Monitor runs on AWS Neuron-enabled instances to collect and expose hardware metrics (like utilization, memory usage, and temperature) from AWS Inferentia and Trainium chips through a Prometheus-compatible endpoint for monitoring and optimization of ML workloads. Let's deploy neuron monitor DaemonSet to expose these metrics to Prometheus using ServiceMonitor:
 
@@ -36,7 +30,7 @@ Verify dashboard on grafana "AWS Neuron Hardware Monitoring (ConfigMap)"
 
 ### Deploy Comprehensive Dashboard 
 ```bash
-kubectl apply -f comprehensive-vllm-neuron-dashboard.yaml 
+kubectl apply -f vllm-neuron-dashboard-configmap.yaml 
 ```
 
 Verify dashboard on grafana "Comprehensive vLLM + Neuron Monitoring Dashboard" 

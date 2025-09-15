@@ -253,32 +253,48 @@ validate_aws_region() {
 get_fsx_by_tags() {
     local blueprint_tag="eksworkshop"
     
-    log_info "Looking for FSx Lustre filesystem with Blueprint tag: $blueprint_tag"
+    # Send log messages to stderr to avoid mixing with return value
+    log_info "Looking for FSx Lustre filesystem with Blueprint tag: $blueprint_tag" >&2
     
-    # Get FSx filesystems filtered by tags
-    local fsx_systems=$(aws fsx describe-file-systems \
-        --query "FileSystems[?FileSystemType==\`LUSTRE\` && Tags[?Key==\`Blueprint\` && Value==\`$blueprint_tag\`]].[FileSystemId,DNSName,LustreConfiguration.MountName]" \
+    # First, get all FSx Lustre filesystems
+    local all_fsx=$(aws fsx describe-file-systems \
+        --query 'FileSystems[?FileSystemType==`LUSTRE`]' \
         --output json)
     
-    # Count the number of matching file systems
-    local fsx_count=$(echo $fsx_systems | jq length)
-    
-    if [ "$fsx_count" -eq 0 ]; then
-        log_error "No FSx for Lustre file systems found with Blueprint tag: $blueprint_tag"
-        log_info "Available FSx Lustre file systems:"
-        aws fsx describe-file-systems --query 'FileSystems[?FileSystemType==`LUSTRE`].[FileSystemId,Tags[?Key==`Blueprint`].Value|[0]]' --output table
+    if [[ -z "$all_fsx" || "$all_fsx" == "[]" ]]; then
+        log_error "No FSx for Lustre file systems found in this region" >&2
         return 1
-    elif [ "$fsx_count" -eq 1 ]; then
-        log_info "Found FSx for Lustre file system with Blueprint tag: $blueprint_tag"
-        echo $fsx_systems | jq -r '.[0] | @tsv'
+    fi
+    
+    # Filter by Blueprint tag using jq
+    local tagged_fsx=$(echo "$all_fsx" | jq -r --arg tag "$blueprint_tag" '
+        .[] | 
+        select(.Tags[]? | select(.Key == "Blueprint" and .Value == $tag)) |
+        [.FileSystemId, .DNSName, .LustreConfiguration.MountName] |
+        @tsv
+    ')
+    
+    if [[ -z "$tagged_fsx" ]]; then
+        log_error "No FSx for Lustre file systems found with Blueprint tag: $blueprint_tag" >&2
+        log_info "Available FSx Lustre file systems:" >&2
+        echo "$all_fsx" | jq -r '.[] | [.FileSystemId, (.Tags[]? | select(.Key == "Blueprint") | .Value // "no-blueprint-tag")] | @tsv' | column -t >&2
+        return 1
+    fi
+    
+    # Count lines to see how many filesystems we found
+    local fsx_count=$(echo "$tagged_fsx" | wc -l)
+    
+    if [ "$fsx_count" -eq 1 ]; then
+        log_info "Found FSx for Lustre file system with Blueprint tag: $blueprint_tag" >&2
+        echo "$tagged_fsx"
         return 0
     else
-        log_warn "Multiple FSx for Lustre file systems found with Blueprint tag: $blueprint_tag"
-        echo $fsx_systems | jq -r '.[] | @tsv' | column -t -s $'\t'
+        log_warn "Multiple FSx for Lustre file systems found with Blueprint tag: $blueprint_tag" >&2
+        echo "$tagged_fsx" | column -t >&2
         
         # For workshop consistency, use the first one
-        log_info "Using the first matching filesystem for workshop consistency"
-        echo $fsx_systems | jq -r '.[0] | @tsv'
+        log_info "Using the first matching filesystem for workshop consistency" >&2
+        echo "$tagged_fsx" | head -n 1
         return 0
     fi
 }
@@ -287,25 +303,33 @@ get_fsx_by_tags() {
 get_fsx_lustre_az() {
     local fsx_id=$1
     
-    log_info "Detecting FSx Lustre availability zone for filesystem: $fsx_id"
+    # Validate filesystem ID format
+    if [[ ! "$fsx_id" =~ ^fs-[a-zA-Z0-9]{8,}$ ]]; then
+        log_error "Invalid FSx filesystem ID format: '$fsx_id'" >&2
+        log_error "Expected format: fs-xxxxxxxxx (at least 11 characters total)" >&2
+        return 1
+    fi
+    
+    log_info "Detecting FSx Lustre availability zone for filesystem: $fsx_id" >&2
     
     # Get the subnet ID of the FSx filesystem
-    local subnet_id=$(aws fsx describe-file-systems --file-system-ids $fsx_id --query 'FileSystems[0].SubnetIds[0]' --output text)
+    local subnet_id=$(aws fsx describe-file-systems --file-system-ids "$fsx_id" --query 'FileSystems[0].SubnetIds[0]' --output text 2>/dev/null)
     
-    if [[ -z "$subnet_id" || "$subnet_id" == "None" ]]; then
-        log_error "Failed to get subnet ID for FSx filesystem $fsx_id"
+    if [[ -z "$subnet_id" || "$subnet_id" == "None" || "$subnet_id" == "null" ]]; then
+        log_error "Failed to get subnet ID for FSx filesystem $fsx_id" >&2
+        log_error "This could mean the filesystem doesn't exist or you don't have permissions" >&2
         return 1
     fi
     
     # Get the AZ from the subnet
-    local az=$(aws ec2 describe-subnets --subnet-ids $subnet_id --query 'Subnets[0].AvailabilityZone' --output text)
+    local az=$(aws ec2 describe-subnets --subnet-ids "$subnet_id" --query 'Subnets[0].AvailabilityZone' --output text 2>/dev/null)
     
-    if [[ -z "$az" || "$az" == "None" ]]; then
-        log_error "Failed to get availability zone for subnet $subnet_id"
+    if [[ -z "$az" || "$az" == "None" || "$az" == "null" ]]; then
+        log_error "Failed to get availability zone for subnet $subnet_id" >&2
         return 1
     fi
     
-    log_info "FSx Lustre filesystem $fsx_id is in availability zone: $az"
+    log_info "FSx Lustre filesystem $fsx_id is in availability zone: $az" >&2
     echo "$az"
     return 0
 }
@@ -330,28 +354,7 @@ validate_fsx_cluster_association() {
     fi
 }
 
-# Function to validate AZ has Inferentia capacity
-validate_inferentia_az() {
-    local az=$1
-    
-    log_info "Validating Inferentia availability in AZ: $az"
-    
-    # Check if there are any inf2 instances available in this AZ
-    local inf2_available=$(aws ec2 describe-instance-type-offerings \
-        --location-type availability-zone \
-        --filters Name=location,Values=$az Name=instance-type,Values=inf2.* \
-        --query 'InstanceTypeOfferings[].InstanceType' \
-        --output text)
-    
-    if [[ -n "$inf2_available" ]]; then
-        log_info "✓ Inferentia instances available in AZ $az: $inf2_available"
-        return 0
-    else
-        log_warn "⚠ No Inferentia instances found in AZ $az"
-        log_warn "  This may cause scheduling issues for the Mistral deployment"
-        return 1
-    fi
-}
+
 
 # Function to check if kubectl is working
 check_kubectl_access() {
@@ -615,6 +618,14 @@ fi
 
 # Parse the output and export variables
 IFS=$'\t' read -r FSXL_VOLUME_ID DNS_NAME MOUNT_NAME <<< "$SYSTEM_INFO"
+
+# Debug: Show what we parsed
+log_info "Parsed FSx information:"
+log_info "  Raw SYSTEM_INFO: '$SYSTEM_INFO'"
+log_info "  FSXL_VOLUME_ID: '$FSXL_VOLUME_ID'"
+log_info "  DNS_NAME: '$DNS_NAME'"
+log_info "  MOUNT_NAME: '$MOUNT_NAME'"
+
 export FSXL_VOLUME_ID
 export DNS_NAME  
 export MOUNT_NAME
@@ -629,9 +640,6 @@ export FSX_LUSTRE_AZ
 
 # Validate FSx belongs to current cluster
 validate_fsx_cluster_association "$FSXL_VOLUME_ID" "$CLUSTER_NAME"
-
-# Validate Inferentia availability in the FSx AZ
-validate_inferentia_az "$FSX_LUSTRE_AZ"
 
 # Validate that all variables are set
 if [[ -z "$FSXL_VOLUME_ID" || -z "$DNS_NAME" || -z "$MOUNT_NAME" || -z "$FSX_LUSTRE_AZ" ]]; then

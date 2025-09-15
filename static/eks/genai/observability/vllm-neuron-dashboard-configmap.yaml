@@ -34,9 +34,8 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 0,
-      "id": null,
+      "id": 38,
       "links": [],
-      "liveNow": false,
       "panels": [
         {
           "datasource": {
@@ -89,8 +88,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "yellow",
@@ -121,10 +119,12 @@ data:
               "showLegend": true
             },
             "tooltip": {
+              "hideZeros": false,
               "mode": "single",
               "sort": "none"
             }
           },
+          "pluginVersion": "12.0.2",
           "targets": [
             {
               "datasource": {
@@ -212,8 +212,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "yellow",
@@ -244,10 +243,12 @@ data:
               "showLegend": true
             },
             "tooltip": {
+              "hideZeros": false,
               "mode": "single",
               "sort": "none"
             }
           },
+          "pluginVersion": "12.0.2",
           "targets": [
             {
               "datasource": {
@@ -294,7 +295,7 @@ data:
               "refId": "D"
             }
           ],
-          "title": "GPU Memory Usage",
+          "title": "Neuron/System Memory Usage",
           "type": "timeseries"
         },
         {
@@ -302,7 +303,7 @@ data:
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "description": "vLLM prompt and generation token counters",
+          "description": "Neuron execution latency percentiles - Key performance indicators for inference timing",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -317,7 +318,7 @@ data:
                 "barAlignment": 0,
                 "barWidthFactor": 0.6,
                 "drawStyle": "line",
-                "fillOpacity": 0,
+                "fillOpacity": 10,
                 "gradientMode": "none",
                 "hideFrom": {
                   "legend": false,
@@ -326,12 +327,12 @@ data:
                 },
                 "insertNulls": false,
                 "lineInterpolation": "linear",
-                "lineWidth": 1,
+                "lineWidth": 2,
                 "pointSize": 5,
                 "scaleDistribution": {
                   "type": "linear"
                 },
-                "showPoints": "auto",
+                "showPoints": "never",
                 "spanNulls": false,
                 "stacking": {
                   "group": "A",
@@ -346,18 +347,82 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
+                  },
+                  {
+                    "color": "yellow",
+                    "value": 0.05
                   },
                   {
                     "color": "red",
-                    "value": 80
+                    "value": 0.1
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "s"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "P50 (Median)"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "P95"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "yellow",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "P99"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "orange",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "P100 (Max)"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -365,28 +430,33 @@ data:
             "x": 0,
             "y": 8
           },
-          "id": 3,
+          "id": 10,
           "options": {
             "legend": {
-              "calcs": [],
-              "displayMode": "list",
+              "calcs": [
+                "lastNotNull",
+                "mean"
+              ],
+              "displayMode": "table",
               "placement": "bottom",
               "showLegend": true
             },
             "tooltip": {
-              "mode": "single",
+              "hideZeros": false,
+              "mode": "multi",
               "sort": "none"
             }
           },
+          "pluginVersion": "12.0.2",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "rate(vllm:prompt_tokens_total[$__rate_interval])",
+              "expr": "execution_latency_seconds{percentile=\"p50\"}",
               "instant": false,
-              "legendFormat": "Prompt Tokens/sec",
+              "legendFormat": "P50 (Median)",
               "range": true,
               "refId": "A"
             },
@@ -395,14 +465,36 @@ data:
                 "type": "prometheus",
                 "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "rate(vllm:generation_tokens_total[$__rate_interval])",
+              "expr": "execution_latency_seconds{percentile=\"p95\"}",
               "instant": false,
-              "legendFormat": "Generation Tokens/sec",
+              "legendFormat": "P95",
               "range": true,
               "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "execution_latency_seconds{percentile=\"p99\"}",
+              "instant": false,
+              "legendFormat": "P99",
+              "range": true,
+              "refId": "C"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "execution_latency_seconds{percentile=\"p100\"}",
+              "instant": false,
+              "legendFormat": "P100 (Max)",
+              "range": true,
+              "refId": "D"
             }
           ],
-          "title": "vLLM Token Counters",
+          "title": "Neuron Execution Latency Percentiles",
           "type": "timeseries"
         },
         {
@@ -454,8 +546,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -482,10 +573,12 @@ data:
               "showLegend": true
             },
             "tooltip": {
+              "hideZeros": false,
               "mode": "single",
               "sort": "none"
             }
           },
+          "pluginVersion": "12.0.2",
           "targets": [
             {
               "datasource": {
@@ -540,22 +633,51 @@ data:
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "description": "vLLM throughput gauges for prompt and generation",
+          "description": "vLLM prompt and generation token counters",
           "fieldConfig": {
             "defaults": {
               "color": {
                 "mode": "palette-classic"
               },
               "custom": {
-                "displayMode": "list",
-                "orientation": "horizontal"
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
               },
               "mappings": [],
               "thresholds": {
+                "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -573,30 +695,30 @@ data:
             "x": 0,
             "y": 16
           },
-          "id": 5,
+          "id": 3,
           "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
             },
-            "textMode": "auto"
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "single",
+              "sort": "none"
+            }
           },
+          "pluginVersion": "12.0.2",
           "targets": [
             {
               "datasource": {
                 "type": "prometheus",
                 "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "vllm:avg_prompt_throughput_toks_per_s",
+              "expr": "rate(vllm:prompt_tokens_total[$__rate_interval])",
               "instant": false,
-              "legendFormat": "Avg Prompt Throughput (tok/s)",
+              "legendFormat": "Prompt Tokens/sec",
               "range": true,
               "refId": "A"
             },
@@ -605,15 +727,15 @@ data:
                 "type": "prometheus",
                 "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "vllm:avg_generation_throughput_toks_per_s",
+              "expr": "rate(vllm:generation_tokens_total[$__rate_interval])",
               "instant": false,
-              "legendFormat": "Avg Generation Throughput (tok/s)",
+              "legendFormat": "Generation Tokens/sec",
               "range": true,
               "refId": "B"
             }
           ],
-          "title": "vLLM Throughput Gauges",
-          "type": "stat"
+          "title": "vLLM Token Counters",
+          "type": "timeseries"
         },
         {
           "datasource": {
@@ -664,8 +786,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -692,10 +813,12 @@ data:
               "showLegend": true
             },
             "tooltip": {
+              "hideZeros": false,
               "mode": "single",
               "sort": "none"
             }
           },
+          "pluginVersion": "12.0.2",
           "targets": [
             {
               "datasource": {
@@ -772,8 +895,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -800,10 +922,12 @@ data:
               "showLegend": true
             },
             "tooltip": {
+              "hideZeros": false,
               "mode": "single",
               "sort": "none"
             }
           },
+          "pluginVersion": "12.0.2",
           "targets": [
             {
               "datasource": {
@@ -891,8 +1015,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -919,10 +1042,12 @@ data:
               "showLegend": true
             },
             "tooltip": {
+              "hideZeros": false,
               "mode": "single",
               "sort": "none"
             }
           },
+          "pluginVersion": "12.0.2",
           "targets": [
             {
               "datasource": {
@@ -960,6 +1085,86 @@ data:
           ],
           "title": "vLLM Time per Output Token",
           "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "description": "vLLM throughput gauges for prompt and generation",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 32
+          },
+          "id": 5,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "horizontal",
+            "percentChangeColorMode": "standard",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            },
+            "showPercentChange": false,
+            "textMode": "auto",
+            "wideLayout": true
+          },
+          "pluginVersion": "12.0.2",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "vllm:avg_prompt_throughput_toks_per_s",
+              "instant": false,
+              "legendFormat": "Avg Prompt Throughput (tok/s)",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "vllm:avg_generation_throughput_toks_per_s",
+              "instant": false,
+              "legendFormat": "Avg Generation Throughput (tok/s)",
+              "range": true,
+              "refId": "B"
+            }
+          ],
+          "title": "vLLM Throughput Gauges",
+          "type": "stat"
         },
         {
           "datasource": {
@@ -1010,8 +1215,7 @@ data:
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green",
-                    "value": null
+                    "color": "green"
                   },
                   {
                     "color": "red",
@@ -1025,8 +1229,8 @@ data:
           },
           "gridPos": {
             "h": 8,
-            "w": 24,
-            "x": 0,
+            "w": 12,
+            "x": 12,
             "y": 32
           },
           "id": 9,
@@ -1038,10 +1242,12 @@ data:
               "showLegend": true
             },
             "tooltip": {
+              "hideZeros": false,
               "mode": "single",
               "sort": "none"
             }
           },
+          "pluginVersion": "12.0.2",
           "targets": [
             {
               "datasource": {
@@ -1081,8 +1287,8 @@ data:
           "type": "timeseries"
         }
       ],
-      "schemaVersion": 39,
-      "style": "dark",
+      "preload": false,
+      "schemaVersion": 41,
       "tags": [
         "vllm",
         "neuron",
@@ -1090,7 +1296,33 @@ data:
         "comprehensive"
       ],
       "templating": {
-        "list": []
+        "list": [
+          {
+            "current": {},
+            "includeAll": false,
+            "label": "datasource",
+            "name": "DS_PROMETHEUS",
+            "options": [],
+            "query": "prometheus",
+            "refresh": 1,
+            "regex": "",
+            "type": "datasource"
+          },
+          {
+            "definition": "label_values(model_name)",
+            "includeAll": false,
+            "label": "model_name",
+            "name": "model_name",
+            "options": [],
+            "query": {
+              "query": "label_values(model_name)",
+              "refId": "StandardVariableQuery"
+            },
+            "refresh": 1,
+            "regex": "",
+            "type": "query"
+          }
+        ]
       },
       "time": {
         "from": "now-1h",
@@ -1100,5 +1332,5 @@ data:
       "timezone": "",
       "title": "Comprehensive vLLM + Neuron Monitoring Dashboard",
       "uid": "comprehensive-vllm-neuron-dashboard",
-      "version": 1
+      "version": 2
     }
