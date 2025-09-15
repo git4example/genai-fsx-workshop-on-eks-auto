@@ -121,7 +121,6 @@ In this workshop the **Mistral-7B-Instruct** model is stored in an Amazon S3 buc
     │   └── quick-deploy-sponsored.sh
     └── terraform
         ├── helm-values
-        │   ├── kube-prometheus.yaml
         │   ├── neuron-values.yaml
         │   └── nvidia-values.yaml
         ├── sysprep.tf

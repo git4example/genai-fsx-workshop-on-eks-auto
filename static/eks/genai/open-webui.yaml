@@ -22,6 +22,8 @@ spec:
           value: "xxx"
         - name: OPENAI_API_BASE_URL
           value: "http://vllm-mistral7b-service/v1"
+        # - name: OPENAI_API_BASE_URLS
+        #   value: "http://vllm-mistral7b-service/v1;vllm-mistral-7b-v03-service"
 ---
 apiVersion: v1
 kind: Service
