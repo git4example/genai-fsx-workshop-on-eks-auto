@@ -494,6 +494,7 @@ if check_cloudformation_stack "$STACK_NAME"; then
           ParameterKey=DevServerPort,ParameterValue=8081 \
           ParameterKey=AssetZipS3Path,ParameterValue=${ASSET_BUCKET_ZIPPATH} \
           ParameterKey=Assets,ParameterValue=s3://${ASSET_BUCKET}/${ASSET_BUCKET_PATH}/assets/ \
+          --tags Key=auto-delete,Value=no \
           --capabilities CAPABILITY_NAMED_IAM
     else
         log_info "Skipping stack update"
@@ -514,6 +515,7 @@ else
       ParameterKey=DevServerPort,ParameterValue=8081 \
       ParameterKey=AssetZipS3Path,ParameterValue=${ASSET_BUCKET_ZIPPATH} \
       ParameterKey=Assets,ParameterValue=s3://${ASSET_BUCKET}/${ASSET_BUCKET_PATH}/assets/ \
+      --tags Key=auto-delete,Value=no \
       --disable-rollback \
       --capabilities CAPABILITY_NAMED_IAM
 fi

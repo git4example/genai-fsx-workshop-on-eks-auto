@@ -12,8 +12,8 @@ terraform {
     }
     helm = {
       source  = "hashicorp/helm"
-      version = "2.17.0" 
-    }    
+      version = "2.17.0"
+    }
     kubectl = {
       source  = "gavinbunney/kubectl"
       version = ">= 1.19"
@@ -43,7 +43,7 @@ provider "aws" {
 provider "kubernetes" {
   host                   = module.eks.cluster_endpoint
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-  
+
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
@@ -55,7 +55,7 @@ provider "helm" {
   kubernetes {
     host                   = module.eks.cluster_endpoint
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-    
+
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
       command     = "aws"
@@ -85,39 +85,39 @@ locals {
   # cluster_version = "1.33"
 
   vpc_cidr = "10.0.0.0/16"
-  
+
   # Map of unsupported AZ IDs for EKS per region
   unsupported_az_ids = {
-    "us-east-1"     = ["use1-az3"]
-    "us-west-1"     = ["usw1-az2"]
-    "ca-central-1"  = ["cac1-az3"]
+    "us-east-1"    = ["use1-az3"]
+    "us-west-1"    = ["usw1-az2"]
+    "ca-central-1" = ["cac1-az3"]
   }
 
   # Get current region's unsupported AZ IDs
   region_unsupported_az_ids = lookup(local.unsupported_az_ids, data.aws_region.current.name, [])
 
-  azs = data.aws_availability_zones.available.names 
+  azs      = data.aws_availability_zones.available.names
   az_count = length(local.azs) # Get number of AZs in the region
 
   tags = {
-    Blueprint = local.name
+    Blueprint   = local.name
     auto-delete = "no"
   }
 
   # Following is to check if WSParticipantRole role is present or not, to handle on-demand workshop in private accounts
-    
+
   # Base access entries - this will always be created
   base_access_entries = {}
-  
+
   # Define the role ARN
   ws_participant_role_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/WSParticipantRole"
-  
+
   # Check if role exists first
   has_ws_participant_role = try(
     contains(data.aws_iam_roles.all.names, "WSParticipantRole"),
     false
   )
-  
+
   # Use the check result to conditionally create access entry
   ws_participant_access = local.has_ws_participant_role ? {
     super-admin = {
@@ -173,18 +173,18 @@ module "eks" {
     aws = aws.region1
   }
 
-  cluster_name                   = local.name
-  cluster_version                = local.cluster_version
-  cluster_endpoint_public_access = true
+  cluster_name                             = local.name
+  cluster_version                          = local.cluster_version
+  cluster_endpoint_public_access           = true
   enable_cluster_creator_admin_permissions = true
-  authentication_mode            = "API"
-  cluster_enabled_log_types = ["api","audit","authenticator","controllerManager","scheduler"]
+  authentication_mode                      = "API"
+  cluster_enabled_log_types                = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
 
   cluster_compute_config = {
     enabled    = true
-    node_pools = ["general-purpose","system"]
+    node_pools = ["general-purpose", "system"]
   }
-    
+
   access_entries = local.access_entries
 
   vpc_id     = module.vpc.vpc_id
@@ -208,7 +208,7 @@ module "eks" {
 module "eks_blueprints_addons" {
   source  = "aws-ia/eks-blueprints-addons/aws"
   version = "1.21.0"
-  
+
   providers = {
     aws = aws.region1
   }
@@ -237,7 +237,7 @@ module "eks_blueprints_addons" {
   #   repository_username = data.aws_ecrpublic_authorization_token.token.user_name
   #   repository_password = data.aws_ecrpublic_authorization_token.token.password
   # }
- 
+
   # karpenter_node = {
   #   iam_role_use_name_prefix = false
   #   iam_role_additional_policies = {
@@ -258,7 +258,7 @@ module "eks_blueprints_addons" {
   #   }]
   # }
 
-## fsx CSI driver can be installed here in fugure as needed.
+  ## fsx CSI driver can be installed here in fugure as needed.
   # enable_aws_fsx_csi_driver = true
   # aws_fsx_csi_driver = {
   #   namespace     = "aws-fsx-csi-driver"
@@ -316,6 +316,7 @@ resource "random_password" "grafana" {
 resource "aws_secretsmanager_secret" "grafana" {
   name_prefix             = "${local.name}-oss-grafana"
   recovery_window_in_days = 0 # Set to zero for this example to force delete during Terraform destroy
+  tags                    = local.tags
 }
 
 resource "aws_secretsmanager_secret_version" "grafana" {
@@ -341,7 +342,7 @@ module "data_addons" {
   #   create_namespace=true
   #   values  = [file("${path.module}/helm-values/neuron-values.yaml")]
   # }
-  
+
   # enable_nvidia_device_plugin = true
   # nvidia_device_plugin_helm_config = {
   #   # version =  "0.17.0"
@@ -451,30 +452,31 @@ resource "random_string" "random" {
 
 # Region 1 Bucket
 module "fsx-lustre-bucket" {
-  source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "4.1.2"
+  source        = "terraform-aws-modules/s3-bucket/aws"
+  version       = "4.1.2"
   force_destroy = true
 
   providers = {
     aws = aws.region1
   }
 
-  bucket_prefix="fsx-lustre-${random_string.random.id}"
-
+  bucket_prefix = "fsx-lustre-${random_string.random.id}"
+  tags          = local.tags
 }
 
 
 # Region 2 Bucket
 module "fsx-lustre-bucket-2ndregion" {
-  source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "4.1.2" 
+  source        = "terraform-aws-modules/s3-bucket/aws"
+  version       = "4.1.2"
   force_destroy = true
 
   providers = {
     aws = aws.region2
   }
 
-  bucket_prefix="fsx-lustre-2ndregion-${random_string.random.id}"
+  bucket_prefix = "fsx-lustre-2ndregion-${random_string.random.id}"
+  tags          = local.tags
 }
 
 ## S3 Cross region replication Role :
@@ -496,6 +498,7 @@ resource "aws_iam_role" "s3-cross-region-replication-role" {
       },
     ]
   })
+  tags = local.tags
 }
 
 
@@ -540,6 +543,7 @@ resource "aws_iam_policy" "s3-cross-region-replication-policy" {
   ]
 }
 POLICY
+  tags   = local.tags
 }
 
 resource "aws_iam_policy_attachment" "s3-cross-region-replication-policy-attachment" {
@@ -558,28 +562,29 @@ resource "aws_security_group" "FSxLSecurityGroup01" {
 
   ingress {
     description = "Allow Lustre traffic between FSx for Lustre file servers"
-    from_port        = 988
-    to_port          = 988
-    protocol         = "tcp"
-    cidr_blocks      = [local.vpc_cidr]
+    from_port   = 988
+    to_port     = 988
+    protocol    = "tcp"
+    cidr_blocks = [local.vpc_cidr]
   }
 
   ingress {
     description = "Allows Lustre traffic between FSx for Lustre file servers"
-    from_port        = 1018
-    to_port          = 1023
-    protocol         = "tcp"
-    cidr_blocks      = [local.vpc_cidr]
+    from_port   = 1018
+    to_port     = 1023
+    protocol    = "tcp"
+    cidr_blocks = [local.vpc_cidr]
   }
 
   egress {
     description = "Allows Lustre traffic between FSx for Lustre file servers"
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = [local.vpc_cidr]
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = [local.vpc_cidr]
   }
 
+  tags = local.tags
 }
 
 ################################################################################
@@ -587,13 +592,14 @@ resource "aws_security_group" "FSxLSecurityGroup01" {
 ################################################################################
 
 resource "aws_fsx_lustre_file_system" "fsx_lustre" {
-  provider    = aws.region1
-  file_system_type_version = "2.15"
-  storage_capacity = 1200
-  deployment_type = "PERSISTENT_2"
+  provider                    = aws.region1
+  file_system_type_version    = "2.15"
+  storage_capacity            = 1200
+  deployment_type             = "PERSISTENT_2"
   per_unit_storage_throughput = 250
-  subnet_ids       = [module.vpc.private_subnets[0]]
-  security_group_ids = [aws_security_group.FSxLSecurityGroup01.id]
+  subnet_ids                  = [module.vpc.private_subnets[0]]
+  security_group_ids          = [aws_security_group.FSxLSecurityGroup01.id]
+  tags                        = local.tags
   depends_on = [
     module.fsx-lustre-bucket,
     aws_security_group.FSxLSecurityGroup01
@@ -602,9 +608,9 @@ resource "aws_fsx_lustre_file_system" "fsx_lustre" {
 
 
 resource "aws_fsx_data_repository_association" "fsx_lustre_association" {
-  file_system_id       = aws_fsx_lustre_file_system.fsx_lustre.id
-  data_repository_path = "s3://${module.fsx-lustre-bucket.s3_bucket_id}"
-  file_system_path     = "/"
+  file_system_id                   = aws_fsx_lustre_file_system.fsx_lustre.id
+  data_repository_path             = "s3://${module.fsx-lustre-bucket.s3_bucket_id}"
+  file_system_path                 = "/"
   batch_import_meta_data_on_create = true
 
   s3 {
@@ -616,7 +622,7 @@ resource "aws_fsx_data_repository_association" "fsx_lustre_association" {
       events = ["NEW", "CHANGED", "DELETED"]
     }
   }
-  depends_on = [    
+  depends_on = [
     module.fsx-lustre-bucket,
     aws_fsx_lustre_file_system.fsx_lustre
   ]
