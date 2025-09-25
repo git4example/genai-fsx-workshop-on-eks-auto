@@ -1,5 +1,12 @@
 scheduler:
   enabled: true
+  image:
+    repository: public.ecr.aws/neuron/neuron-scheduler
+    tag: "2.28.4.0"
+  customScheduler:
+    image:
+      repository: public.ecr.aws/eks-distro/kubernetes/kube-scheduler
+      tag: "v1.33.4-eks-1-33-13"
 npd:
   nodeRecovery:
     enabled: true

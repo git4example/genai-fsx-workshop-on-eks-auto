@@ -96,7 +96,6 @@ In this workshop the **Mistral-7B-Instruct** model is stored in an Amazon S3 buc
     ├── download
     │   ├── check.yaml
     │   ├── download-upload.yaml
-    │   ├── s3-upload.json
     │   └── sysprep.yaml
     ├── eks
     │   ├── FSxL

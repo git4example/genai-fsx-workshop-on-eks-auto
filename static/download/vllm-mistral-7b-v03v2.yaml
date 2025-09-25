@@ -13,9 +13,9 @@ spec:
         app: vllm-mistral-7b-v03
     spec:
       securityContext:
-        runAsUser: 0      # Run as root
-        runAsGroup: 0     # Run as root group
-        fsGroup: 0        # Ensure volume access
+        runAsUser: 0 # Run as root
+        runAsGroup: 0 # Run as root group
+        fsGroup: 0 # Ensure volume access
       schedulerName: my-scheduler
       tolerations:
         - key: "aws.amazon.com/neuron"
@@ -23,63 +23,64 @@ spec:
           effect: "NoSchedule"
       containers:
         - name: inference-server
-          image: public.ecr.aws/u3r1l1j7/eks-genai:vllm-neuronx-0.9.1
+          image: public.ecr.aws/neuron/pytorch-inference-vllm-neuronx:0.9.1-neuronx-py310-sdk2.25.0-ubuntu22.04
           resources:
             requests:
               aws.amazon.com/neuron: 1
-              # memory: "32Gi" # Use more memory for faster compilation
-              # cpu: "8" # Use more CPU for faster compilation
+              memory: "32Gi" # Use more memory for faster compilation
+              cpu: "8" # Use more CPU for faster compilation
             limits:
               aws.amazon.com/neuron: 1
-              # memory: "125Gi" # Generous memory limit for inf2.8xlarge
-              # cpu: "12" # More CPU for compilation
+              memory: "125Gi" # Generous memory limit for inf2.8xlarge
+              cpu: "12" # More CPU for compilation
           args:
-            # - /opt/conda/bin/vllm
-            # - serve
-            - $(MODEL_ID)
-            - --enforce-eager
-            - --gpu-memory-utilization=0.96 # Higher utilization for better performance
-            - --device=neuron
-            - --max-num-seqs=4 # Slightly higher for better throughput
-            - --tensor-parallel-size=2 # Use TP=2 for better performance (will create cache for inf2.xlarge)
-            - --max-model-len=10240 # Reasonable context size
-            - --served-model-name=mistralai/Mistral-7B-Instruct-v0.3-neuron
-            - --host=0.0.0.0
+            - python
+            - -m
+            - vllm.entrypoints.openai.api_server
+            - --model=$(MODEL_ID)
+            - --max-num-seqs=4
+            - --max-model-len=10240
+            - --tensor-parallel-size=2
             - --port=8000
-            # - --disable-log-requests
-            # - --swap-space=0
+            - --device=neuron
+            - --override-neuron-config={"enable_bucketing":false}
+            - --host=0.0.0.0
           env:
+            # - name: VLLM_NEURON_FRAMEWORK
+            #   value: "neuronx-distributed-inference"
             - name: MODEL_ID
               value: /work-dir/Mistral-7B-Instruct-v0.3/
             - name: NEURON_COMPILE_CACHE_URL
               value: /work-dir/Mistral-7B-Instruct-v0.3/neuron-cache/
             - name: PORT
               value: "8000"
-            # Optimized for faster compilation on inf2.8xlarge
-            - name: MALLOC_ARENA_MAX
-              value: "4" # More arenas for parallel compilation
-            - name: MALLOC_MMAP_THRESHOLD_
-              value: "262144" # Larger threshold for better performance
-            - name: MALLOC_TRIM_THRESHOLD_
-              value: "262144"
-            - name: NEURON_RT_NUM_CORES
-              value: "2" # Use both cores for TP=2
-            - name: NEURON_RT_VISIBLE_CORES
-              value: "0,1"
-            # Compilation optimization flags
-            - name: NEURON_CC_FLAGS
-              value: "--model-type=transformer --auto-cast=none --optlevel=2" # Higher optimization
-            - name: NEURONX_COMPILE_FLAGS
-              value: "--enable-mixed-precision-accumulation --enable-saturate-infinity"
-            - name: NEURON_COMPILE_CACHE_ENABLED
-              value: "1"
-            - name: NEURON_CACHE_PATH
+            - name: NEURON_COMPILED_ARTIFACTS
               value: /work-dir/Mistral-7B-Instruct-v0.3/neuron-cache/
-            # Parallel compilation settings
-            - name: OMP_NUM_THREADS
-              value: "8" # More threads for compilation
-            - name: NEURON_FRAMEWORK_DEBUG
-              value: "0" # Disable debug for faster compilation
+            # Optimized for faster compilation on inf2.8xlarge
+            # - name: MALLOC_ARENA_MAX
+            #   value: "4" # More arenas for parallel compilation
+            # - name: MALLOC_MMAP_THRESHOLD_
+            #   value: "262144" # Larger threshold for better performance
+            # - name: MALLOC_TRIM_THRESHOLD_
+            #   value: "262144"
+            # - name: NEURON_RT_NUM_CORES
+            #   value: "2" # Use 8 cores for TP=8
+            # - name: NEURON_RT_VISIBLE_CORES
+            #   value: "0,1"
+            # # Compilation optimization flags
+            # - name: NEURON_CC_FLAGS
+            #   value: "--model-type=transformer --auto-cast=none --optlevel=2" # Higher optimization
+            # - name: NEURONX_COMPILE_FLAGS
+            #   value: "--enable-mixed-precision-accumulation --enable-saturate-infinity"
+            # - name: NEURON_COMPILE_CACHE_ENABLED
+            #   value: "1"
+            # - name: NEURON_CACHE_PATH
+            #   value: /work-dir/Mistral-7B-Instruct-v0.3/neuron-cache/
+            # # Parallel compilation settings
+            # - name: OMP_NUM_THREADS
+            #   value: "8" # More threads for compilation
+            # - name: NEURON_FRAMEWORK_DEBUG
+            #   value: "0" # Disable debug for faster compilation
           ports:
             - containerPort: 8000
               name: http

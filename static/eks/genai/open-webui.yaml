@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: open-webui
-        image: kopi/openwebui
+        image: public.ecr.aws/parikshit/openwebui:latest
         env:
         - name: WEBUI_AUTH
           value: "False"

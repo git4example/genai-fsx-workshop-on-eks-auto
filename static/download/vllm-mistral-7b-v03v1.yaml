@@ -1,17 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: vllm-mistral-fast-compilation
+  name: vllm-mistral-7b-v03
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: vllm-mistral-fast-compilation
+      app: vllm-mistral-7b-v03
   template:
     metadata:
       labels:
-        app: vllm-mistral-fast-compilation
+        app: vllm-mistral-7b-v03
     spec:
+      securityContext:
+        runAsUser: 0      # Run as root
+        runAsGroup: 0     # Run as root group
+        fsGroup: 0        # Ensure volume access
       schedulerName: my-scheduler
       tolerations:
         - key: "aws.amazon.com/neuron"
@@ -30,8 +34,8 @@ spec:
               memory: "125Gi" # Generous memory limit for inf2.8xlarge
               cpu: "12" # More CPU for compilation
           args:
-            - /opt/conda/bin/vllm
-            - serve
+            # - /opt/conda/bin/vllm
+            # - serve
             - $(MODEL_ID)
             - --enforce-eager
             - --gpu-memory-utilization=0.96 # Higher utilization for better performance
@@ -42,8 +46,8 @@ spec:
             - --served-model-name=mistralai/Mistral-7B-Instruct-v0.3-neuron
             - --host=0.0.0.0
             - --port=8000
-            - --disable-log-requests
-            - --swap-space=0
+            # - --disable-log-requests
+            # - --swap-space=0
           env:
             - name: MODEL_ID
               value: /work-dir/Mistral-7B-Instruct-v0.3/
@@ -121,9 +125,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: vllm-mistral-fast-compilation-service
+  name: vllm-mistral-7b-v03-service
   labels:
-    app: vllm-mistral-fast-compilation
+    app: vllm-mistral-7b-v03
 spec:
   type: ClusterIP
   ports:
@@ -132,4 +136,4 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: vllm-mistral-fast-compilation
+    app: vllm-mistral-7b-v03

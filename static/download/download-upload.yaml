@@ -28,9 +28,9 @@ spec:
       restartPolicy: OnFailure
       initContainers:
       - name: download
-        image: public.ecr.aws/parikshit/huggingface-cli 
+        image: public.ecr.aws/parikshit/huggingface-cli:slim
         command:
-        - huggingface-cli
+        - hf
         - download
         - "enghwa/neuron-mistral7bv0.2"
         - "--local-dir"

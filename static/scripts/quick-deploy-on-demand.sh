@@ -403,7 +403,7 @@ fi
 log_info "Downloading Mistral Model (this may take several minutes)..."
 if [[ ! -d "./work-dir/Mistral-7B-Instruct-v0.2" ]]; then
     mkdir -p ./work-dir
-    sudo docker run -v ./work-dir/:/work-dir/ --entrypoint huggingface-cli public.ecr.aws/parikshit/huggingface-cli:slim download "enghwa/neuron-mistral7bv0.2" --local-dir /work-dir/Mistral-7B-Instruct-v0.2
+    sudo docker run -v ./work-dir/:/work-dir/ public.ecr.aws/parikshit/huggingface-cli:slim download "enghwa/neuron-mistral7bv0.2" --local-dir /work-dir/Mistral-7B-Instruct-v0.2
 else
     log_info "Mistral model already downloaded"
 fi
