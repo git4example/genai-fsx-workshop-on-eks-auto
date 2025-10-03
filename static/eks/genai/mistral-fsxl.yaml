@@ -1,3 +1,4 @@
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -21,7 +22,7 @@ spec:
                   - key: topology.kubernetes.io/zone
                     operator: In
                     values:
-                      - FSX_LUSTRE_AZ # Replace with your FSx Lustre AZ
+                      - us-west-2a # Replace with your FSx Lustre AZ
       tolerations:
         - key: "aws.amazon.com/neuron"
           operator: "Exists"
@@ -43,8 +44,6 @@ spec:
             - --tensor-parallel-size=2
             - --max-model-len=10240
             - --served-model-name=mistralai/Mistral-7B-Instruct-v0.2-neuron
-            - --disable-log-stats
-            - --enable-prometheus
           env:
             - name: MODEL_ID
               value: /work-dir/Mistral-7B-Instruct-v0.2/
@@ -59,6 +58,38 @@ spec:
           volumeMounts:
             - name: persistent-storage
               mountPath: "/work-dir"
+          # startupProbe: Delays the liveness and readiness probes.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 60    # Start checking after 1 minute
+            periodSeconds: 30          # Check every 30 seconds
+            timeoutSeconds: 10         # 10 second timeout per check
+            failureThreshold: 4       # Allow up to 6 minutes total (60s + 4*30s = 180s = 3 minutes)
+            successThreshold: 1        # Only need 1 success to mark as started
+
+          # livenessProbe: Ensures the container is still running properly. Restarts after 15 mins if it continues to fails after startup probe succeeds 
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 0     # No delay since startup probe handles initial startup
+            periodSeconds: 30          # Check every 30 seconds once running
+            timeoutSeconds: 10         # 10 second timeout
+            failureThreshold: 24       # Restart after 24 consecutive failures (24 * 30s = 720s + 3 mins startup = 15 minutes)
+            successThreshold: 1        # Only need 1 success to be considered healthy
+         
+          # readinessProbe: Checks if the application is ready to accept traffic after startup probe succeeds after 3 mins.
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 0     # No delay since startup probe handles initial startup
+            periodSeconds: 10          # Check every 10 seconds for faster traffic routing
+            timeoutSeconds: 5          # Shorter timeout for readiness
+            failureThreshold: 3        # Remove from service after 3 failures (30 seconds)
+            successThreshold: 1        # Only need 1 success to receive traffic
       volumes:
         - name: persistent-storage
           persistentVolumeClaim:

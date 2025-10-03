@@ -24,11 +24,25 @@ kubectl apply -f vllm-servicemonitor.yaml
 ```bash
 kubectl apply -f vllm-dashboard-configmap.yaml
 ```
+Look for "vLLM Mistral 7B Monitoring" Dashboard on Grafana
 
-Experimental: 
+##### Other Experimental Dashboards: 
 ```bash
 kubectl apply -f vllm-dashboard-configmap-v2.yaml
 ```
+
+Look for "vLLM Mistral 7B Monitoring - v2" Dashboard on Grafana
+
+```bash
+kubectl apply -f vllm-performance-dashboard.yaml
+```
+Look for "Performance Statistics" Dashboard on Grafana
+
+```bash
+kubectl apply -f vllm-query-statistics.yaml
+```
+Look for "Query Statistics_New4" Dashboard on Grafana
+
 
 #### Grafana Stack
 
