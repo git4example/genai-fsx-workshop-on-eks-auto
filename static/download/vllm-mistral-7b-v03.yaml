@@ -40,7 +40,7 @@ spec:
             - --model=$(MODEL_ID)
             - --max-num-seqs=4
             - --max-model-len=10240
-            - --tensor-parallel-size=2
+            - --tensor-parallel-size=1
             - --port=8000
             - --device=neuron
             - --override-neuron-config={"enable_bucketing":false}
@@ -65,23 +65,13 @@ spec:
               mountPath: "/work-dir"
             - name: shm-volume
               mountPath: /dev/shm
-          # startupProbe: Delays the liveness and readiness probes.
-          startupProbe:
-            httpGet:
-              path: /health
-              port: 8000
-            initialDelaySeconds: 60    # Start checking after 1 minute
-            periodSeconds: 30          # Check every 30 seconds
-            timeoutSeconds: 10         # 10 second timeout per check
-            failureThreshold: 4       # Allow up to 6 minutes total (60s + 4*30s = 180s = 3 minutes)
-            successThreshold: 1        # Only need 1 success to mark as started
 
-          # livenessProbe: Ensures the container is still running properly. Restarts after 15 mins if it continues to fails after startup probe succeeds 
+          # livenessProbe: Ensures the container is still running properly. Restarts after 15 mins if it continues to fails after initial delay 
           livenessProbe:
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 0     # No delay since startup probe handles initial startup
+            initialDelaySeconds: 180     # No delay since startup probe handles initial startup
             periodSeconds: 30          # Check every 30 seconds once running
             timeoutSeconds: 10         # 10 second timeout
             failureThreshold: 30       # Restart after 24 consecutive failures (30 * 30s = 900s + 3 mins startup = 18 minutes)
@@ -92,7 +82,7 @@ spec:
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 0     # No delay since startup probe handles initial startup
+            initialDelaySeconds: 180     # No delay since startup probe handles initial initial delay
             periodSeconds: 10          # Check every 10 seconds for faster traffic routing
             timeoutSeconds: 5          # Shorter timeout for readiness
             failureThreshold: 3        # Remove from service after 3 failures (30 seconds)
