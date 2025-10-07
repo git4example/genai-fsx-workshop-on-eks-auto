@@ -1,15 +1,21 @@
 ---
-title : "Setting up Observability stack for Neuron"
+title : "Setting up observability stack"
 weight : 510
 ---
+### Overview
 
-## Setting up Observability stack for Neuron
+In this section, we'll install the core components for our observability stack, designed to monitor LLM inference workloads on Amazon EKS.
 
-
-In this section, we'll install and explore the core components of our observability stack designed to monitor LLM inference workloads on Amazon EKS.
 ## Observability Stack Components
 
-For monitoring LLM inference workloads, we will need to deploy several key components in the cluster for our observability stack:
+For monitoring LLM inference workloads, we will need to deploy several key components (as outlined below) in the cluster for our observability stack:
+
+Each component serves a specific purpose:
+  - Prometheus Server: Central metrics collection and storage
+  - Node Exporter: Collects hardware and OS metrics from each node (runs as DaemonSet)
+  - Kube State Metrics: Generates metrics about Kubernetes objects
+  - This includes Grafana setup, with Grafana server exposed via NLB
+
 
 #### Kube Prometheus Stack
 
@@ -20,7 +26,7 @@ The Kube Prometheus Stack provides a complete monitoring solution. Let's start b
 
 The Kube Prometheus Stack provides a complete monitoring solution. Lets deploy it in our cluster.
 
-Get the grafana password, which we are going to use during helm install.
+1. Get the grafana password, which we are going to use during helm install.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 SECRET_NAME=$(aws secretsmanager list-secrets --query 'SecretList[?contains(Name, `oss-grafana`)].Name' --output text)
@@ -30,6 +36,7 @@ GRAFANA_PASSWORD=$(aws secretsmanager get-secret-value \
     --output text)
 :::
 
+2. Update helm repo
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -38,6 +45,7 @@ cd /home/participant/environment/eks/genai/observability/
 :::
 
 
+3. Install the kube prometheus stack
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
@@ -52,28 +60,22 @@ helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheu
 :::
 
 
-Check monitoring namespace for successful kube prometheus stack deployment and its components 
+4. Check monitoring namespace for successful kube prometheus stack deployment and its components
 ::code[kubectl get pods -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 
-Each component serves a specific purpose:
-  - Prometheus Server: Central metrics collection and storage
-  - Node Exporter: Collects hardware and OS metrics from each node (runs as DaemonSet)
-  - Kube State Metrics: Generates metrics about Kubernetes objects
-  - This includes Grafana setup, with Grafana server exposed via NLB
 
 
-
-#### Check Prometheus deployment
+5. Check Prometheus deployment
 
 ::code[kubectl get pods -l "app.kubernetes.io/name=prometheus" -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
 
-#### Check Node Exporter DaemonSet
+6. Check Node Exporter DaemonSet
 
 ::code[kubectl get pods -l "app.kubernetes.io/name=prometheus-node-exporter" -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
 
-#### Check Kube State Metrics deployment
+7. Check Kube State Metrics deployment
 
 ::code[kubectl get pods -l "app.kubernetes.io/name=kube-state-metrics" -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
 
@@ -87,7 +89,7 @@ In this section, we have:
 ✅ Verified our existing monitoring stack components:
 
     Kube Prometheus Stack
-    Grafana 
+    Grafana
     Alert Manager
     Node Exporter
     Kube State Metrics
@@ -96,12 +98,6 @@ In this section, we have:
 
 #### Next Steps
 
-In the following sections, we will:
+In the next sections, you will Learn how to monitor LLM inference workloads using configure Grafana dashboards for vLLM and Neuron monitoring
 
-    Learn how to monitor LLM inference workloads using configure Grafana dashboards for vLLM and Neuron monitoring
-    
-You can now proceed to the next module to learn about setting up custom dashboards for monitoring your GPU workloads.
-
-
-
-
+You can now proceed to the next module to learn about setting up custom dashboards for monitoring your Inference workloads.

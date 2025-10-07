@@ -10,7 +10,7 @@ weight: 22
 ::alert[If you are currently logged in to an AWS Account, you can logout using this [link](https://console.aws.amazon.com/console/logout!doLogout).]{type="warning"}
 
 
-1. From your local workstation, open a web browser to the lab access URL that has been provided for the workshop,OR Click on the [link](https://catalog.us-east-1.prod.workshops.aws/join) and enter the Event access code provided.
+1. From your local workstation,  open a web browser to the lab access URL that has been provided for the workshop. Alternatively click on the [link](https://catalog.us-east-1.prod.workshops.aws/join) and enter the Event access code provided.
 
     - Click on the Email one-time password(OTP) and enter your email address to receive the OTP
 
@@ -28,9 +28,9 @@ weight: 22
 
     - You will redirected to the workshop instructions page, on the left bottom of the window pane, you will find the AWS account access information.
 
-    - Click  on **Open AWS Console** to get started
+    - Click  on **Open AWS Console** to get started and access your lab account.
 
-    ![Workshop Studio](/static/images/account_access.png)
+    ![Workshop Studio](/static/images/aws_console_access.png)
+
 
 ::alert[Before getting started, from the top right corner of your AWS Console session, select the **AWS Region** that has been stated for your workshop session.]{header="Important" type="warning"}
-

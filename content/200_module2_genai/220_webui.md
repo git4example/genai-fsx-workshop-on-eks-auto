@@ -20,12 +20,15 @@ You can connect to the Inference Service of the deployed vLLM engine, using the 
 
 ::code[kubectl get ing]{language=bash showLineNumbers=false showCopyAction=true}
 
-3. Now wait 1-2 minutes (for the OpenWeb UI to deploy) then copy above the URL ADDRESS, and paste it into a web browser. This will open a Open WebUI chat client interface.
+![WebUI_url](/static/images/WebUI_url.png)
+
+3. Now wait 2 minutes (for the OpenWeb UI to deploy) then copy above the URL ADDRESS, and paste it into a web browser as "*http://<your-URL-address>*". This will open a Open WebUI chat client interface.
+
 :::alert{header="Note" type="info"}
-Please make sure your URL is "**http:**//< URL ADDRESS >". Some browser like chrome try **"https"** by default if you dont provide protocol. (note extra **"s"** in protocol)
+Make sure your URL is "**http:**//< URL ADDRESS >" and doesn't start with "**https:**". Some browser like chrome try **"https"** by default if you dont provide protocol.
 :::
 
-![WebUI_url](/static/images/WebUI_url.png)
+
 
 4. In the WebUI interface you will see a drop down in the top menu bar, used to select your model. Select the Mistral-7B model from the drop down, and start chatting with your newly deployed Generative AI chat application.
 

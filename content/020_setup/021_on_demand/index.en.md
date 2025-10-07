@@ -50,7 +50,7 @@ Here's a broad IAM policy that you may includes all the required permissions for
 }
 ```
 
-Alternative for simplicity, you may like to use AWS managed policies: `AdministratorAccess` 
+Alternative for simplicity, you may like to use AWS managed policies: `AdministratorAccess`
 
 
 ### Part 2 : Automated Workshop Deployment
@@ -77,11 +77,14 @@ The workshop automated deployment script that handles all setup tasks including:
 
 
 
+### Part 3 : Use VScode IDE to access workshop
 
-You have now completed the workshop deployment and have a VSCode IDE Server environment ready to use with your Amazon EKS Cluster! Please proceed to the first module of the workshop **[Open source VSCode IDE](/020-setup/023_vs_code)**.
+You have now completed the workshop deployment and its components.
+
+Click on the following link to access your **[Open source VSCode IDE](/023_vs_code)** and begin the workshop.
 
 
-### Part 3 : Workshop Cleanup
+### Part 4 : Workshop Cleanup
 
 When you're finished with the workshop, use the cleanup script to remove all resources:
 
@@ -105,6 +108,3 @@ cd genai-fsx-workshop-on-eks-auto/static/scripts
 :::alert{header="Important" type="warning"}
 Always run the cleanup script after completing the workshop to avoid unexpected AWS charges.
 :::
-
-
-
