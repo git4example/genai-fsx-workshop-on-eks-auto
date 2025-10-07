@@ -1,6 +1,6 @@
 ---
 title : "Use Dynamic Provisioning to deploy a new PV and FSx Lustre instance for testing"
-weight : 422
+weight : 622
 ---
 
 In the previous module you learnt how you can use Static Provisioning with an existing storage entity (created by an admin) to create a Persistent Volume and Claim. In this section you will learn how a user can use the CSI driver and its Dynamic Provisioning feature, to deploy an on-demand Persistent Volume and Claim, which also creates the associated FSx Lustre instance on the backend (no admin pre-provisioning required). You will create the definitions for the StorageClass, PersistentVolume and PersistentVolumeClaims, to highlight the difference between Static and Dynamic provisioning, where you will use this Persistent Volume for some testing in this lab section.

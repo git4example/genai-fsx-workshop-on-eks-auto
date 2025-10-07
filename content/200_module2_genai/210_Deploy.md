@@ -8,6 +8,8 @@ weight : 210
 
 In order to use the AWS Inferentia accelerated compute nodes to host our Mistral LLM mode, we need to install the Neuron Device Plugin, Neuron Scheduler, and Node Problem Detector on the EKS Cluster using helm chart. Click on this link to learn more about the [AWS Neuron Helm Chart](https://aws.amazon.com/blogs/containers/announcing-aws-neuron-helm-chart/).
 
+1. Copy & paste the below command into your terminal to install the neuron helm chart.
+
 :::code{showCopyAction=true showLineNumbers=true language=bash}
 cd /home/participant/environment/terraform
 
@@ -37,7 +39,7 @@ Lets take a moment to understand each of these components.
 
 The Neuron device plugin exposes Neuron cores & devices to kubernetes as a resource. `aws.amazon.com/neuroncore` and `aws.amazon.com/neuron` are the resources that the neuron device plugin registers with the kubernetes. `aws.amazon.com/neuroncore` is used for allocating neuron cores to the container. `aws.amazon.com/neuron` is used for allocating neuron devices to the container. When resource name ‘neuron’ is used, all the cores belonging to the device will be allocated to container in your pod.
 
-For more informaiton on this, please refer [Neuron Device Plugin](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/kubernetes-getting-started.html#neuron-device-plugin)
+For more information on this, please refer [Neuron Device Plugin](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/kubernetes-getting-started.html#neuron-device-plugin)
 
 
 ###### Neuron Scheduler
@@ -97,16 +99,21 @@ To save you time in the lab, the Mistral-7B model has already been downloaded & 
 
 You will now deploy the vLLM pod which will provide you with model serving capability, and inference endpoint. Once the vLLM Pod is online, it will load the Mistral-7B model (29GB) into its memory from your FSx for Lustre based Persistent Volume, then it will be ready to use.
 
-1. As we are running single AZ Lustre filesystem deployed we want to run our model in the same AZ for better performance. Run the below command to get FSx Lustre Filesystem AZ updated for nodeAffinity.
+1. Run the below commands to update the mistral-fsxl.yaml with your AWS environment variables.
+
+:::code[]{language=bash showLineNumbers=false showCopyAction=true}
+cd /home/participant/environment/eks/genai
+:::
 
 :::code[]{language=bash showLineNumbers=false showCopyAction=true}
 FSX_LUSTRE_AZ=$(aws fsx describe-file-systems  --region $AWS_REGION --query 'FileSystems[0].SubnetIds[0]' --output text | xargs -I {} aws ec2 describe-subnets --subnet-ids {} --query 'Subnets[0].AvailabilityZone' --output text)
-cd /home/participant/environment/eks/genai
+:::
+
+:::code[]{language=bash showLineNumbers=false showCopyAction=true}
 sed -i'' -e "s/FSX_LUSTRE_AZ/$FSX_LUSTRE_AZ/g" mistral-fsxl.yaml
 :::
-  
-  
-2. Run the below command to deploy your vLLM Pod.
+
+2. Run the below command to deploy the vLLM Pod.
 
 
 ::code[kubectl apply -f mistral-fsxl.yaml]{language=bash showLineNumbers=false showCopyAction=true}
@@ -117,7 +124,7 @@ sed -i'' -e "s/FSX_LUSTRE_AZ/$FSX_LUSTRE_AZ/g" mistral-fsxl.yaml
 
 
 
-**Note** The vLLM deployment will take approx. 6-7 minutes. (**You can continue to the next steps, and don't need to wait for this step to complete**).
+**Note** The vLLM deployment will take approx. 7 minutes. (**You can continue to the next steps, and don't need to wait for this step to complete**).
 
 
 
@@ -179,6 +186,10 @@ spec:
 
 ![vllm_pod](/static/images/vllm_pod_1.png)
 
+
+You can also see when the Mistral model is loaded into the vLLM memory by running below command and seeing the "*Application startup complete*" in the output.
+
+::code[kubectl logs <your-vLLM-pod-name> -f]{language=bash showLineNumbers=false showCopyAction=true}
 
 5. While you are waiting for the vLLM pod to deploy, lets go check out the EKS NodePools by navigating to the [Amazon EKS cluster Console](https://console.aws.amazon.com/eks)
 

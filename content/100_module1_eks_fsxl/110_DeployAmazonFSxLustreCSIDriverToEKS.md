@@ -1,15 +1,19 @@
 ---
-title : "Deploy CSI Driver"
+title : "Deploy CSI Driver for Amazon FSx for Lustre"
 weight : 110
 ---
 
-In this section, the following steps will guide you to set the required environmental variables, create a service account, and  create/attach an IAM policy for use with your EKS cluster, allowing you to then deploy the CSI driver for FSx for Lustre.
+
+Imagine the scenario where you need to host many AI models, or vast amounts of training data-sets, which will be accessed by hundreds of Pods in your workload. You can store this data on a single Persistent Volume (PV) backed by FSx for Lustre. This will allow you to have a centralized high-performance model/data cache location to service your application Pods, instead of having creating many individual local storage volumes attached to each of your Pods, where you could have duplicate data, and also  wait time associated with copying the data to each of the local volumes before your Pod can access it.
+
+In this section, the following steps will guide you to set the required environmental variables, create a service account, and create/attach an IAM policy for use with your EKS cluster, allowing you to then deploy the CSI driver for FSx for Lustre.
 
 :::alert{header="Note" type="info"}
 For an AWS Sponsored Workshop, the Security Group and S3 Bucket have been pre-created for you.
 :::
 
 For more information about what rule is required for the FSx Lustre Security Group, please refer to the [official document](https://docs.aws.amazon.com/fsx/latest/LustreGuide/limit-access-security-groups.html).
+
 
 
 ##### Step 1: Create an IAM policy, and service account, that allows the CSI driver to make the AWS API calls on your behalf
