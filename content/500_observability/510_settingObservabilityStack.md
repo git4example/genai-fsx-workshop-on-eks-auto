@@ -4,7 +4,7 @@ weight : 510
 ---
 ### Overview
 
-In this section, we'll install the core components for our observability stack, designed to monitor LLM inference workloads on Amazon EKS.
+In this section, you will install the core components for the observability stack (Prometheus + Grafana) designed to monitor LLM inference workloads on Amazon EKS.
 
 ## Observability Stack Components
 
@@ -24,9 +24,9 @@ The Kube Prometheus Stack provides a complete monitoring solution. Let's start b
 
 #### Install kube prometheus stack
 
-The Kube Prometheus Stack provides a complete monitoring solution. Lets deploy it in our cluster.
+The Kube Prometheus Stack provides a complete monitoring solution. Lets deploy this on the EKS cluster.
 
-1. Get the grafana password, which we are going to use during helm install.
+1. Get the Grafana password, which we are going to use during helm install.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 SECRET_NAME=$(aws secretsmanager list-secrets --query 'SecretList[?contains(Name, `oss-grafana`)].Name' --output text)
@@ -36,7 +36,7 @@ GRAFANA_PASSWORD=$(aws secretsmanager get-secret-value \
     --output text)
 :::
 
-2. Update helm repo
+2. Update the helm repo
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
@@ -60,44 +60,37 @@ helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheu
 :::
 
 
-4. Check monitoring namespace for successful kube prometheus stack deployment and its components
+4. Check the monitoring namespace for the successful deployment of the "kube prometheus stack" and its components
 ::code[kubectl get pods -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
 
 
-
-
-
-5. Check Prometheus deployment
+5. Verify the Prometheus deployment
 
 ::code[kubectl get pods -l "app.kubernetes.io/name=prometheus" -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
 
-6. Check Node Exporter DaemonSet
+6. Verify the Node Exporter DaemonSet
 
 ::code[kubectl get pods -l "app.kubernetes.io/name=prometheus-node-exporter" -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
 
-7. Check Kube State Metrics deployment
+7. Verify the Kube State Metrics deployment
 
 ::code[kubectl get pods -l "app.kubernetes.io/name=kube-state-metrics" -n kube-system]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 
 
-### Conclusion
+### Summary
 
-In this section, we have:
+In this section, you have deployed and verified the core components for the observability stack (Prometheus + Grafana) designed to monitor LLM inference workloads on Amazon EKS.
 
-✅ Verified our existing monitoring stack components:
-
-    Kube Prometheus Stack
-    Grafana
-    Alert Manager
-    Node Exporter
-    Kube State Metrics
+✅ Kube Prometheus Stack
+✅ Grafana
+✅ Alert Manager
+✅ Node Exporter
+✅ Kube State Metrics
 
 
 
 #### Next Steps
 
-In the next sections, you will Learn how to monitor LLM inference workloads using configure Grafana dashboards for vLLM and Neuron monitoring
-
-You can now proceed to the next module to learn about setting up custom dashboards for monitoring your Inference workloads.
+Now that we have deployed the observability stack on the EKS cluster, in the next module you will deploy a Grafana dashboard that will provide metrics associated with the vLLM inference workloads, and also  Neuron cores (AWS Inferentia compute).

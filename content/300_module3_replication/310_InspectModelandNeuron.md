@@ -89,11 +89,10 @@ Press `q` to exit from `neuron-top` screen and return back to pod exec shell.
 ::code[q]{showCopyAction=true showLineNumbers=false language=bash}
 
 
+Finally exit from the pod, and back to the terminal window for the next module.
+
+::code[exit]{showCopyAction=true showLineNumbers=false language=bash}
 
 ## Summary
 
-In this section, you have observed how you can share & replicate generated data within a Pod, using FSx for Lustre, and its auto import/export to Amazon S3 capability. You have observed how you can also seamlessly replicate generated data between S3 buckets using S3 Replication. This is useful for scenario's such as distributed data requirements to DR scenarios, where you may have an existing EKS cluster in a secondary region (i.e. DR), and can then leverage the replicated data stored in your S3 buckets, by creating an FSx for Lustre instance (linked to the S3 bucket), create an associated Persistent Volume (using the FSx instance), and then spin up your application Pod's to seamlessly consume this data in the different AWS Region.
-
-:::alert{header="Information" type="info"}
-Imagine the scenario where you need to host many AI models, or vast amounts of training data-sets, which will be accessed by hundreds of Pods in your workload. You can store this data on a single Persistent Volume (PV) backed by FSx for Lustre. This will allow you to have a centralized high-performance model/data cache location to service your application Pods, instead of having creating many individual local storage volumes attached to each of your Pods, where you could have duplicate data, and also  wait time associated with copying the data to each of the local volumes before your Pod can access it.
-:::
+In this module you have logged into the vLLM, viewed the mounted PV and the hosted Mistal model data, and used the Neuron tools to monitor performance.

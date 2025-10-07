@@ -74,6 +74,11 @@ echo "Password: $GRAFANA_PASSWORD"
 
 6. You have successfully deployed a vLLM observability dashboard in this module. Continue to the next module to deploy an observability dashboard for your AWS Inferentia Accelerated Compute (Neuron observability dashboard).
 
+### Summary
+
+In this section, you have deployed a Grafana dashboard that provides observability across vLLM, Inference workload, and Neuron performance metrics.
+
+
 
 ##### Optional: Deploy additional Dashboards:
 
