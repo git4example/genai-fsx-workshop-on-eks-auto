@@ -761,7 +761,7 @@ data:
       "time": { "from": "now-12h", "to": "now" },
       "timepicker": {},
       "timezone": "browser",
-      "title": "Query Statistics_New4",
+      "title": "vLLM Query Statistics",
       "uid": "query-statistics4",
       "version": 2,
       "weekStart": ""

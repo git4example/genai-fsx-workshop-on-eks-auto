@@ -1,6 +1,7 @@
 ---
 title : "Configuring Neuron Monitoring Dashboard"
 weight : 530
+hidden : true
 ---
 
 ### Overview

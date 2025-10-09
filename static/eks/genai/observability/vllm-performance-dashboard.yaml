@@ -1408,7 +1408,7 @@ data:
       },
       "timezone": "browser",
       "uid": "performance-statistics",
-      "title": "Performance Statistics",
+      "title": "vLLM Performance Statistics",
       "version": 40,
       "weekStart": ""
     }

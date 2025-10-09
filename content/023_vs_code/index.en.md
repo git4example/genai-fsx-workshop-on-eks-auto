@@ -27,27 +27,16 @@ You will be using the Open source VSCode IDE terminal to copy and paste commands
 ![maximize](/static/images/maximize.png)
 
 
-### Validate the IAM role {#validate_iam}
+## Update the kube-config file for Amazon EKS cluster:
+Before you can start running all the Kubernetes commands included in this workshop, you need to update the kube-config file with the proper configuration to access EKS cluster. To do so, in your VSCode terminal run the below commands:
 
-- Copy and paste the below CLI command into your VSCode IDE terminal to validate that the VSCode IDE is using the correct IAM role.
-
-::code[aws sts get-caller-identity]{language=bash showLineNumbers=false showCopyAction=true}
-
+::code[export CLUSTER_NAME=eksworkshop]{language=bash showLineNumbers=false showCopyAction=true}
 
 :::alert{header="Note" type="info"}
 When you first time copy-paste a command on VSCode IDE, your browser may ask you to allow permission to see informaiton on clipboard. Please select **"Allow"**.
 
 ![allow-clipboard](/static/images/allow-clipboard.png)
 :::
-
-- The output assumed-role name should look like the following:
-
-![correct-iam-role](/static/images/correct-iam-role.png)
-
-- Set the Amazon EKS cluster variables :
-
-::code[export CLUSTER_NAME=eksworkshop]{language=bash showLineNumbers=false showCopyAction=true}
-
 
 - Check if region and cluster names are set correctly
 
@@ -56,13 +45,10 @@ echo $AWS_REGION
 echo $CLUSTER_NAME
 :::
 
-## Update the kube-config file:
-Before you can start running all the Kubernetes commands included in this workshop, you need to update the kube-config file with the proper credentials to access the cluster. To do so, in your VSCode terminal run the below command:
-
 ::code[aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION]{language=bash showLineNumbers=false showCopyAction=true}
 
 
-## Query the Amazon EKS cluster:
+## Test Amazon EKS cluster connectivity:
 Run the command below just to see the connectivity to EKS Auto Cluster:
 
 ::code[kubectl get nodes]{language=bash showLineNumbers=false showCopyAction=true}

@@ -2148,6 +2148,50 @@ Resources:
                   # echo "Applying Terraform configuration again..."
                   # terraform apply --auto-approve
 
+                  # ===== QUICK VALIDATION: Verify DRA is AVAILABLE =====
+                  echo "Performing quick validation of DRA status..."
+
+                  DRA_ID=$(terraform state show aws_fsx_data_repository_association.fsx_lustre_association | grep " id " | head -n 1 | awk '{print $3}' | tr -d '"')
+
+                  if [ -z "$DRA_ID" ]; then
+                    echo "WARNING: Could not retrieve DRA ID from Terraform state"
+                  else
+                    echo "DRA ID: $DRA_ID"
+                    
+                    # Quick check with short timeout (should already be AVAILABLE)
+                    max_wait=60
+                    elapsed=0
+                    check_interval=10
+                    
+                    while [ $elapsed -lt $max_wait ]; do
+                      DRA_STATUS=$(aws fsx describe-data-repository-associations \
+                        --association-ids "$DRA_ID" \
+                        --region ${AWS::Region} \
+                        --query 'Associations[0].Lifecycle' \
+                        --output text 2>/dev/null)
+                      
+                      echo "DRA $DRA_ID status: $DRA_STATUS"
+                      
+                      if [ "$DRA_STATUS" == "AVAILABLE" ]; then
+                        echo "✓ DRA is AVAILABLE"
+                        break
+                      elif [ "$DRA_STATUS" == "FAILED" ]; then
+                        echo "ERROR: DRA is in FAILED state"
+                        exit 1
+                      fi
+                      
+                      echo "Waiting for DRA status confirmation..."
+                      sleep $check_interval
+                      elapsed=$((elapsed + check_interval))
+                    done
+                    
+                    if [ "$DRA_STATUS" != "AVAILABLE" ]; then
+                      echo "WARNING: DRA status check timed out. Status: $DRA_STATUS"
+                      echo "Proceeding anyway since Terraform apply succeeded..."
+                    fi
+                  fi
+                  # ===== END VALIDATION =====
+
                   echo "Running sysprep job"
                   terraform apply -var="create_one_off_job=true" --auto-approve
                   

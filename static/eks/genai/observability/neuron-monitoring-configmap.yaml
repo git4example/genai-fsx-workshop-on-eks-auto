@@ -877,7 +877,7 @@ data:
       },
       "timepicker": {},
       "timezone": "",
-      "title": "AWS Neuron Hardware Monitoring (ConfigMap)",
+      "title": "AWS Neuron Hardware Monitoring",
       "uid": "neuron-monitoring-dashboard-configmap",
       "version": 1
     }

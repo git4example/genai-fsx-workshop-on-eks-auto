@@ -1,14 +1,14 @@
 ---
-title : "vLLM Monitoring dashboard"
+title : "vLLM and Neuron Monitoring dashboards"
 weight : 520
 ---
 
 ### Overview
 
-In this section, you will setup vLLM monitoring and deploy the Grafana dashboard.
+In this section, you will setup vLLM and Neuron monitoring configurations and deploy the Grafana dashboards.
 
 
-##### Deploy Service Monitor to scrape metrics
+##### vLLM Monitoring Setup 
 
 Deploy a serviceMonitor configuration so that prometheus can scrape metrics from the Mistral model service endpoint.
 
@@ -18,12 +18,34 @@ kubectl apply -f vllm-servicemonitor.yaml
 
 ```
 
-##### Deploy the Dashboard
+### Neuron Monitoring Setup
+
+Neuron Monitor runs on AWS Neuron-enabled instances to collect and expose hardware metrics (like utilization, memory usage, and temperature) from AWS Inferentia and Trainium chips through a Prometheus-compatible endpoint for monitoring and optimization of ML workloads. Let's deploy neuron monitor DaemonSet to expose these metrics to Prometheus using ServiceMonitor:
+
+
+1. Deploy Neuron Monitor Deamonset and Service which will expose metrics
 
 ```bash
-kubectl apply -f vllm-dashboard-configmap.yaml
+kubectl apply -f neuron-monitor.yaml
+
 ```
-This will create a dashboard called "vLLM Mistral 7B Monitoring" on Grafana
+2. Deploy Service Monitor to scrape metrics
+
+```bash
+kubectl apply -f neuron-servicemonitor.yaml
+
+```
+
+##### Deploy the vLLM + Neuron Monitoring Dashboard
+
+3. Deploy vLLM + Neuron Monitoring  Dashboard
+```bash
+kubectl apply -f vllm-neuron-dashboard-configmap.yaml
+```
+
+Navigate back to your Grafana URL, Click on the "**Dashboards**" option from the right window pane. Then in the search field enter "vLLM + Neuron Monitoring Dashboard", then select it to open the dashboard.
+
+
 
 
 #### Grafana Stack
@@ -92,12 +114,34 @@ This will create a dashboard called  "vLLM Mistral 7B Monitoring - v2" on Grafan
 ```bash
 kubectl apply -f vllm-performance-dashboard.yaml
 ```
-This will create a dashboard called "Performance Statistics" on Grafana
+This will create a dashboard called "vLLM Performance Statistics" on Grafana
 
 ```bash
 kubectl apply -f vllm-query-statistics.yaml
 ```
-This will create a dashboard called "Query Statistics_New4" on Grafana
+This will create a dashboard called "vLLM Query Statistics" on Grafana
+
+
+
+
+##### Deploy Neuron Monitoring Dashboar (Optional)
+
+
+4. Deploy Neuron Dashboard
+
+```bash
+kubectl apply -f neuron-monitoring-configmap.yaml
+```
+
+Verify dashboard on grafana "AWS Neuron Hardware Monitoring"
+
+
+##### Deploy the vLLM Dashboard (Optional)
+
+```bash
+kubectl apply -f vllm-dashboard-configmap.yaml
+```
+This will create a dashboard called "vLLM Mistral 7B Monitoring" on Grafana
 
 <!--
 

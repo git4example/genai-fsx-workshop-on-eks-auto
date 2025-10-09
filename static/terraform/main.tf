@@ -622,6 +622,13 @@ resource "aws_fsx_data_repository_association" "fsx_lustre_association" {
       events = ["NEW", "CHANGED", "DELETED"]
     }
   }
+
+  timeouts {
+    create = "15m"
+    update = "15m"
+    delete = "15m"
+  }
+
   depends_on = [
     module.fsx-lustre-bucket,
     aws_fsx_lustre_file_system.fsx_lustre

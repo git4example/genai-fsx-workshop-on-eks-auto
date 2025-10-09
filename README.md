@@ -221,55 +221,36 @@ You will be using an Open source VSCode IDE terminal to copy and paste the requi
 
 ![maximize](/static/images/maximize.png)
 
-### Validate the IAM role
 
-- Use the [GetCallerIdentity](https://docs.aws.amazon.com/cli/latest/reference/sts/get-caller-identity.html) CLI command to validate that the VSCode IDE is using the correct IAM role.
+## Update the kube-config file for Amazon EKS cluster:
+Before you can start running all the Kubernetes commands included in this workshop, you need to update the kube-config file with the proper configuration to access EKS cluster. To do so, in your VSCode terminal run the below commands:
 
-```bash
-aws sts get-caller-identity
-```
+::code[export CLUSTER_NAME=eksworkshop]{language=bash showLineNumbers=false showCopyAction=true}
 
 :::alert{header="Note" type="info"}
-The first time you copy-paste a command into the VSCode IDE, your browser may ask you to allow permission, select **"Allow"**.
+When you first time copy-paste a command on VSCode IDE, your browser may ask you to allow permission to see informaiton on clipboard. Please select **"Allow"**.
 
 ![allow-clipboard](/static/images/allow-clipboard.png)
 :::
 
-- The output of the assumed-role name should look like the following:
 
-![correct-iam-role](/static/images/correct-iam-role.png)
+- Check if region and cluster names are set correctly
 
-- Set the Amazon EKS cluster variables :
-
-```bash
-export CLUSTER_NAME=eksworkshop
-```
-
-
-- Check that your region and cluster names are set correctly, to match your current region.
-
-```bash
+:::code[]{language=bash showLineNumbers=true showCopyAction=true}
 echo $AWS_REGION
 echo $CLUSTER_NAME
-```
-
-## Update the kube-config file:
-Before you can start running all the Kubernetes commands included in this workshop, you need to update the kube-config file with the required credentials to access the EKS cluster. In your VSCode IDE terminal, run the below command:
-
-```bash
-aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION
-```
+:::
 
 
-## Query the Amazon EKS cluster:
-Run the command below to test connectivity to the EKS cluster:
+::code[aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION]{language=bash showLineNumbers=false showCopyAction=true}
 
-```bash
-kubectl get nodes
-```
 
-You should see a provisioned node, which was provisioned by EKS Auto-Mode to run some of the core components required for the workshop.
+## Test Amazon EKS cluster connectivity:
+Run the command below just to see the connectivity to EKS Auto Cluster:
 
+::code[kubectl get nodes]{language=bash showLineNumbers=false showCopyAction=true}
+
+You should see one node provisioned which was provisioned by EKS Auto to run some of the core components required for the workshop.
 ![get-nodes](/static/images/get-nodes.png)
 
 You now now completed the workshop deployment and have a VSCode IDE Server environment ready to use with your Amazon EKS Cluster! Please proceed to the first module of the workshop **[Explore EKS Auto](/030_module_explore_eks_auto)**.
