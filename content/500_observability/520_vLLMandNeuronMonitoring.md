@@ -43,31 +43,12 @@ kubectl apply -f neuron-servicemonitor.yaml
 kubectl apply -f vllm-neuron-dashboard-configmap.yaml
 ```
 
-Navigate back to your Grafana URL, Click on the "**Dashboards**" option from the right window pane. Then in the search field enter "vLLM + Neuron Monitoring Dashboard", then select it to open the dashboard.
+##### Log into Grafana dashboard
 
-
-
-
-#### Grafana Stack
-
-Get grafana loadbalancer
-::code[kubectl get svc -n kube-system kube-prometheus-stack-grafana]{language=bash showLineNumbers=false showCopyAction=true}
-
-```bash
-NAME                            TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)        AGE
-kube-prometheus-stack-grafana   LoadBalancer   172.20.211.49   a0b4c567b25944afb889f19b945efad4-1467842165.us-west-2.elb.amazonaws.com   80:30387/TCP   18m
-```
-
-
-
-# Get LoadBalancer URL
+1. Run the following command to get the Grafana URL, and logon credentials.
 ```bash
 GRAFANA_URL=$(kubectl get svc -n kube-system kube-prometheus-stack-grafana -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 ```
-
-# Log into Grafana dashboard
-
-1. Run the following command to get the Grafana URL, and logon credentials.
 
 ```bash
 echo "Grafana URL: http://$GRAFANA_URL"
@@ -79,19 +60,19 @@ echo "Password: $GRAFANA_PASSWORD"
 
 2. Open the Grafana URL (shown in the output) in your browser, and use the credentials shown to log-in.
 
-3. Click on the "**Dashboards**" option from the right window pane. Then in the search field, enter the name of the dashboard you want to view, such as the "**vLLM Mistral 7B Monitoring**" that you created in the pervious steps. Click on the name that it returns to open the Grafana dashboard. DO NOT CLOSE this dashboard as you will revisit it in the below steps.
+3. Click on the "**Dashboards**" option from the right window pane. 
+
+
+Navigate back to your Grafana URL, Click on the "**Dashboards**" option from the right window pane. Then in the search field, enter the name of the dashboard you want to view, such as the "**vLLM + Neuron Monitoring Dashboard**" that you created in the pervious steps. Click on the name that it returns to open the Grafana dashboard. DO NOT CLOSE this dashboard as you will revisit it in the below steps.
 
 ![mistral_vllm_dash_1](/static/images/mistral_vllm_dash_1.png)
-
-
 
 4. Now go back to your Open WebUI client URL, and generate some input prompts (ask it questions or a task), and view the metrics associated with Inference, input and output tokens generated.
 
 
 5. Navigate back to your vLLM monitoring dashboard and view the metrics related to input and output tokens, such as below.
 
-![vllm_dash_example](/static/images/vllm_dash_example.png)
-
+![mistral_vllm_dash_1](/static/images/vLLMNeuronMonitoringDashboard.png)
 
 
 6. You have successfully deployed a vLLM observability dashboard in this module. Continue to the next module to deploy an observability dashboard for your AWS Inferentia Accelerated Compute (Neuron observability dashboard).
@@ -105,16 +86,30 @@ In this section, you have deployed a Grafana dashboard that provides observabili
 ##### Optional: Deploy additional Dashboards:
 
 You can create the below additional dashboards on Grafana, and then search for them in Grafana dashboards and view them (as per the above step)
+
+
+##### Deploy the vLLM Dashboard (Optional)
+
+```bash
+kubectl apply -f vllm-dashboard-configmap.yaml
+```
+This will create a dashboard called "vLLM Mistral 7B Monitoring" on Grafana
+
+![vllm_dash_example](/static/images/vLLMMistral7BMonitoring.png)
+
 ```bash
 kubectl apply -f vllm-dashboard-configmap-v2.yaml
 ```
 
 This will create a dashboard called  "vLLM Mistral 7B Monitoring - v2" on Grafana
+![vllm_dash_example](/static/images/vLLMMistral7BMonitoring-v2.png)
 
 ```bash
 kubectl apply -f vllm-performance-dashboard.yaml
 ```
 This will create a dashboard called "vLLM Performance Statistics" on Grafana
+
+![vllm_dash_example](/static/images/vLLMPerformanceStatistics.png)
 
 ```bash
 kubectl apply -f vllm-query-statistics.yaml
@@ -122,7 +117,7 @@ kubectl apply -f vllm-query-statistics.yaml
 This will create a dashboard called "vLLM Query Statistics" on Grafana
 
 
-
+![vllm_dash_example](/static/images/vLLMQueryStatistics.png)
 
 ##### Deploy Neuron Monitoring Dashboar (Optional)
 
@@ -135,13 +130,9 @@ kubectl apply -f neuron-monitoring-configmap.yaml
 
 Verify dashboard on grafana "AWS Neuron Hardware Monitoring"
 
+![vllm_dash_example](/static/images/AWSNeuronHardwareMonitoring.png)
 
-##### Deploy the vLLM Dashboard (Optional)
 
-```bash
-kubectl apply -f vllm-dashboard-configmap.yaml
-```
-This will create a dashboard called "vLLM Mistral 7B Monitoring" on Grafana
 
 <!--
 
