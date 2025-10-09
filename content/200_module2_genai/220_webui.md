@@ -72,8 +72,9 @@ You have now successfully deployed a Generative AI Chatbot as a containerized ap
 <br>
 
 
-3. **Context for prompts using files** - Let's give the Chatbot context for prompts by attaching a file (or files) directly to the prompt. You can also create a library of documents that you can reference in your prompts (in the Open WebUI select Workspaces -> Documents -> select the **+** -> Add docs)
+3. **Context for prompts using files**
 
+For this testing first ask chat bot without any document upload : 
 - Ask the Chatbot "What is MCP"
 
 <br>
@@ -85,7 +86,9 @@ You have now successfully deployed a Generative AI Chatbot as a containerized ap
 - Without context or a reference document, its not talking about the **Model Context Protocol Server** that we were asking about in relation to Generative AI.  
 <br>
 
-- Now download this file, which we will use to apply local context: https://d1.awsstatic.com/solutions/guidance/architecture-diagrams/deploying-model-context-protocol-servers-on-aws.pdf
+You can give the Chatbot context for prompts by attaching a file (or files) directly to the prompt Or you can also create a library of documents that you can reference in your prompts. For library of docuemnts, you can Open WebUI -> select Workspaces -> Knowledge -> select the **+ New Knowledge** -> Create a knowledge base -> Once knowledge base collection is created -> **+** to add Add docs. 
+
+Now download this file, which we will use to apply local context: https://d1.awsstatic.com/solutions/guidance/architecture-diagrams/deploying-model-context-protocol-servers-on-aws.pdf
 
 <br>
 
