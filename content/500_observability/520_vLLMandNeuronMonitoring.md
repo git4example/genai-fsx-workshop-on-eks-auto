@@ -5,7 +5,7 @@ weight : 520
 
 ### Overview
 
-It is important to have a mechanism that provides observability into Inference workloads, across metrics such as "prompt" & "generated" tokens, inference performance & queues, and also Accelerated Compute performance details. In this section you will setup & deploy Grafana based dashboards that will provide observability into inference workload, vLLM & Neuron performance metrics.
+It is important to have a mechanism that provides observability into Inference workloads, across metrics such as "prompt" & "generated" tokens, inference performance & queue metrics, and also Accelerated Compute performance details. In this section you will setup & deploy Grafana based dashboards that will provide observability into inference workload, vLLM & Neuron performance metrics.
 
 
 ##### vLLM Monitoring Setup
@@ -55,7 +55,7 @@ echo "Password: $GRAFANA_PASSWORD"
 
 ![grafana_url](/static/images/grafana_url.png)
 
-2. Open the Grafana URL (shown in the output) in your browser, and use the credentials shown to log-in.
+2. Wait 2 minutes for the load balance to become online, then open the Grafana URL (shown in the output) in your browser, and use the credentials shown to log-in.
 
 3. Click on the "**Dashboards**" option from the right window pane.
 
@@ -64,15 +64,24 @@ Navigate back to your Grafana URL, Click on the "**Dashboards**" option from the
 
 ![mistral_vllm_dash_1](/static/images/mistral_vllm_dash_1.png)
 
-4. Now go back to your Open WebUI client URL, and generate some input prompts (ask it questions or a task), and view the metrics associated with Inference, input and output tokens generated.
+4. Now go back to your Open WebUI client URL (your chatbot). From the left hand window pane, right-click on your previous chat and select **Delete**.
+
+![new_chat](/static/images/new_chat.png)
+
+5. This will now start a new chat, so go ahead and generate some input prompts (ask it questions or a task), and view the metrics associated with Inference, input and output tokens generated.
 
 
-5. Navigate back to your vLLM monitoring dashboard and view the metrics related to input and output tokens, such as below.
+5. Navigate back to your vLLM monitoring dashboard, click on the time range button and select *5min* or *15min* and select *Refresh*
 
-![mistral_vllm_dash_1](/static/images/vLLMNeuronMonitoringDashboard.png)
+![refresh_dash](/static/images/refresh_dash.png)
+
+6. You will see metrics related to input and output tokens of your Generative AI query, such as below.
+
+![vLLMNeuronMonitoringDashboard](/static/images/vLLMNeuronMonitoringDashboard.png)
 
 
-6. You have successfully deployed a vLLM observability dashboard in this module. Continue to the next module to deploy an observability dashboard for your AWS Inferentia Accelerated Compute (Neuron observability dashboard).
+
+7. You have successfully deployed a vLLM observability dashboard in this module. Continue to the next module to deploy an observability dashboard for your AWS Inferentia Accelerated Compute (Neuron observability dashboard).
 
 ### Summary
 
