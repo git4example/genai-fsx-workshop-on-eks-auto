@@ -3,9 +3,7 @@ title : "Observability dashboard for LLM Inference"
 weight : 500
 ---
 -------------------------------------------------------------
-
-
-In this section, you will create a dashboard that provides detailed observability for LLM inference workloads running on Amazon EKS with AWS Neuron accelerators, focusing on key metrics that help understand model performance, Neuron utilization, and system health.
+It is important to have a mechanism that provides observability into Inference workloads, across metrics such as "prompt" & "generated" tokens, inference performance & queues, and also Accelerated Compute performance details. In this section, you will create a dashboard that provides detailed observability for LLM inference workloads running on Amazon EKS with AWS Neuron accelerators, focusing on key metrics that help understand model performance, Neuron utilization, and system health.
 
 While this module demonstrates how to instrument observability tools directly on EKS for learning purposes, for production environments at scale, we recommend using AWS managed services such as Amazon Managed Service for Prometheus (AMP) and Amazon Managed Grafana (AMG) for improved scalability, reduced operational overhead, and better integration with the AWS ecosystem.
 

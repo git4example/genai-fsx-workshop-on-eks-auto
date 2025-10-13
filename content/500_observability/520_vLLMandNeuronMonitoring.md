@@ -1,21 +1,20 @@
 ---
-title : "vLLM and Neuron Monitoring dashboards"
+title : "Deploy vLLM & Neuron monitoring dashboards"
 weight : 520
 ---
 
 ### Overview
 
-In this section, you will setup vLLM and Neuron monitoring configurations and deploy the Grafana dashboards.
+It is important to have a mechanism that provides observability into Inference workloads, across metrics such as "prompt" & "generated" tokens, inference performance & queues, and also Accelerated Compute performance details. In this section you will setup & deploy Grafana based dashboards that will provide observability into inference workload, vLLM & Neuron performance metrics.
 
 
-##### vLLM Monitoring Setup 
+##### vLLM Monitoring Setup
 
 Deploy a serviceMonitor configuration so that prometheus can scrape metrics from the Mistral model service endpoint.
 
 ```bash
 cd /home/participant/environment/eks/genai/observability/
 kubectl apply -f vllm-servicemonitor.yaml
-
 ```
 
 ### Neuron Monitoring Setup
@@ -27,13 +26,11 @@ Neuron Monitor runs on AWS Neuron-enabled instances to collect and expose hardwa
 
 ```bash
 kubectl apply -f neuron-monitor.yaml
-
 ```
 2. Deploy Service Monitor to scrape metrics
 
 ```bash
 kubectl apply -f neuron-servicemonitor.yaml
-
 ```
 
 ##### Deploy the vLLM + Neuron Monitoring Dashboard
@@ -60,7 +57,7 @@ echo "Password: $GRAFANA_PASSWORD"
 
 2. Open the Grafana URL (shown in the output) in your browser, and use the credentials shown to log-in.
 
-3. Click on the "**Dashboards**" option from the right window pane. 
+3. Click on the "**Dashboards**" option from the right window pane.
 
 
 Navigate back to your Grafana URL, Click on the "**Dashboards**" option from the right window pane. Then in the search field, enter the name of the dashboard you want to view, such as the "**vLLM + Neuron Monitoring Dashboard**" that you created in the pervious steps. Click on the name that it returns to open the Grafana dashboard. DO NOT CLOSE this dashboard as you will revisit it in the below steps.
@@ -81,66 +78,36 @@ Navigate back to your Grafana URL, Click on the "**Dashboards**" option from the
 
 In this section, you have deployed a Grafana dashboard that provides observability across vLLM, Inference workload, and Neuron performance metrics.
 
+Congratulations! You have now completed the workshop.
 
 
-##### Optional: Deploy additional Dashboards:
+---
 
-You can create the below additional dashboards on Grafana, and then search for them in Grafana dashboards and view them (as per the above step)
+---
 
 
-##### Deploy the vLLM Dashboard (Optional)
 
-```bash
-kubectl apply -f vllm-dashboard-configmap.yaml
-```
-This will create a dashboard called "vLLM Mistral 7B Monitoring" on Grafana
 
-![vllm_dash_example](/static/images/vLLMMistral7BMonitoring.png)
+##### Optional: You can deploy additional metrics dashboards
 
-```bash
-kubectl apply -f vllm-dashboard-configmap-v2.yaml
-```
+You can deploy any of the optional dashboards below to view different metrics. Once you deploy one of the below dashboards, simply search for them in Grafana dashboards to view them (as per the above step).
 
-This will create a dashboard called  "vLLM Mistral 7B Monitoring - v2" on Grafana
-![vllm_dash_example](/static/images/vLLMMistral7BMonitoring-v2.png)
+
+1. Deploy a dashboard called "vLLM Performance Statistics" on Grafana
 
 ```bash
 kubectl apply -f vllm-performance-dashboard.yaml
 ```
-This will create a dashboard called "vLLM Performance Statistics" on Grafana
 
-![vllm_dash_example](/static/images/vLLMPerformanceStatistics.png)
+2. Deploy a dashboard called "vLLM Query Statistics" on Grafana
 
 ```bash
 kubectl apply -f vllm-query-statistics.yaml
 ```
-This will create a dashboard called "vLLM Query Statistics" on Grafana
 
 
-![vllm_dash_example](/static/images/vLLMQueryStatistics.png)
-
-##### Deploy Neuron Monitoring Dashboar (Optional)
-
-
-4. Deploy Neuron Dashboard
+3. Deploy a dashboard called "AWS Neuron Hardware Monitoring" on Grafana
 
 ```bash
 kubectl apply -f neuron-monitoring-configmap.yaml
 ```
-
-Verify dashboard on grafana "AWS Neuron Hardware Monitoring"
-
-![vllm_dash_example](/static/images/AWSNeuronHardwareMonitoring.png)
-
-
-
-<!--
-
-Open file vllm-dashboard.json by double clicking (file is located under : /home/participant/environment/eks/genai/observability/)
-
-Select all - Copy content.
-
-
-Click Dashboards -- > New -- > Import -- > paste above copied json -- > click Load -- > Click Import  -->
-
-This should load vLLM dashboard with metrics.
