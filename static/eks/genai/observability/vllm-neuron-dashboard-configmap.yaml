@@ -34,7 +34,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 0,
-      "id": 30,
+      "id": 33,
       "links": [],
       "panels": [
         {
@@ -437,46 +437,12 @@ data:
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
-          "description": "Token throughput showing the rate at which vLLM processes prompt tokens (input) and generates output tokens. Measured in tokens per second, this indicates the inference server's actual throughput performance.",
           "fieldConfig": {
             "defaults": {
               "color": {
                 "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "barWidthFactor": 0.6,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
               },
               "mappings": [],
               "thresholds": {
@@ -491,36 +457,30 @@ data:
                   }
                 ]
               },
-              "unit": "short"
+              "unit": "none"
             },
             "overrides": [
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "Prompt Tokens/sec (Input)"
+                  "options": "vllm:prompt_tokens_total"
                 },
                 "properties": [
                   {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "blue",
-                      "mode": "fixed"
-                    }
+                    "id": "displayName",
+                    "value": "Total Tokens - Prompt"
                   }
                 ]
               },
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "Generation Tokens/sec (Output)"
+                  "options": "vllm:generation_tokens_total"
                 },
                 "properties": [
                   {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "green",
-                      "mode": "fixed"
-                    }
+                    "id": "displayName",
+                    "value": "Total Tokens - Generated"
                   }
                 ]
               }
@@ -532,47 +492,55 @@ data:
             "x": 0,
             "y": 8
           },
-          "id": 3,
+          "id": 16,
           "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
+            "minVizHeight": 75,
+            "minVizWidth": 75,
+            "orientation": "auto",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
             },
-            "tooltip": {
-              "hideZeros": false,
-              "mode": "single",
-              "sort": "none"
-            }
+            "showThresholdLabels": false,
+            "showThresholdMarkers": true,
+            "sizing": "auto"
           },
           "pluginVersion": "12.0.2",
           "targets": [
             {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
-              "expr": "rate(vllm:prompt_tokens_total[$__rate_interval])",
-              "instant": false,
-              "legendFormat": "Prompt Tokens/sec (Input)",
+              "disableTextWrap": false,
+              "editorMode": "builder",
+              "expr": "vllm:prompt_tokens_total",
+              "fullMetaSearch": false,
+              "includeNullMetadata": true,
+              "legendFormat": "__auto",
               "range": true,
-              "refId": "A"
+              "refId": "A",
+              "useBackend": false
             },
             {
               "datasource": {
                 "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
+                "uid": "prometheus"
               },
-              "expr": "rate(vllm:generation_tokens_total[$__rate_interval])",
+              "disableTextWrap": false,
+              "editorMode": "builder",
+              "expr": "vllm:generation_tokens_total",
+              "fullMetaSearch": false,
+              "hide": false,
+              "includeNullMetadata": true,
               "instant": false,
-              "legendFormat": "Generation Tokens/sec (Output)",
+              "legendFormat": "__auto",
               "range": true,
-              "refId": "B"
+              "refId": "B",
+              "useBackend": false
             }
           ],
-          "title": "vLLM Token Throughput (Tokens/sec)",
-          "type": "timeseries"
+          "title": "vLLM Token Counts",
+          "type": "gauge"
         },
         {
           "datasource": {
@@ -771,7 +739,7 @@ data:
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "description": "Time from request arrival until the first output token is generated. This measures prompt processing speed and perceived responsiveness. Lower values indicate better user experience, especially for streaming responses. P50 = typical, P95 = 95% of requests, P99 = 99% of requests.",
+          "description": "Token throughput showing the rate at which vLLM processes prompt tokens (input) and generates output tokens. Measured in tokens per second, this indicates the inference server's actual throughput performance.",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -823,49 +791,34 @@ data:
                   }
                 ]
               },
-              "unit": "s"
+              "unit": "short"
             },
             "overrides": [
               {
                 "matcher": {
                   "id": "byName",
-                  "options": "P50 TTFT"
+                  "options": "Prompt Tokens/sec (Input)"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "blue",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Generation Tokens/sec (Output)"
                 },
                 "properties": [
                   {
                     "id": "color",
                     "value": {
                       "fixedColor": "green",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "P95 TTFT"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "orange",
-                      "mode": "fixed"
-                    }
-                  }
-                ]
-              },
-              {
-                "matcher": {
-                  "id": "byName",
-                  "options": "P99 TTFT"
-                },
-                "properties": [
-                  {
-                    "id": "color",
-                    "value": {
-                      "fixedColor": "red",
                       "mode": "fixed"
                     }
                   }
@@ -879,7 +832,7 @@ data:
             "x": 0,
             "y": 16
           },
-          "id": 7,
+          "id": 3,
           "options": {
             "legend": {
               "calcs": [],
@@ -900,9 +853,9 @@ data:
                 "type": "prometheus",
                 "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "histogram_quantile(0.50, sum by(le) (rate(vllm:time_to_first_token_seconds_bucket[$__rate_interval])))",
+              "expr": "rate(vllm:prompt_tokens_total[$__rate_interval])",
               "instant": false,
-              "legendFormat": "P50 TTFT",
+              "legendFormat": "Prompt Tokens/sec (Input)",
               "range": true,
               "refId": "A"
             },
@@ -911,25 +864,14 @@ data:
                 "type": "prometheus",
                 "uid": "${DS_PROMETHEUS}"
               },
-              "expr": "histogram_quantile(0.95, sum by(le) (rate(vllm:time_to_first_token_seconds_bucket[$__rate_interval])))",
+              "expr": "rate(vllm:generation_tokens_total[$__rate_interval])",
               "instant": false,
-              "legendFormat": "P95 TTFT",
+              "legendFormat": "Generation Tokens/sec (Output)",
               "range": true,
               "refId": "B"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
-              "expr": "histogram_quantile(0.99, sum by(le) (rate(vllm:time_to_first_token_seconds_bucket[$__rate_interval])))",
-              "instant": false,
-              "legendFormat": "P99 TTFT",
-              "range": true,
-              "refId": "C"
             }
           ],
-          "title": "vLLM Time to First Token (TTFT)",
+          "title": "vLLM Token Throughput (Tokens/sec)",
           "type": "timeseries"
         },
         {
@@ -1103,21 +1045,107 @@ data:
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "description": "Distribution of prompt token counts across requests shown as a heatmap. Darker/warmer colors indicate more requests at that token length. Use this to understand typical input sizes and identify outliers that may impact performance.",
+          "description": "Time from request arrival until the first output token is generated. This measures prompt processing speed and perceived responsiveness. Lower values indicate better user experience, especially for streaming responses. P50 = typical, P95 = 95% of requests, P99 = 99% of requests.",
           "fieldConfig": {
             "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
               "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
                 "hideFrom": {
                   "legend": false,
                   "tooltip": false,
                   "viz": false
                 },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
                 "scaleDistribution": {
                   "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
                 }
-              }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "s"
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "P50 TTFT"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "green",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "P95 TTFT"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "orange",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "P99 TTFT"
+                },
+                "properties": [
+                  {
+                    "id": "color",
+                    "value": {
+                      "fixedColor": "red",
+                      "mode": "fixed"
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -1125,46 +1153,18 @@ data:
             "x": 0,
             "y": 24
           },
-          "id": 12,
+          "id": 7,
           "options": {
-            "calculate": false,
-            "cellGap": 1,
-            "cellValues": {
-              "unit": "none"
-            },
-            "color": {
-              "exponent": 0.5,
-              "fill": "dark-orange",
-              "min": 0,
-              "mode": "scheme",
-              "reverse": false,
-              "scale": "exponential",
-              "scheme": "Spectral",
-              "steps": 64
-            },
-            "exemplars": {
-              "color": "rgba(255,0,255,0.7)"
-            },
-            "filterValues": {
-              "le": 1e-9
-            },
             "legend": {
-              "show": true
-            },
-            "rowsFrame": {
-              "layout": "auto",
-              "value": "Request count"
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
             },
             "tooltip": {
+              "hideZeros": false,
               "mode": "single",
-              "showColorScale": false,
-              "yHistogram": true
-            },
-            "yAxis": {
-              "axisLabel": "Prompt Length",
-              "axisPlacement": "left",
-              "reverse": false,
-              "unit": "none"
+              "sort": "none"
             }
           },
           "pluginVersion": "12.0.2",
@@ -1174,21 +1174,37 @@ data:
                 "type": "prometheus",
                 "uid": "${DS_PROMETHEUS}"
               },
-              "disableTextWrap": false,
-              "editorMode": "builder",
-              "expr": "sum by(le) (increase(vllm:request_prompt_tokens_bucket{model_name=\"$model_name\"}[$__rate_interval]))",
-              "format": "heatmap",
-              "fullMetaSearch": false,
-              "includeNullMetadata": true,
+              "expr": "histogram_quantile(0.50, sum by(le) (rate(vllm:time_to_first_token_seconds_bucket[$__rate_interval])))",
               "instant": false,
-              "legendFormat": "{{le}}",
+              "legendFormat": "P50 TTFT",
               "range": true,
-              "refId": "A",
-              "useBackend": false
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "histogram_quantile(0.95, sum by(le) (rate(vllm:time_to_first_token_seconds_bucket[$__rate_interval])))",
+              "instant": false,
+              "legendFormat": "P95 TTFT",
+              "range": true,
+              "refId": "B"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "expr": "histogram_quantile(0.99, sum by(le) (rate(vllm:time_to_first_token_seconds_bucket[$__rate_interval])))",
+              "instant": false,
+              "legendFormat": "P99 TTFT",
+              "range": true,
+              "refId": "C"
             }
           ],
-          "title": "Request Prompt Length",
-          "type": "heatmap"
+          "title": "vLLM Time to First Token (TTFT)",
+          "type": "timeseries"
         },
         {
           "datasource": {
@@ -1281,6 +1297,210 @@ data:
           ],
           "title": "Request Generation Length",
           "type": "heatmap"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "description": "Distribution of prompt token counts across requests shown as a heatmap. Darker/warmer colors indicate more requests at that token length. Use this to understand typical input sizes and identify outliers that may impact performance.",
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "scaleDistribution": {
+                  "type": "linear"
+                }
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 32
+          },
+          "id": 12,
+          "options": {
+            "calculate": false,
+            "cellGap": 1,
+            "cellValues": {
+              "unit": "none"
+            },
+            "color": {
+              "exponent": 0.5,
+              "fill": "dark-orange",
+              "min": 0,
+              "mode": "scheme",
+              "reverse": false,
+              "scale": "exponential",
+              "scheme": "Spectral",
+              "steps": 64
+            },
+            "exemplars": {
+              "color": "rgba(255,0,255,0.7)"
+            },
+            "filterValues": {
+              "le": 1e-9
+            },
+            "legend": {
+              "show": true
+            },
+            "rowsFrame": {
+              "layout": "auto",
+              "value": "Request count"
+            },
+            "tooltip": {
+              "mode": "single",
+              "showColorScale": false,
+              "yHistogram": true
+            },
+            "yAxis": {
+              "axisLabel": "Prompt Length",
+              "axisPlacement": "left",
+              "reverse": false,
+              "unit": "none"
+            }
+          },
+          "pluginVersion": "12.0.2",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "disableTextWrap": false,
+              "editorMode": "builder",
+              "expr": "sum by(le) (increase(vllm:request_prompt_tokens_bucket{model_name=\"$model_name\"}[$__rate_interval]))",
+              "format": "heatmap",
+              "fullMetaSearch": false,
+              "includeNullMetadata": true,
+              "instant": false,
+              "legendFormat": "{{le}}",
+              "range": true,
+              "refId": "A",
+              "useBackend": false
+            }
+          ],
+          "title": "Request Prompt Length",
+          "type": "heatmap"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "description": "KV cache utilization showing percentage of pre-allocated cache blocks currently in use. Neuron device cache stores attention key-value pairs on the accelerator, while CPU cache is used for overflow. High utilization (>80%) may indicate capacity constraints and potential queuing.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 32
+          },
+          "id": 14,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "12.0.2",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "editorMode": "code",
+              "expr": "vllm:gpu_cache_usage_perc{model_name=\"$model_name\"}",
+              "instant": false,
+              "legendFormat": "Neuron Device Cache Usage",
+              "range": true,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${DS_PROMETHEUS}"
+              },
+              "editorMode": "code",
+              "expr": "vllm:cpu_cache_usage_perc{model_name=\"$model_name\"}",
+              "hide": false,
+              "instant": false,
+              "legendFormat": "CPU Cache Usage",
+              "range": true,
+              "refId": "B"
+            }
+          ],
+          "title": "KV Cache Utilization",
+          "type": "timeseries"
         },
         {
           "datasource": {
@@ -1393,7 +1613,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 32
+            "y": 40
           },
           "id": 8,
           "options": {
@@ -1447,86 +1667,6 @@ data:
           ],
           "title": "vLLM Time per Output Token (TPOT)",
           "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "description": "Average throughput metrics reported by vLLM's internal monitoring. These represent rolling averages over recent requests, providing a smoothed view of system performance. Compare with the instantaneous Token Throughput panel to identify trends vs spikes.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "short"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 32
-          },
-          "id": 5,
-          "options": {
-            "colorMode": "value",
-            "graphMode": "area",
-            "justifyMode": "auto",
-            "orientation": "horizontal",
-            "percentChangeColorMode": "standard",
-            "reduceOptions": {
-              "calcs": [
-                "lastNotNull"
-              ],
-              "fields": "",
-              "values": false
-            },
-            "showPercentChange": false,
-            "textMode": "auto",
-            "wideLayout": true
-          },
-          "pluginVersion": "12.0.2",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
-              "expr": "vllm:avg_prompt_throughput_toks_per_s",
-              "instant": false,
-              "legendFormat": "Avg Prompt Throughput (tok/s)",
-              "range": true,
-              "refId": "A"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
-              "expr": "vllm:avg_generation_throughput_toks_per_s",
-              "instant": false,
-              "legendFormat": "Avg Generation Throughput (tok/s)",
-              "range": true,
-              "refId": "B"
-            }
-          ],
-          "title": "vLLM Average Throughput",
-          "type": "stat"
         },
         {
           "datasource": {
@@ -1592,7 +1732,7 @@ data:
           "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 0,
+            "x": 12,
             "y": 40
           },
           "id": 6,
@@ -1636,127 +1776,12 @@ data:
           ],
           "title": "vLLM Request Queue Status",
           "type": "timeseries"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
-          },
-          "description": "KV cache utilization showing percentage of pre-allocated cache blocks currently in use. Neuron device cache stores attention key-value pairs on the accelerator, while CPU cache is used for overflow. High utilization (>80%) may indicate capacity constraints and potential queuing.",
-          "fieldConfig": {
-            "defaults": {
-              "color": {
-                "mode": "palette-classic"
-              },
-              "custom": {
-                "axisBorderShow": false,
-                "axisCenteredZero": false,
-                "axisColorMode": "text",
-                "axisLabel": "",
-                "axisPlacement": "auto",
-                "barAlignment": 0,
-                "barWidthFactor": 0.6,
-                "drawStyle": "line",
-                "fillOpacity": 0,
-                "gradientMode": "none",
-                "hideFrom": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": false
-                },
-                "insertNulls": false,
-                "lineInterpolation": "linear",
-                "lineWidth": 1,
-                "pointSize": 5,
-                "scaleDistribution": {
-                  "type": "linear"
-                },
-                "showPoints": "auto",
-                "spanNulls": false,
-                "stacking": {
-                  "group": "A",
-                  "mode": "none"
-                },
-                "thresholdsStyle": {
-                  "mode": "off"
-                }
-              },
-              "mappings": [],
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "color": "green"
-                  },
-                  {
-                    "color": "red",
-                    "value": 80
-                  }
-                ]
-              },
-              "unit": "percentunit"
-            },
-            "overrides": []
-          },
-          "gridPos": {
-            "h": 8,
-            "w": 12,
-            "x": 12,
-            "y": 40
-          },
-          "id": 14,
-          "options": {
-            "legend": {
-              "calcs": [],
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "hideZeros": false,
-              "mode": "single",
-              "sort": "none"
-            }
-          },
-          "pluginVersion": "12.0.2",
-          "targets": [
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
-              "editorMode": "code",
-              "expr": "vllm:gpu_cache_usage_perc{model_name=\"$model_name\"}",
-              "instant": false,
-              "legendFormat": "Neuron Device Cache Usage",
-              "range": true,
-              "refId": "A"
-            },
-            {
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${DS_PROMETHEUS}"
-              },
-              "editorMode": "code",
-              "expr": "vllm:cpu_cache_usage_perc{model_name=\"$model_name\"}",
-              "hide": false,
-              "instant": false,
-              "legendFormat": "CPU Cache Usage",
-              "range": true,
-              "refId": "B"
-            }
-          ],
-          "title": "KV Cache Utilization",
-          "type": "timeseries"
         }
       ],
       "preload": false,
+      "refresh": "",
       "schemaVersion": 41,
-      "tags": [
-        "vllm",
-        "neuron",
-        "inference"
-      ],
+      "tags": [],
       "templating": {
         "list": [
           {
@@ -1794,12 +1819,12 @@ data:
         ]
       },
       "time": {
-        "from": "2025-10-09T02:45:12.661Z",
-        "to": "2025-10-09T02:48:53.271Z"
+        "from": "2025-10-13T23:43:03.351Z",
+        "to": "2025-10-13T23:57:17.415Z"
       },
       "timepicker": {},
       "timezone": "",
       "title": "vLLM + Neuron Monitoring Dashboard",
-      "uid": "vllm-neuron-dashboard",
+      "uid": "09a8ac60-4589-491b-9ee2-43c6e0c47f7e",
       "version": 1
     }
