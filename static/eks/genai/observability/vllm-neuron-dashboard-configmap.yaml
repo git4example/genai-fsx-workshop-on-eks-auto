@@ -34,7 +34,7 @@ data:
       "editable": true,
       "fiscalYearStartMonth": 0,
       "graphTooltip": 0,
-      "id": 33,
+      "id": 35,
       "links": [],
       "panels": [
         {
@@ -462,25 +462,25 @@ data:
             "overrides": [
               {
                 "matcher": {
-                  "id": "byName",
-                  "options": "vllm:prompt_tokens_total"
+                  "id": "byFrameRefID",
+                  "options": "A"
                 },
                 "properties": [
                   {
                     "id": "displayName",
-                    "value": "Total Tokens - Prompt"
+                    "value": "Prompt - Total Token Count"
                   }
                 ]
               },
               {
                 "matcher": {
-                  "id": "byName",
-                  "options": "vllm:generation_tokens_total"
+                  "id": "byFrameRefID",
+                  "options": "B"
                 },
                 "properties": [
                   {
                     "id": "displayName",
-                    "value": "Total Tokens - Generated"
+                    "value": "Generated - Total Token Count"
                   }
                 ]
               }
@@ -512,8 +512,8 @@ data:
           "targets": [
             {
               "disableTextWrap": false,
-              "editorMode": "builder",
-              "expr": "vllm:prompt_tokens_total",
+              "editorMode": "code",
+              "expr": "increase(vllm:prompt_tokens_total[$__range])",
               "fullMetaSearch": false,
               "includeNullMetadata": true,
               "legendFormat": "__auto",
@@ -527,8 +527,8 @@ data:
                 "uid": "prometheus"
               },
               "disableTextWrap": false,
-              "editorMode": "builder",
-              "expr": "vllm:generation_tokens_total",
+              "editorMode": "code",
+              "expr": "increase(vllm:generation_tokens_total[$__range])",
               "fullMetaSearch": false,
               "hide": false,
               "includeNullMetadata": true,
@@ -1329,17 +1329,13 @@ data:
           "options": {
             "calculate": false,
             "cellGap": 1,
-            "cellValues": {
-              "unit": "none"
-            },
             "color": {
               "exponent": 0.5,
               "fill": "dark-orange",
-              "min": 0,
               "mode": "scheme",
               "reverse": false,
               "scale": "exponential",
-              "scheme": "Spectral",
+              "scheme": "Oranges",
               "steps": 64
             },
             "exemplars": {
@@ -1352,19 +1348,16 @@ data:
               "show": true
             },
             "rowsFrame": {
-              "layout": "auto",
-              "value": "Request count"
+              "layout": "auto"
             },
             "tooltip": {
               "mode": "single",
               "showColorScale": false,
-              "yHistogram": true
+              "yHistogram": false
             },
             "yAxis": {
-              "axisLabel": "Prompt Length",
               "axisPlacement": "left",
-              "reverse": false,
-              "unit": "none"
+              "reverse": false
             }
           },
           "pluginVersion": "12.0.2",
@@ -1819,12 +1812,12 @@ data:
         ]
       },
       "time": {
-        "from": "2025-10-13T23:43:03.351Z",
-        "to": "2025-10-13T23:57:17.415Z"
+        "from": "now-30m",
+        "to": "now"
       },
       "timepicker": {},
       "timezone": "",
       "title": "vLLM + Neuron Monitoring Dashboard",
-      "uid": "09a8ac60-4589-491b-9ee2-43c6e0c47f7e",
-      "version": 1
+      "uid": "0b02362d-7253-4e54-9ee6-7b4c17b9eaa7",
+      "version": 2
     }
