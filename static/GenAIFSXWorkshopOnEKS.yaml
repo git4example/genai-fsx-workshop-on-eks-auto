@@ -1767,6 +1767,9 @@ Resources:
               runCommand:
                 - !Sub |
                   #!/bin/bash
+                  set -e          # Exit immediately on any error
+                  set -o pipefail # Exit on pipe failures
+
                   date                  
                   echo '=== INSTALL kubectl ==='
                   echo "KUBECTL_VERSION=${KubectlVersion}"
@@ -1933,6 +1936,9 @@ Resources:
               runCommand:
                 - !Sub |
                   #!/bin/bash
+                  set -e          # Exit immediately on any error
+                  set -o pipefail # Exit on pipe failures
+
                   # Download static assets from asset bucket
                   echo "ASSET_BUCKET=${Assets}"
                   export ASSET_BUCKET=${Assets}
@@ -2006,6 +2012,9 @@ Resources:
               runCommand:
               - !Sub |
                 #!/bin/bash
+                set -e          # Exit immediately on any error
+                set -o pipefail # Exit on pipe failures
+
                 echo "Check if Terraform installed."
                 terraform --version
 
@@ -2079,6 +2088,9 @@ Resources:
               runCommand:
                 - !Sub |
                   #!/bin/bash
+                  set -e          # Exit immediately on any error
+                  set -o pipefail # Exit on pipe failures
+
                   terraform --version
 
                   # Create VPC
@@ -2134,6 +2146,9 @@ Resources:
               runCommand:
                 - !Sub |
                   #!/bin/bash
+                  set -e          # Exit immediately on any error
+                  set -o pipefail # Exit on pipe failures
+
                   terraform --version
 
                   cd /home/${VSCodeUser}/environment/terraform/
@@ -2254,6 +2269,9 @@ Resources:
             runCommand:
               - !Sub |
                 #!/bin/bash
+                set -e          # Exit immediately on any error
+                set -o pipefail # Exit on pipe failures
+
                 terraform --version
 
                 cd /home/${VSCodeUser}/environment/terraform/
@@ -2313,6 +2331,9 @@ Resources:
             runCommand:
               - !Sub |
                 #!/bin/bash
+                set -e          # Exit immediately on any error
+                set -o pipefail # Exit on pipe failures
+                
                 echo "This is a dummy document as placeholder for delete infra logic to reuse same lambda custom resource"
                 echo "Executed at: $(date)"
                 echo "No actual deletion performed"
