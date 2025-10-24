@@ -1747,7 +1747,7 @@ Resources:
       DocumentType: Command
       Content:
         schemaVersion: '2.2'
-        description: Create Fsx, EKS, S3 ..etc resources for workshop requirement
+        description: Install workshop prerequisites including Terraform, kubectl, eksctl, and Go tools
         parameters:
           LinuxFlavor:
             type: String
@@ -1985,7 +1985,7 @@ Resources:
       DocumentType: Command
       Content:
         schemaVersion: '2.2'
-        description: Create Fsx, EKS, S3 ..etc resources for workshop requirement
+        description: Create FSx Lustre S3 bucket and upload ML model files for workshop
         parameters:
           LinuxFlavor:
             type: String
@@ -2058,7 +2058,7 @@ Resources:
       DocumentType: Command
       Content:
         schemaVersion: '2.2'
-        description: Create Fsx, EKS, S3 ..etc resources for workshop requirement
+        description: Create VPC infrastructure and EKS cluster with FSx Lustre filesystem
         parameters:
           LinuxFlavor:
             type: String
@@ -2113,7 +2113,7 @@ Resources:
       DocumentType: Command
       Content:
         schemaVersion: '2.2'
-        description: Create Fsx, EKS, S3 ..etc resources for workshop requirement
+        description: Apply complete Terraform configuration and run sysprep jobs for EKS cluster setup
         parameters:
           LinuxFlavor:
             type: String
@@ -2234,7 +2234,7 @@ Resources:
       DocumentType: Command
       Content:
         schemaVersion: '2.2'
-        description: Bootstrap VSCode IDE Instance
+        description: Destroy all Terraform-managed infrastructure resources and clean up KMS aliases
         parameters:
           LinuxFlavor:
             type: String
