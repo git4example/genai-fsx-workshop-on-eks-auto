@@ -12,14 +12,50 @@ spec:
       labels:
         app: open-webui-server
     spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: node.kubernetes.io/instance-type
+                operator: In
+                values:
+                # ec2-instance-selector --allow-list "^[cmr][0-9].*\.2xlarge$" --cpu-architecture x86_64 --current-generation --max-results 100 --deny-list "c5a\.|c5ad\.|c6a\.|m5a\.|m5ad\.|m6a\.|m7a\.|r5a\.|r5ad\.|r6a\.|.*-flex\."
+                  - c5.2xlarge
+                  - c5d.2xlarge
+                  - c5n.2xlarge
+                  - c6i.2xlarge
+                  - c6id.2xlarge
+                  - c6in.2xlarge
+                  - c7i.2xlarge
+                  - m5.2xlarge
+                  - m5d.2xlarge
+                  - m5zn.2xlarge
+                  - m6i.2xlarge
+                  - m6id.2xlarge
+                  - m6idn.2xlarge
+                  - m6in.2xlarge
+                  - m7i.2xlarge
+                  - r5.2xlarge
+                  - r5b.2xlarge
+                  - r5d.2xlarge
+                  - r5dn.2xlarge
+                  - r5n.2xlarge
+                  - r6id.2xlarge
+                  - r6idn.2xlarge
+                  - r6in.2xlarge
+                  - r7i.2xlarge
       containers:
       - name: open-webui
-        image: public.ecr.aws/parikshit/openwebui:latest
+        image: public.ecr.aws/parikshit/openwebui:latest-slim
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "500Mi"
         env:
         - name: WEBUI_AUTH
           value: "False"
-        - name: OPENAI_API_KEY
-          value: "xxx"
         - name: OPENAI_API_BASE_URLS
           value: "http://vllm-mistral7b-service/v1"
 ---
