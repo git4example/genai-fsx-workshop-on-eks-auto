@@ -1,13 +1,13 @@
 ---
-title: 'Open source VSCode IDE'
+title: 'Connect to your AWS lab environment'
 chapter: false
 weight: 23
 ---
 
-## Connect to your AWS lab environment via Open source VSCode IDE
+## Connect to the Open-Source VSCode IDE for access to the AWS lab environment.
 Ref : [code-server](https://github.com/coder/code-server)
 
-You will be using the Open source VSCode IDE terminal to copy and paste commands that are provided in this workshop. Let's get started and connect to your VScode IDE instance by running the follow actions.
+You will be using the Open-Source VSCode IDE terminal to copy and paste commands that are provided in this workshop. Let's get started and connect to your VScode IDE instance by running the follow actions.
 
 ::alert[Note: Please use a Google chrome browser for this workshop, Firefox users may experience some issues with copy-paste commands.]{header="Important" type="warning"}
 

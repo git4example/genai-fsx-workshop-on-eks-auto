@@ -4,8 +4,9 @@ weight : 120
 ---
 -------------------------------------------------------------
 
+## Overview
 
-### Two methods for creating Persistent Volumes
+There are two methods for creating Persistent Volumes
 - **Static Provisioning** -  The admin creates the backend storage entity, creates the PV, and the user makes a claim (PVC) for this PV to be used in their Pod(s).
 
 - **Dynamic Provisioning** - The user requests a PVC, and a PV (and its backed storage entity) is automatically created by the CSI driver based on the users requirements. This method doesn't require a separate process for an admin to pre-create

@@ -2,6 +2,10 @@
 title : "Deploy WebUI chat application to interact with model"
 weight : 220
 ---
+## Overview
+
+In this section you will deploy the Open WebUI (chatbot UI client), and run through example prompts and view Generative-AI output.
+
 ### How to consume the Inference Service
 You can connect to the Inference Service of the deployed vLLM engine, using the **"Open WebUI"** application, which is designed to consume the OpenAI-compatible endpoint provided by the vLLM-hosted Mistral-7B-Instruct model (that you have deployed in the workshop). The Open WebUI application allows users to interact with the LLM model through a chat-based interface. To use the Open WebUI application, simply deploy the application container, and connect to the WebUI URL that is provided and start chatting with the LLM model. The WebUI application will handle the communication with the VLLM-hosted Mistral-7B-Instruct model, providing a seamless user experience.
 
@@ -10,7 +14,7 @@ You can connect to the Inference Service of the deployed vLLM engine, using the 
 <br>
 
 
-### Deploy the Open WebUI pod and load balance.
+### Deploy the Open WebUI pod.
 
 1. Run the below command to deploy the Open WebUI application Pod, so we can interact with the vLLM Mistral model, that we deployed in previous step. This will also deploy an application load balancer, which will serve the chatbot Open WebUI Chat user interface.
 
@@ -22,29 +26,32 @@ You can connect to the Inference Service of the deployed vLLM engine, using the 
 
 ![WebUI_url](/static/images/WebUI_url.png)
 
-3. Now wait 2 minutes (for the OpenWeb UI to deploy) then copy above the URL ADDRESS, and paste it into a web browser as "*http://<your-URL-address>*". This will open a Open WebUI chat client interface.
+3. Now wait 2 minutes (for the Open Web UI to deploy) then copy above the URL ADDRESS, and paste it into a web browser as "*http://<-URL-ADDRESS->*". This will open a Open WebUI chat client interface.
 
 :::alert{header="Note" type="info"}
-Make sure your URL is "**http:**//< URL ADDRESS >" and doesn't start with "**https:**". Some browser like chrome try **"https"** by default if you dont provide protocol.
+Make sure your URL is "**http:**//<-URL-ADDRESS->" and doesn't start with "**https:**". Some browser like chrome try **"https"** by default if you dont provide protocol.
 :::
 
 
-
-4. In the WebUI interface you will see a drop down in the top menu bar, used to select your model. Select the Mistral-7B model from the drop down, and start chatting with your newly deployed Generative AI chat application.
+4. In the Open WebUI interface you will see a drop down in the top menu bar, used to select your model. Select the Mistral-7B model from the drop down, and start chatting with your newly deployed Generative AI chat application.
 
 If you don't see the Mistral-7B model, please refresh the WebUI page until you can see the model in the top drop-down selection menu. (Remember from the previous lab module, that the vLLM Pod and the model load into memory will take approx. 7-8 minutes)
 
 ![Open WebUI](/static/images/OpenWebUI.png)
 
+You can also see when vLLM Pod and the Mistral model has been loaded into the vLLM memory by running below command and seeing the "*Application startup complete*" in the output.
 
-You have now successfully deployed a Generative AI Chatbot as a containerized application running on Amazon EKS, with the cached Mistral-7B model hosted on Amazon FSx Lustre, and the compute powered by AWS Inferentia Accelerators.
+::code[kubectl logs <your-vLLM-pod-name> -f]{language=bash showLineNumbers=false showCopyAction=true}
+
+
+5. You have now successfully deployed a Generative AI Chatbot as a containerized application running on Amazon EKS, with the cached Mistral-7B model hosted on Amazon FSx Lustre, and the compute powered by AWS Inferentia Accelerators.
 
 <br>
 
 <br>
 
 
-### Run some example queries using the Chatbot.
+### Run the below example prompt queries using the Chatbot, and view Generative-AI output.
 
 
 <br>
@@ -74,7 +81,7 @@ You have now successfully deployed a Generative AI Chatbot as a containerized ap
 
 3. **Context for prompts using files**
 
-For this testing first ask chat bot without any document upload : 
+For this testing first ask chat bot without any document upload :
 - Ask the Chatbot "What is MCP"
 
 <br>
@@ -86,7 +93,7 @@ For this testing first ask chat bot without any document upload :
 - Without context or a reference document, its not talking about the **Model Context Protocol Server** that we were asking about in relation to Generative AI.  
 <br>
 
-You can give the Chatbot context for prompts by attaching a file (or files) directly to the prompt Or you can also create a library of documents that you can reference in your prompts. For library of docuemnts, you can Open WebUI -> select Workspaces -> Knowledge -> select the **+ New Knowledge** -> Create a knowledge base -> Once knowledge base collection is created -> **+** to add Add docs. 
+You can give the Chatbot context for prompts by attaching a file (or files) directly to the prompt Or you can also create a library of documents that you can reference in your prompts. For library of docuemnts, you can Open WebUI -> select Workspaces -> Knowledge -> select the **+ New Knowledge** -> Create a knowledge base -> Once knowledge base collection is created -> **+** to add Add docs.
 
 Now download this file, which we will use to apply local context: https://d1.awsstatic.com/solutions/guidance/architecture-diagrams/deploying-model-context-protocol-servers-on-aws.pdf
 
@@ -108,3 +115,7 @@ Now download this file, which we will use to apply local context: https://d1.aws
 :::alert{header="Note" type="info"}
 Do not close your WebUI browser session, you will need it for the next module.
 :::
+
+
+### Summary
+You have now completed this module, and have deployed your own Generative-AI Chatbot using an Open WebUI client to interface to vLLM inference engine, which is serving the Mistral-7B LLM, from an FSx for Lustre based Persistent Volume. You have also seen the different Generative-AI output capabilities of the model by running different prompt scenarios.

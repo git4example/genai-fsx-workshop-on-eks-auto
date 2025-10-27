@@ -3,6 +3,9 @@ title : "Deploy vLLM on AWS Inferentia nodes for model Inference"
 weight : 210
 ---
 
+## Overview
+
+In this section you will configure the AWS Inferentia nodepool on the EKS cluster, install the AWS Neuron plugins, and then deploy the vLLM inference engine Pod.
 
 ##### Step 1: Install Neuron Device Plugin & Neuron Scheduler
 
@@ -47,13 +50,13 @@ The Neuron scheduler extension is required for scheduling pods that require more
 
 The Neuron scheduler extension finds sets of directly connected devices with minimal communication latency when scheduling containers. On Inf1 and Inf2 instance types where Neuron devices are connected through a ring topology, the scheduler finds sets of contiguous devices. On Trn1.32xlarge, Trn1n.32xlarge, Trn2.48xlarge and Trn1n.32xlarge instance types where devices are connected through a 4x4, 2D Torus topology, where the Neuron scheduler enforces additional constraints.
 
-For more informaiton on this, please refer [Neuron Scheduler Extension](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/kubernetes-getting-started.html#neuron-scheduler-extension)
+For more information on this, please refer [Neuron Scheduler Extension](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/kubernetes-getting-started.html#neuron-scheduler-extension)
 
 ###### Node Problem Detector
 
 The Neuron Problem Detector Plugin facilitates error detection and recovery by continuously monitoring the health of Neuron devices across all Kubernetes nodes. It publishes CloudWatch metrics for node errors and can optionally trigger automatic recovery of affected nodes.
 
-For more informaiton on this, please refer [Neuron Problem Detector Plugin](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/kubernetes-getting-started.html#neuron-scheduler-extension)
+For more information on this, please refer [Neuron Problem Detector Plugin](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/kubernetes-getting-started.html#neuron-scheduler-extension)
 
 #####  Step 2: Create EKS Auto Mode NodePool and EC2 NodeClass for AWS Inferentia Accelerators
 
@@ -119,25 +122,22 @@ sed -i'' -e "s/FSX_LUSTRE_AZ/$FSX_LUSTRE_AZ/g" mistral-fsxl.yaml
 ::code[kubectl apply -f mistral-fsxl.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 
-3. Now run the below command, and you will see the Inferentia node count increase to 1, as we have deployed a pod that requires the accelerated compute node.
+3. Now run the below command, and you will see the Inferentia node count increase to 1, as we have deployed a pod that requires the accelerated compute node. Note that the increase to a value of 1 can take 30 seconds to update.
 ::code[kubectl get nodepool,nodeclass inferentia]{language=bash showLineNumbers=false showCopyAction=true}
 
-
-
-**Note** The vLLM deployment will take approx. 7 minutes. (**You can continue to the next steps, and don't need to wait for this step to complete**).
-
+:::alert{header="Note" type="info"}
+**The vLLM pod deployment will take approx. 7 minutes. You can continue to the next steps, and don't need to wait for this step to complete**.  
+:::
 
 
 3. Run the below command to inspect the vLLM's mistral-fsxl.yaml deployment file.
 
-Please note, in this workshop we are using single Neuron resource so we may choose to not use Neuron Scheduler, however to demostrate and as a best practice we are using Neuron Scheduler.
+::code[cat mistral-fsxl.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 :::alert{header="Note" type="info"}
-You will notice a single pod deployment request, with a request for AWS Inferentia Neuron core, persistent storage using the PVC you created previously, using FSx for Lustre (fsx-lustre-claim), and also some model parameters.  
+You will notice a single pod deployment request, with a request for a single AWS Inferentia Neuron core, persistent storage using the PVC you created previously (fsx-lustre-claim), and also some model parameters.  
 :::
 
-
-::code[cat mistral-fsxl.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 :::code[]{language=yaml showLineNumbers=true showCopyAction=false}
 # mistral-fsxl.yaml
@@ -180,16 +180,13 @@ spec:
 (...)
 :::
 
-4. You can monitor the vLLM pod creation by running the following command periodically, until you see it transitioning to `Running`
+
+4. You can monitor the vLLM pod creation by running the following command periodically, until you see it transitioning to `Running`, and when its at the 7 minute mark (and the vLLM is online and the model has been loaded into memory)
 
 ::code[kubectl get pod]{language=bash showLineNumbers=false showCopyAction=true}
 
 ![vllm_pod](/static/images/vllm_pod_1.png)
 
-
-You can also see when the Mistral model is loaded into the vLLM memory by running below command and seeing the "*Application startup complete*" in the output.
-
-::code[kubectl logs <your-vLLM-pod-name> -f]{language=bash showLineNumbers=false showCopyAction=true}
 
 5. While you are waiting for the vLLM pod to deploy, lets go check out the EKS NodePools by navigating to the [Amazon EKS cluster Console](https://console.aws.amazon.com/eks)
 

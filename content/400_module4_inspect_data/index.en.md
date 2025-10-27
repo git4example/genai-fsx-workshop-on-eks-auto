@@ -1,6 +1,6 @@
 ---
 title : "Inspect vLLM & Neuron tools, and replicate data"
-weight : 300
+weight : 400
 ---
 -------------------------------------------------------------
 
@@ -12,4 +12,5 @@ One Persistent Volume can be shared with many Pods. Imagine the scenario where y
 In this module, you will log into the vLLM pod and perform the following;
 - View the Mistral model data structure and how its stored on the persistent volume.
 - Inspect Neuron cores and use Neuron tools to monitor performance
-- Configure S3 replication between S3 buckets. Then test the automatic data export capability of your S3-linked FSx for Lustre file systems, by generating a test file on your PV (which is backed by you s3-linked FSx for Lustre file system). Then watch your data automatically export from your PV to your linked S3 bucket, and also get replicated to the target S3 bucket that you will create.
+- Test the automatic data export feature of S3-linked FSx for Lustre file-systems.
+- Configure and test S3 replication with the S3 bucket linked to your FSx for Lustre file-system. Then watch data generated on the FSx for Lustre file-system automatically get replicated to a target S3 bucket, in a different region.

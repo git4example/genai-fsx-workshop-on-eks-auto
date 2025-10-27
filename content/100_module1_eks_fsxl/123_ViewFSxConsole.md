@@ -2,13 +2,14 @@
 title : "View options and performance details in the Amazon FSx console"
 weight : 131
 ---
--------------------------------------------------------------
 
-In the previous steps you have configured a Persistent Volume (PV) using the FSx for Lustre we pre-provisioned for you in this lab. Let's take a moment to view the settings and options for a FSx for Lustre instance. Note: you will get a chance to deploy and configure your own FSx for Lustre instance with your EKS cluster, in a subsequent section of this workshop.
+## Overview
+
+In the previous steps you configured a Persistent Volume (PV) using the FSx for Lustre file-system that we had already pre-provisioned for you in this lab. Let's take a moment to view the settings and options available when deploying an FSx for Lustre instance.
 
 1. Navigate to the [Amazon FSx console](https://console.aws.amazon.com/fsx/).
 
-2. From the top right hand corner, select the **AWS region** that was provided to you for this lab, before continuing
+2. From the top right hand corner, select the **AWS region** that was provided to you for this lab (i.e. us-west-2), before continuing
 
 ![aws_region](/static/images/aws_region.png)
 
@@ -27,7 +28,7 @@ In the previous steps you have configured a Persistent Volume (PV) using the FSx
 ---
 7.  Click the on the **Cancel** button to exit this screen, and return to the FSx console.
 
-8. In the FSx console you can see a list of your FSx instances, and that we have already provisioned a 1200GiB FSx for Lustre instance, with Persistent-SSD for Storage, and 250MB/s of **Throughput Capacity per unit of storage**.
+8. In the FSx console you can see a list of your FSx instances, where we have already provisioned a 1200GiB FSx for Lustre instance, with Persistent-SSD for Storage, and 250MB/s per-TiB of **Throughput Capacity per unit of storage**.
 
 ![FSxL_console](/static/images/fsx_console.png)
 

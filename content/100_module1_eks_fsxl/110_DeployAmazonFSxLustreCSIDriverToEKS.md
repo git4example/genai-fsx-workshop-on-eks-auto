@@ -3,6 +3,7 @@ title : "Deploy CSI Driver for Amazon FSx for Lustre"
 weight : 110
 ---
 
+## Overview
 
 Imagine the scenario where you need to host many AI models, or vast amounts of training data-sets, which will be accessed by hundreds of Pods in your workload. You can store this data on a single Persistent Volume (PV) backed by FSx for Lustre. This will allow you to have a centralized high-performance model/data cache location to service your application Pods, instead of having creating many individual local storage volumes attached to each of your Pods, where you could have duplicate data, and also  wait time associated with copying the data to each of the local volumes before your Pod can access it.
 
@@ -18,7 +19,7 @@ For more information about what rule is required for the FSx Lustre Security Gro
 
 ##### Step 1: Create an IAM policy, and service account, that allows the CSI driver to make the AWS API calls on your behalf
 
-Copy and run the below command to create the fsx-csi-driver.json file.
+1. Copy and run the below command to create the fsx-csi-driver.json file.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 cat << EOF >  fsx-csi-driver.json
@@ -66,7 +67,7 @@ EOF
 
 ##### Step 2: Create the IAM policy
 
-Copy and run the following command to create an IAM polcy.
+2. Copy and run the following command to create an IAM polcy.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 aws iam create-policy \
@@ -76,7 +77,7 @@ aws iam create-policy \
 
 ##### Step 3: Create a Kubernetes service account for the driver and attach the policy to the service account
 
-Copy and run the below command to create the service account and attach the IAM policy created in Step 3.
+3. Copy and run the below command to create the service account and attach the IAM policy created in Step 3.
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
 eksctl create iamserviceaccount \
@@ -90,21 +91,21 @@ eksctl create iamserviceaccount \
     --approve   
 :::
 
-::alert[you need to wait for 30 to 60 secs for the above command to complete]
+::alert[ You need to wait for approx. 60 seconds for the above command to complete]
 
 ##### Step 4: Save the Role ARN that was created into a variable
 
-Copy and run the below command to save the role ARN.
+4. Copy and run the below command to save, which will save the role ARN into the ROLE_ARN variable.
 
 ::code[export ROLE_ARN=$(aws cloudformation describe-stacks --stack-name "eksctl-${CLUSTER_NAME}-addon-iamserviceaccount-kube-system-fsx-csi-controller-sa" --query "Stacks[0].Outputs[0].OutputValue"  --region $AWS_REGION --output text)]{language=bash showLineNumbers=false showCopyAction=true}
 
-Copy the output of this ROLE_ARN into your notepad file
+5. Copy the output of this ROLE_ARN into your the notepad file you are using for the workshop
 ::code[echo $ROLE_ARN]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 ##### Step 5: Deploy the CSI driver of FSx for Lustre
 
-Copy and the run the following command to deploy the CSI driver for FSx for Lustre
+6. Copy and the run the following command to deploy the CSI driver for FSx for Lustre
 
 **Add repository**
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}

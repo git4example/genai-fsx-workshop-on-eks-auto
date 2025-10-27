@@ -4,46 +4,53 @@ weight : 30
 ---
 
 
-## Automation used for the creation of your lab Amazon EKS Cluster
+## Overview
 
-The Amazon Elastic Kubernetes Service (EKS) cluster in this workshop was created with [**Terraform**](https://www.terraform.io/) using the [**EKS Blueprints for Terraform**](https://github.com/aws-ia/terraform-aws-eks-blueprints). You can explore the blueprint by looking into the `~/environment/eksworkshop` folder on your VSCode IDE, to learn how it could be used in a your environment.
+Amazon Elastic Kubernetes Service (Amazon EKS) Auto Mode is used in this workshop for Amazon EKS cluster provisioning and management.
 
-**Terraform** is an infrastructure as code tool that lets you build, change, and version infrastructure efficiently in AWS.
+Workshop creation details: The Amazon Elastic Kubernetes Service (EKS) cluster in this workshop was created using [**Terraform**](https://www.terraform.io/), and the [**EKS Blueprints for Terraform**](https://github.com/aws-ia/terraform-aws-eks-blueprints). You can explore the blueprint by looking into the `~/environment/eksworkshop` folder which is located in your VSCode IDE, if you want to learn how to use it in your own environment.
+
+**Terraform** is an infrastructure-as-code tool that lets you build, change, and version infrastructure efficiently in AWS.
 
 **EKS Blueprints for Terraform** helps you compose complete EKS clusters that are fully bootstrapped with the operational software that is needed to deploy and operate workloads. With EKS Blueprints, you describe the configuration for the desired state of your EKS environment, such as the control plane, worker nodes, and Kubernetes add-ons, as an IaC blueprint. Once a blueprint is configured, you can use it to create consistent environments across multiple AWS accounts and Regions using continuous deployment automation.
 
 :::alert{header="Note" type="info"}
-Take a moment to explore the  [Amazon EKS cluster via the AWS Console](https://console.aws.amazon.com/eks),  to view the cluster configuration, and the 2 worker nodes.
+Take a moment to explore the  [Amazon EKS cluster deployed in the workshop via the AWS Console](https://console.aws.amazon.com/eks). Here you will see the cluster configuration, and the deployed worker nodes.
 :::
 
 ## EKS Auto Mode
 
-Amazon Elastic Kubernetes Service (Amazon EKS) Auto Mode cluster offers capability to fully automates compute, storage, and networking management for Kubernetes clusters. Amazon EKS Auto Mode simplifies running Kubernetes by offloading cluster operations to AWS, improves the performance and security of your applications, and helps optimize compute costs. 
+Amazon EKS Auto Mode offers the capability to fully automate compute, storage, and networking management for Kubernetes clusters. Amazon EKS Auto Mode makes getting started with Kubernetes, easier and faster, by offloading EKS cluster operations to AWS, allowing for improved performance and security of your applications, and optimized compute costs.
 
-You can use EKS Auto Mode to get Kubernetes conformant managed compute, networking, and storage for any new or existing EKS cluster. This makes it easier for you to leverage the security, scalability, availability, and efficiency of AWS for your Kubernetes applications. EKS Auto Mode removes the need for deep expertise, ongoing infrastructure management, or capacity planning by automatically selecting the best EC2 instances to run your application. It helps optimize compute costs while maintaining application availability by dynamically scaling EC2 instances based on demand. EKS Auto Mode provisions, operates, secures, and upgrades EC2 instances within your account using AWS-controlled access and lifecycle management. It handles OS patches and updates and limits security risks with ephemeral compute, which strengthens your security posture by default.
+You can use EKS Auto Mode to obtain Kubernetes managed compute, networking, and storage for any new or existing EKS cluster. This makes it easier for you to leverage the security, scalability, availability, and efficiency of AWS for your Kubernetes applications. EKS Auto Mode removes the need for deep expertise, where EKS Auto Mode selects the optimal compute instances, dynamically scales resources as required, continuously optimizes costs, manages core add-ons, and patching.
 
-With the EKS Auto Mode, you can automate cluster management without deep Kubernetes expertise, because it selects optimal compute instances, dynamically scales resources, continuously optimizes costs, manages core add-ons, patches operating systems, and integrates with AWS security services. AWS expands its operational responsibility in EKS Auto Mode compared to customer-managed infrastructure in your EKS clusters. In addition to the EKS control plane, AWS will configure, manage, and secure the AWS infrastructure in EKS clusters that your applications need to run.
+You can also migrate from Karpenter, EKS Managed Node Groups, and EKS Fargate to EKS Auto Mode.
 
-You can now get started quickly, improve performance, and reduce overhead, enabling you to focus on building applications that drive innovation instead of on cluster management tasks. EKS Auto Mode also reduces the work required to acquire and run cost-efficient GPU-accelerated instances so that your generative AI workloads have the capacity they need when they need it.
-
-You can also migrate from Karpenter, EKS Managed Node Groups, and EKS Fargate to EKS Auto Mode. 
-
-With EKS Auto you no longer need to manage components like:
+By using EKS Auto Mode, you no longer need to manage components such as:
 - CoreDNS
 - KubeProxy
-- Amazon VPC CNI 
+- Amazon VPC CNI
 - AWS Load Balancer Controller
 - Karpenter
 - AWS EBS CSI Driver
 - EKS Pod Identity Agent
 
-You can still install additional Amazon EKS Add-ons or any other self-managed add-ons in EKS Auto clusters.
+You can still install additional Amazon EKS or self-managed add-ons in EKS Auto Mode clusters.
+
+<br></br>
+
+---
+<br></br>
+
+# Additional reading
+
+<br></br>
 
 #### EKS Auto Features
 
 EKS Auto Mode provides the following high-level features:
 
-**Streamline Kubernetes Cluster Management:** EKS Auto Mode streamlines EKS management by providing production-ready clusters with minimal operational overhead. With EKS Auto Mode, you can run demanding, dynamic workloads confidently, without requiring deep EKS expertise.
+**Streamlined Kubernetes Cluster Management:** EKS Auto Mode streamlines EKS management by providing production-ready clusters with minimal operational overhead. With EKS Auto Mode, you can run demanding, dynamic workloads confidently, without requiring deep EKS expertise.
 
 **Application Availability:** EKS Auto Mode dynamically adds or removes nodes in your EKS cluster based on the demands of your Kubernetes applications. This minimizes the need for manual capacity planning and ensures application availability.
 

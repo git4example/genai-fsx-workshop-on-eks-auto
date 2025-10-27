@@ -1,6 +1,6 @@
 ---
 title : "Setting up observability stack"
-weight : 510
+weight : 310
 ---
 ### Overview
 
@@ -83,11 +83,11 @@ helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheu
 
 In this section, you have deployed and verified the core components for the observability stack (Prometheus + Grafana) designed to monitor LLM inference workloads on Amazon EKS.
 
-✅ Kube Prometheus Stack
-✅ Grafana
-✅ Alert Manager
-✅ Node Exporter
-✅ Kube State Metrics
+- Kube Prometheus Stack
+- Grafana
+- Alert Manager
+- Node Exporter
+- Kube State Metrics
 
 
 

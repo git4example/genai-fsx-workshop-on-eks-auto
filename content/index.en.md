@@ -3,10 +3,10 @@ title: "Build GenAI & ML for Performance and Scale, using Amazon EKS, Amazon FSx
 weight: 0
 ---
 
-In this workshop you will build a Generative AI based interactive Chat application, using a vLLM (for model serving), an open source Foundation Model, along with the following AWS services stack:
+In this workshop you will build a Generative AI based interactive Chat application, using a vLLM (Inference engine for model serving), an open-source Large Language Model (LLM), along with the following AWS services stack:
 
 * Amazon Elastic Kubernetes Service (EKS) - Orchestration layer
-* Amazon FSx for Lustre & Amazon S3 -  host the AI model and data
+* Amazon FSx for Lustre -  host the AI model and data
 * AWS Inferentia - Accelerated compute layer
 
 

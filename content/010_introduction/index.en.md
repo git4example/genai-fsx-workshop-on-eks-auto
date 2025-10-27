@@ -10,11 +10,14 @@ Errors or corrections? Contact ppariksh@amazon.com, akbariw@amazon.com and ameen
 -------------------------------------------------------------
 ## Workshop Objective
 In this workshop, you will learn how you can:
-1. Deploy a Generative AI chatbot application on Kubernetes by deploying a vLLM and a WebUI Pod on an Amazon EKS cluster, store and access the Mistral-7B model using Amazon FSx for Lustre and  Amazon S3, and leverage Accelerate Compute for your Generative AI workload using AWS Inferentia Accelerator.
-2. Let EKS Auto to scale the number of EKS managed nodes, when there are additional Pod requests that require additional nodes, to enable scale and operational efficiency.
-3. Use AWS Inferentia Accelerated Compute in your Amazon EKS clusters, as a new nodepool to power your Generative AI applications.
-4. Configure Amazon FSx for Lustre and Amazon S3, as your performant and scalable data layer, which will host your model and data
-5. Achieve operational efficiency at the data layer: accessing the same model data across container Pods without storing multiple copies, and seamlessly sharing your data across regions, for scenario's such as distributed access and sharing, to DR.
+1. Deploy a Generative AI chatbot application by deploying:
+- A vLLM and an Open WebUI Pod on an Amazon EKS cluster
+- Storing and accessing the Mistral-7B model on an Amazon FSx for Lustre file-system (Persistent Volume).
+- Leverage AWS Inferentia Accelerator as your accelerated compute, to power your Generative AI workload
+- Deploy a Grafana dashboard to view Inference workload metrics
+2. Let EKS Auto Mode scale the number of EKS managed nodes based on Pod requests, enabling operational efficiency at-scale.
+3. Configure Amazon FSx for Lustre and Amazon S3, as your performant and scalable data layer to host your model and training data
+
 
 
 
@@ -24,9 +27,14 @@ In this workshop, you will learn how you can:
 
 ****Duration****: Approximately take 2 hours.
 
-![lab-image](/static/images/lab-image.png)
+![lab-image-3](/static/images/lab-image-3.png)
 
 -----
+
+# Additional reading
+
+<br></br>
+
 
 ## Generative AI and Machine Learning
 Generative AI and Machine Learning (ML) is helping businesses transform the way they operate and innovate. Generative AI refers to a class of Artificial Intelligence that leverages Large Language Models (LLM) in order to generate new content from a prompt, content such as text, images, audio, and software code.

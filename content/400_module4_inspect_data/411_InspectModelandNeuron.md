@@ -1,9 +1,12 @@
 ---
 title : "Inspect vLLM, Mistral-7B model, and Neuron performance tools"
-weight : 310
+weight : 401
 
 ---
-In this section, you will log-in to the vLLM Pod, inspect the Mistral-7B  model, Inspect Neuron cores and use Neuron tools to monitor performance, and generate a test file to test automatic data export from FSx for Lustre to your S3 bucket.
+
+## Overview
+
+In this section, you will log-in to the vLLM Pod, inspect the Mistral-7B  model, Inspect Neuron cores and use Neuron tools to monitor performance.
 
 
 ##### Step 1: Login to vLLM Pod, Inspect LLM model data
@@ -34,14 +37,23 @@ From the output, copy the name shown in your environment that starts with **vllm
 
 ![vllm_02](/static/images/vllm_02.png)
 
-5. Lets inspect what's stored in this Persistent Volume
+5. Lets inspect what's stored on this Persistent Volume which is mounted as */work-dir*
 
 :::code{showCopyAction=true showLineNumbers=true language=bash}
 cd /work-dir/
 ls -ll
 :::
 
-You can see the Mistral-7B Model is stored here. Lets have a look at what the model data structure looks like.
+You can see the Mistral-7B Model is stored here.
+
+:::alert{header="Note" type="info"}
+**All the files you see listed under */work-dir* are actually stored in your S3 bucket initially**. When you spin-up an FSx for Lustre file-system and link it to an S3-bucket, the FSx for Lustre file-system will import the file metadata (file list) of the S3 bucket, and generate a file system view of the contents of the S3 bucket for you. When you access a file for the first time through the Lustre file-system, FSx for Lustre pulls that file from the S3 bucket into the file-system, where that data will be cached on the Lustre file-system for future access. Subsequent access to that data will be served directly from the FSx for Lustre file system, providing you with sub-millisecond access and high throughput performance to the data.
+:::
+
+
+
+
+Lets have a look at what the model data structure looks like.
 
 :::code{showCopyAction=true showLineNumbers=true language=bash}
 cd Mistral-7B-Instruct-v0.2/

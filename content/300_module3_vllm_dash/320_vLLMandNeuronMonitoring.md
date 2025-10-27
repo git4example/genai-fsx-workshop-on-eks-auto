@@ -1,6 +1,6 @@
 ---
 title : "Deploy vLLM & Neuron monitoring dashboards"
-weight : 520
+weight : 320
 ---
 
 ### Overview
@@ -87,17 +87,14 @@ Navigate back to your Grafana URL, Click on the "**Dashboards**" option from the
 
 In this section, you have deployed a Grafana dashboard that provides observability across vLLM, Inference workload, and Neuron performance metrics.
 
-Congratulations! You have now completed the workshop.
 
 
 ---
 
----
 
 
 
-
-##### Optional: You can deploy additional metrics dashboards
+##### Optional: Additional metrics dashboards available for deployment.
 
 You can deploy any of the optional dashboards below to view different metrics. Once you deploy one of the below dashboards, simply search for them in Grafana dashboards to view them (as per the above step).
 
