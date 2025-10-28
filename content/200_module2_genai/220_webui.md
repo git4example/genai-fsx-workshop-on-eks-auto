@@ -6,13 +6,10 @@ weight : 220
 
 In this section you will deploy the Open WebUI (chatbot UI client), and run through example prompts and view Generative-AI output.
 
-### How to consume the Inference Service
-You can connect to the Inference Service of the deployed vLLM engine, using the **"Open WebUI"** application, which is designed to consume the OpenAI-compatible endpoint provided by the vLLM-hosted Mistral-7B-Instruct model (that you have deployed in the workshop). The Open WebUI application allows users to interact with the LLM model through a chat-based interface. To use the Open WebUI application, simply deploy the application container, and connect to the WebUI URL that is provided and start chatting with the LLM model. The WebUI application will handle the communication with the VLLM-hosted Mistral-7B-Instruct model, providing a seamless user experience.
+### How to consume an Inference endpoint from an Inference engine.
+A chatbot UI can interact with an Inference engine by accessing the Inference engine endpoint. The **"Open WebUI"** application is designed to consume the OpenAI-compatible endpoint provided by the vLLM Inference engine that is serving the Mistral-7B model. The Open WebUI application allows users to interact with the LLM model through a chat-based interface. To use the Open WebUI application, you need to  deploy the application container and define the inference endpoint, then connect to the Open WebUI URL and start chatting with the LLM model. The WebUI application will handle the communication with the vLLM that is serving the Mistral-7B LLM model.
 
-<br>
-
-<br>
-
+<br></br>
 
 ### Deploy the Open WebUI pod.
 
@@ -68,7 +65,7 @@ You can also see when vLLM Pod and the Mistral model has been loaded into the vL
 2. **Language translation task** - Ask the Chatbot to perform a language translation, without telling it what language the document is in.
 -  Download the document : https://pages.awscloud.com/rs/112-TZM-766/images/AWS-Summit-Japan-2025-EXPO-Guide.pdf
 
-- Open the PDF, go to page 4, and copy one of the session descriptions thats in  Japanese (for example the one shown in the image below). You can copy a section by highlighting a section of the Japanese text using your mouse, then selecting copy.
+- Open the PDF, go to page 4, and copy one of the session descriptions thats in  Japanese (for example the one shown in the image below). You can copy a section by highlighting a section of the Japanese text using your mouse, then select copy.
 
 ![AWS Summit Tokyo session](/static/images/aws_summit_tokyo_session.jpg)
 
@@ -93,9 +90,13 @@ For this testing first ask chat bot without any document upload :
 - Without context or a reference document, its not talking about the **Model Context Protocol Server** that we were asking about in relation to Generative AI.  
 <br>
 
-You can give the Chatbot context for prompts by attaching a file (or files) directly to the prompt Or you can also create a library of documents that you can reference in your prompts. For library of docuemnts, you can Open WebUI -> select Workspaces -> Knowledge -> select the **+ New Knowledge** -> Create a knowledge base -> Once knowledge base collection is created -> **+** to add Add docs.
 
-Now download this file, which we will use to apply local context: https://d1.awsstatic.com/solutions/guidance/architecture-diagrams/deploying-model-context-protocol-servers-on-aws.pdf
+:::alert{header="Note" type="info"}
+**Note**: You can give the Chatbot context for prompts by attaching files directly to the prompt, or by creating a library of documents (Workspaces -> knowledge) that you can reference in your prompts.
+:::
+
+
+- Now lets give the Chatbot some context for our query on MCP. Download this file, which we will use to apply local context: https://d1.awsstatic.com/solutions/guidance/architecture-diagrams/deploying-model-context-protocol-servers-on-aws.pdf
 
 <br>
 

@@ -105,4 +105,4 @@ Run the below command to verify that the PersistentVolumeClaim that we made, is 
 
 ## Summary
 
-In this section you have successfully configured the PersistentVolume, and created the PersistentVolumeClaim that will be used by the vLLM to access the Mistral-7B application.
+In this section you have successfully created a Persistent Volume (PV) definition for the FSx for Lustre instance, which is storing the Mistral-7B LLM model data. You have also created the corresponding Persistent Volume Claim (PVC) to that PV, so this PVC can be used by the vLLM Pod deployment for storage access to the Mistral-7B LLM model data.

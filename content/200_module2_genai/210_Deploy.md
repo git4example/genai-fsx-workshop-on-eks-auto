@@ -9,7 +9,7 @@ In this section you will configure the AWS Inferentia nodepool on the EKS cluste
 
 ##### Step 1: Install Neuron Device Plugin & Neuron Scheduler
 
-In order to use the AWS Inferentia accelerated compute nodes to host our Mistral LLM mode, we need to install the Neuron Device Plugin, Neuron Scheduler, and Node Problem Detector on the EKS Cluster using helm chart. Click on this link to learn more about the [AWS Neuron Helm Chart](https://aws.amazon.com/blogs/containers/announcing-aws-neuron-helm-chart/).
+In order to use the AWS Inferentia accelerated compute nodes with the Mistral LLM, we need to install the Neuron Device Plugin, Neuron Scheduler, and Node Problem Detector on the EKS Cluster using helm chart. Click on this link to learn more about the [AWS Neuron Helm Chart](https://aws.amazon.com/blogs/containers/announcing-aws-neuron-helm-chart/).
 
 1. Copy & paste the below command into your terminal to install the neuron helm chart.
 
@@ -40,27 +40,25 @@ Lets take a moment to understand each of these components.
 
 ###### Neuron Device plugin
 
-The Neuron device plugin exposes Neuron cores & devices to kubernetes as a resource. `aws.amazon.com/neuroncore` and `aws.amazon.com/neuron` are the resources that the neuron device plugin registers with the kubernetes. `aws.amazon.com/neuroncore` is used for allocating neuron cores to the container. `aws.amazon.com/neuron` is used for allocating neuron devices to the container. When resource name ‘neuron’ is used, all the cores belonging to the device will be allocated to container in your pod.
+The Neuron device plugin exposes Neuron cores & devices to kubernetes as a resource, where `aws.amazon.com/neuroncore` and `aws.amazon.com/neuron` are the resources that the neuron device plugin registers with the kubernetes.
 
 For more information on this, please refer [Neuron Device Plugin](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/kubernetes-getting-started.html#neuron-device-plugin)
 
 
 ###### Neuron Scheduler
-The Neuron scheduler extension is required for scheduling pods that require more than one Neuron core or device resource. Neuron scheduler extension filter out nodes with non-contiguous core/device ids and enforces allocation of contiguous core/device ids for the PODs requiring it.
-
-The Neuron scheduler extension finds sets of directly connected devices with minimal communication latency when scheduling containers. On Inf1 and Inf2 instance types where Neuron devices are connected through a ring topology, the scheduler finds sets of contiguous devices. On Trn1.32xlarge, Trn1n.32xlarge, Trn2.48xlarge and Trn1n.32xlarge instance types where devices are connected through a 4x4, 2D Torus topology, where the Neuron scheduler enforces additional constraints.
+The Neuron scheduler extension is required for scheduling pods that require more than one Neuron core or device resource.
 
 For more information on this, please refer [Neuron Scheduler Extension](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/kubernetes-getting-started.html#neuron-scheduler-extension)
 
 ###### Node Problem Detector
 
-The Neuron Problem Detector Plugin facilitates error detection and recovery by continuously monitoring the health of Neuron devices across all Kubernetes nodes. It publishes CloudWatch metrics for node errors and can optionally trigger automatic recovery of affected nodes.
+The Neuron Problem Detector Plugin facilitates error detection and recovery by continuously monitoring the health of Neuron devices across all Kubernetes nodes, and publishes CloudWatch metrics for errors.
 
 For more information on this, please refer [Neuron Problem Detector Plugin](https://awsdocs-neuron.readthedocs-hosted.com/en/latest/containers/kubernetes-getting-started.html#neuron-scheduler-extension)
 
 #####  Step 2: Create EKS Auto Mode NodePool and EC2 NodeClass for AWS Inferentia Accelerators
 
-The EKS Auto Mode configuration comes in the form of a NodePool Custom Resource (CR). The NodePool sets constraints on the EC2 nodes that can be used by EKS Auto Mode, and the pods that can run on those EC2 nodes. Multiple NodePools may point to the same EC2NodeClass.The NodePool can be set to do things like; limiting node creation to certain compute architectures, or be flexible to use multiple. A single EKS Auto Mode NodePool is capable of handling many different pod shapes. EKS Auto Mode makes scheduling and provisioning decisions based on pod attributes such as labels and affinity. A cluster may have more than one NodePool, for this workshop we will declare an additional inferentia NodePool.
+The EKS Auto Mode configuration comes in the form of a NodePool Custom Resource (CR). The NodePool sets constraints on the EC2 nodes that can be used by EKS Auto Mode, the pods that can run on those EC2 nodes, where a NodePool can handle many different pod shapes. EKS Auto Mode makes scheduling and provisioning decisions based on pod attributes such as labels and affinity. An EKS cluster can have more than one NodePool, and in this workshop we will declare an additional inferentia NodePool.
 
 
 1. Run the following command to create the EKS Auto Mode inferentia NodePool definition
@@ -100,7 +98,7 @@ nodeclass.eks.amazonaws.com/inferentia   eksworkshop-eks-auto-202501030632263297
 To save you time in the lab, the Mistral-7B model has already been downloaded & compiled using the AWS Neuron SDK, so that you can deploy it on the AWS Inferentia Accelerated Computes nodes for this workshop.
 :::
 
-You will now deploy the vLLM pod which will provide you with model serving capability, and inference endpoint. Once the vLLM Pod is online, it will load the Mistral-7B model (29GB) into its memory from your FSx for Lustre based Persistent Volume, then it will be ready to use.
+You will now deploy the vLLM pod, which will provide model serving capability through its inference endpoint. Once the vLLM Pod is online, it will load the Mistral-7B LLM model data (29GB) into its memory from the FSx for Lustre file-system that it is stored on.
 
 1. Run the below commands to update the mistral-fsxl.yaml with your AWS environment variables.
 

@@ -95,7 +95,7 @@ eksctl create iamserviceaccount \
 
 ##### Step 4: Save the Role ARN that was created into a variable
 
-4. Copy and run the below command to save, which will save the role ARN into the ROLE_ARN variable.
+4. Copy and run the below command, which will save the role ARN into the ROLE_ARN variable.
 
 ::code[export ROLE_ARN=$(aws cloudformation describe-stacks --stack-name "eksctl-${CLUSTER_NAME}-addon-iamserviceaccount-kube-system-fsx-csi-controller-sa" --query "Stacks[0].Outputs[0].OutputValue"  --region $AWS_REGION --output text)]{language=bash showLineNumbers=false showCopyAction=true}
 
@@ -141,4 +141,4 @@ fsx-csi-node-2pcvt                    3/3     Running   0          38s
 
 ## Summary
 
-In this section you have completed the pre-requisite tasks of creating environmental variables, creating a service account with the right IAM policy and role ARN, and deployed the CSI driver of FSx for Lustre. In the next sections you will create the Persistent Volume (PV), Persistent Volume Claim (PVC), and StorageClass for FSx for Lustre.
+In this section you have completed the pre-requisite tasks of creating environmental variables, creating a service account with the right IAM policy and role ARN, and deployed the CSI driver of FSx for Lustre. In the next section you will create the Persistent Volume (PV) and Persistent Volume Claim (PVC), for the FSx for Lustre instance, so it can be used as persistent storage by your Pods.
