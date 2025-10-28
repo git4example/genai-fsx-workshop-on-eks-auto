@@ -18,7 +18,13 @@ Workshop creation details: The Amazon Elastic Kubernetes Service (EKS) cluster i
 Take a moment to explore the  [Amazon EKS cluster deployed in the workshop via the AWS Console](https://console.aws.amazon.com/eks). Here you will see the cluster configuration, and the deployed worker nodes.
 :::
 
-## EKS Auto Mode
+---
+<br></br>
+
+# Additional reading
+<br></br>
+
+#### EKS Auto Mode
 
 Amazon EKS Auto Mode offers the capability to fully automate compute, storage, and networking management for Kubernetes clusters. Amazon EKS Auto Mode makes getting started with Kubernetes, easier and faster, by offloading EKS cluster operations to AWS, allowing for improved performance and security of your applications, and optimized compute costs.
 

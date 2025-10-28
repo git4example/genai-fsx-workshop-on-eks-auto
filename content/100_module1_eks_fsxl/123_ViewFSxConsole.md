@@ -7,6 +7,8 @@ weight : 131
 
 In the previous steps you configured a Persistent Volume (PV) using the FSx for Lustre file-system that we had already pre-provisioned for you in this lab. Let's take a moment to view the settings and options available when deploying an FSx for Lustre instance.
 
+##### View Amazon FSx for Lustre configuration details
+
 1. Navigate to the [Amazon FSx console](https://console.aws.amazon.com/fsx/).
 
 2. From the top right hand corner, select the **AWS region** that was provided to you for this lab (i.e. us-west-2), before continuing
@@ -39,6 +41,8 @@ In the previous steps you configured a Persistent Volume (PV) using the FSx for 
 :::alert{header="Note" type="info"}
  As you increase the storage capacity of your FSx for Lustre instance, the throughput capacity performance will also increase per unit of storage. Also note that you can also independently increase the **Throughput capacity** without increasing the storage capacity (i.e. you need more throughput performance and not extra storage capacity).
 :::
+
+##### View Amazon FSx for Lustre performance dashboard
 
 11. Scroll to the bottom of the screen and click on the **Monitoring & performance** tab. Here you can view performance metrics across different dimensions, from summary metrics (capacity, throughput, IOPS) to detailed performance metrics (metadata performance, network etc).
 

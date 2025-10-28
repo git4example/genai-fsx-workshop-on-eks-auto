@@ -40,6 +40,13 @@ kubectl apply -f neuron-servicemonitor.yaml
 kubectl apply -f vllm-neuron-dashboard-configmap.yaml
 ```
 
+#### Refresh Open WebUI deployment
+1. Run the below command in your VSCode IDE terminal to refresh the Open WebUI deployment, we will need a fresh deployment of the UI for the next set of input prompt tests and reflected dashboard monitoring.
+
+```bash
+kubectl rollout restart deploy open-webui-deployment
+```
+
 #### Log into Grafana dashboard
 
 1. Run the following command to get the Grafana dashboard URL, and logon credentials.
@@ -65,14 +72,20 @@ echo "Password: $GRAFANA_PASSWORD"
 
 ![mistral_vllm_dash_1](/static/images/mistral_vllm_dash_1.png)
 
-5. Navigate back to your Open WebUI client URL (your chatbot) and generate some input prompts (ask it questions or a task).
+5. In your VSCode IDE run the below command to get the URL of your refreshed Open WebUI Chatbot UI
+```bash
+kubectl get ing
+```
 
+6. Open the Open WebUI URL as shown above (remember its http://URL-address and not https based)
 
-7. Navigate back to your vLLM monitoring dashboard, click on the time range button and select *5min* or *15min* and select *Refresh*
+7. Generate some input prompts (ask it questions or a task).
+
+8. Navigate back to your vLLM monitoring dashboard to see the inference metrics. Firstly click on the time range button and select *5min* or *15min* and select *Refresh*
 
 ![refresh_dash](/static/images/refresh_dash.png)
 
-8. You will now see Inference metrics (such as below) related to inference query load, input prompt tokens, output generated tokens, Neuron compute performance etc, based on your previous prompt query. 
+9. You will now see Inference metrics (such as below) related to inference query load, input prompt tokens, output generated tokens, Neuron compute performance etc, based on your previous prompt query.
 
 ![vLLMNeuronMonitoringDashboard](/static/images/vLLMNeuronMonitoringDashboard.png)
 

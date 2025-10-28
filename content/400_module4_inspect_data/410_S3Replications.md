@@ -20,7 +20,7 @@ For the AWS Sponsored Workshop, we have created two Amazon S3 buckets for you. T
 
 ##### Step 1: Configure Amazon S3 replication between S3 buckets
 
-Let's first setup S3 replication between S3 buckets, before we test out the FSx for Lustre and S3 automatic data import/export feature.
+Let's first setup S3 replication between S3 buckets (as we will need this later in this module), before we test out the FSx for Lustre and S3 automatic data import/export feature.
 
 1. Navigate to the Amazon S3 Console page:
 

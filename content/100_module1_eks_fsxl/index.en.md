@@ -18,12 +18,12 @@ In this module you will deploy and integrate an FSx for Lustre instance (which w
 
 <br></br>
 
-## Amazon FSx for Lustre
+#### Amazon FSx for Lustre
 
    [**Amazon FSx for Lustre**](https://docs.aws.amazon.com/fsx/latest/LustreGuide/what-is.html) is a fully managed service that provides a high-performance parallel file system for workloads where speed matters (i.e. Machine Learning, analytics, high performance compute). FSx for Lustre provides sub-millisecond latency access to data, and the ability to scale to TB/s of throughput and millions of IOPS. FSx for Lustre also integrates with [**Amazon S3**](https://aws.amazon.com/s3/), making it easy for you to store, access and process vast amounts of cloud data with a Lustre high-performance file system. When linked to an S3 bucket, an FSx for Lustre file system transparently presents S3 objects as files to the end user, and can automatically update the contents of the linked S3 bucket, as files are added to, modified, or deleted from the Lustre file system.
 
 
-## Kubernetes storage concepts, and integration with FSx for Lustre
+#### Kubernetes storage concepts, and integration with FSx for Lustre
 
 **CSI driver** - The Container Storage Interface (CSI) is a standard for exposing block and file storage systems to Container Orchestration Systems like Kubernetes, allowing Kubernetes to natively manage persistent storage for containerized applications.
 

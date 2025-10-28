@@ -11,19 +11,19 @@ A chatbot UI can interact with an Inference engine by accessing the Inference en
 
 <br></br>
 
-### Deploy the Open WebUI pod.
+##### Step 1: Deploy the Open WebUI pod.
 
 1. Run the below command to deploy the Open WebUI application Pod, so we can interact with the vLLM Mistral model, that we deployed in previous step. This will also deploy an application load balancer, which will serve the chatbot Open WebUI Chat user interface.
 
 ::code[kubectl apply -f open-webui.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
-2. Let's obtain the URL ADDRESS of the Open WebUI Chat interface by running the below command
+2. Let's obtain the URL ADDRESS of the Open WebUI Chat interface by running the below command (if you dont get a URL address output, run the command again)
 
 ::code[kubectl get ing]{language=bash showLineNumbers=false showCopyAction=true}
 
 ![WebUI_url](/static/images/WebUI_url.png)
 
-3. Now wait 2 minutes (for the Open Web UI to deploy) then copy above the URL ADDRESS, and paste it into a web browser as "*http://<-URL-ADDRESS->*". This will open a Open WebUI chat client interface.
+3. The Open WebUI and load balancer will take up-to **2 minutes to come online**. Once you have waited 2 minutes, copy above the URL ADDRESS into a web browser as "*http://<-URL-ADDRESS->*". This will open a Open WebUI chat client interface.
 
 :::alert{header="Note" type="info"}
 Make sure your URL is "**http:**//<-URL-ADDRESS->" and doesn't start with "**https:**". Some browser like chrome try **"https"** by default if you dont provide protocol.
@@ -32,11 +32,11 @@ Make sure your URL is "**http:**//<-URL-ADDRESS->" and doesn't start with "**htt
 
 4. In the Open WebUI interface you will see a drop down in the top menu bar, used to select your model. Select the Mistral-7B model from the drop down, and start chatting with your newly deployed Generative AI chat application.
 
-If you don't see the Mistral-7B model, please refresh the WebUI page until you can see the model in the top drop-down selection menu. (Remember from the previous lab module, that the vLLM Pod and the model load into memory will take approx. 7-8 minutes)
+If you don't see the Mistral-7B model, please refresh the WebUI page until you can see the model in the top drop-down selection menu. (Remember from the previous lab module, that the vLLM Pod and the model load into memory will take approx. 7 minutes)
 
 ![Open WebUI](/static/images/OpenWebUI.png)
 
-You can also see when vLLM Pod and the Mistral model has been loaded into the vLLM memory by running below command and seeing the "*Application startup complete*" in the output.
+You can also see when vLLM Pod and the Mistral model has been loaded into the vLLM memory by running below command into your terminal session, and seeing the "*Application startup complete*" in the output.
 
 ::code[kubectl logs <your-vLLM-pod-name> -f]{language=bash showLineNumbers=false showCopyAction=true}
 
@@ -44,11 +44,14 @@ You can also see when vLLM Pod and the Mistral model has been loaded into the vL
 5. You have now successfully deployed a Generative AI Chatbot as a containerized application running on Amazon EKS, with the cached Mistral-7B model hosted on Amazon FSx Lustre, and the compute powered by AWS Inferentia Accelerators.
 
 <br>
+</br>
 
 <br>
+</br>
 
+---
 
-### Run the below example prompt queries using the Chatbot, and view Generative-AI output.
+##### Step 2: Run example input prompt queries and view Generative-AI output.
 
 
 <br>
@@ -112,10 +115,8 @@ For this testing first ask chat bot without any document upload :
 
 <br>
 
+4. Close your Open WebUI browser session as you have completed this section.
 
-:::alert{header="Note" type="info"}
-Do not close your WebUI browser session, you will need it for the next module.
-:::
 
 
 ### Summary

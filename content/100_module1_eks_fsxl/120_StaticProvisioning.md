@@ -14,6 +14,7 @@ There are two methods for creating Persistent Volumes
 
 In this lab section, we will use **Static Provisioning** to create a Persistent Volume (PV) definition for the FSx for Lustre Instance that we have already provisioned for you to use in this workshop. This FSx instance is linked to an Amazon S3 bucket that is hosting the Mistral-7B model.Then you will create a Persistent Volume Claim (PVC) to the Persistent Volume, so that you can use this storage volume within the vLLM Pod (that you will deploy in this workshop) to access the Mistral-7B model data.
 
+##### Step 1: Setup environment variables
 
 1. Run the below command to change to the correct working directly, so you can run the commands for this exercise
 
@@ -27,7 +28,7 @@ DNS_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].DNSName' --outpu
 MOUNT_NAME=$(aws fsx describe-file-systems --query 'FileSystems[].LustreConfiguration.MountName' --output text)
 :::
 
-##### Step 1: Create the Persistent Volume
+##### Step 2: Create Persistent Volume definition
 
 Lets take a look at a Persistent Volume (PV) yaml file definition (fsxL-persistent-volume.yaml) that has our placeholder variables in it. We have already created a 1200GiB FSx for Lustre instance for this workshop. So in this Persistent Volume definition you will simply configure the details of the 1200GiB FSx for Lustre instance so it can be registered as an EKS Cluster resource using a name of 'fsx-pv'.
 
@@ -54,7 +55,7 @@ spec:
       mountname: MOUNT_NAME
 :::
 
-Run the below commands to replace `FSXL_VOLUME_ID`,  `DNS_NAME`,  and `MOUNT_NAME` with the actual values of the FSx Lustre instance.
+1. Run the below commands to replace `FSXL_VOLUME_ID`,  `DNS_NAME`,  and `MOUNT_NAME` with the actual values of the FSx Lustre instance.
 
 
 :::code[]{language=bash showLineNumbers=true showCopyAction=true}
@@ -63,20 +64,20 @@ sed -i'' -e "s/DNS_NAME/$DNS_NAME/g" fsxL-persistent-volume.yaml
 sed -i'' -e "s/MOUNT_NAME/$MOUNT_NAME/g" fsxL-persistent-volume.yaml
 :::
 
-You can view the output of the Persistent Volume definition with our FSx instance details. You can see we have created a 1200GiB FSx for Lustre file system for you, and its Instance ID and DNS Name.
+2. You can view the output of the Persistent Volume definition with our FSx instance details. You can see we have created a 1200GiB FSx for Lustre file system for you, and its Instance ID and DNS Name.
 
 ::code[cat fsxL-persistent-volume.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
 
-Let's create the PersistentVolume (PV) configuration for the FSx for Lustre instance in this EKS cluster:
+3. Let's create the PersistentVolume (PV) configuration for the FSx for Lustre instance in this EKS cluster:
 
 ::code[kubectl apply -f fsxL-persistent-volume.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
-Check the PV called "fsx-pv" is created
+4. Check the PV called "fsx-pv" is created
 
 ::code[kubectl get pv]{language=bash showLineNumbers=false showCopyAction=true}
 
-##### Step 2: Create the PersistentVolumeClaim
+##### Step 3: Create the Persistent Volume Claim
 
 We will now create a PersistentVolumeClaim (PVC) so that EKS Pods can use this storage volume for their data. We will bind the PVC to the PV definition that we defined in the previous step. Note that we are directly referencing the pre-provisioned PV using the **volumeName** value of **fsx-pv**:  Below is contents of the PVC claim file (fsxL-claim.yaml) that we will deploy.
 
@@ -96,11 +97,12 @@ spec:
   volumeName: fsx-pv
 :::
 
-Deploy this PersistentVolumeClaim to the EKS cluster:
+1. Create a Persistent Volume Claim (PVC) to the Persistent Volume (PV) that you created previously :
 
 ::code[kubectl apply -f fsxL-claim.yaml]{language=bash showLineNumbers=false showCopyAction=true}
 
-Run the below command to verify that the PersistentVolumeClaim that we made, is bound to the PersistentVolume of **fsx-pv** that we defined. In the output you can see that the **persistentvolumeclaim/fsx-lustre-claim** is showing as bound to the **Volume** of **fsx-pv**
+2. Run the below command to verify that the PersistentVolumeClaim that we made, is bound to the PersistentVolume of **fsx-pv** that we defined. In the output you can see that the **persistentvolumeclaim/fsx-lustre-claim** is showing as bound to the **Volume** of **fsx-pv**
+
 ::code[kubectl get pvc]{language=bash showLineNumbers=false showCopyAction=true}
 
 ## Summary
