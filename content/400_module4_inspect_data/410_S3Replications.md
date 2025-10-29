@@ -120,30 +120,34 @@ Finally exit from the pod.
 
 ##### Step 3: Verify data exported to S3 bucket and replicated across regions
 
-Navigate to the Amazon S3 Console page:  [Amazon S3 console](https://s3.console.aws.amazon.com)
+1. Navigate to the Amazon S3 Console page:  [Amazon S3 console](https://s3.console.aws.amazon.com)
 
-Click on the S3 bucket that is in your region (linked to your FSx instance). **DO NOT** click on the S3 bucket which has **2ndregion** in its name..
+2. Click on the S3 bucket that is in your region (linked to your FSx instance). **DO NOT** click on the S3 bucket which has **2ndregion** in its name..
 
 ![S3_console_1](/static/images/s3_console_1.png)
 
-Notice that there is a **test** folder there. Click on the **test** folder. You will now see that the **testfile** you created on the Persistent Volume in your Pod has also been automatically exported from the FSx for Lustre file system, to your S3 bucket.
+3. Notice that there is a **test** folder there. Click on the **test** folder. You will now see that the **testfile** you created on the Persistent Volume in your Pod has also been automatically exported from the FSx for Lustre file system, to your S3 bucket.
 
 ![testfile](/static/images/testfile.png)
 
-Now lets go and check out your target S3 bucket in the different AWS Region (us-east-2), to verify this testfile has also been automatically replicated there.
+4. Now lets go and check out your target S3 bucket in the different AWS Region (us-east-2), to verify this testfile has also been automatically replicated there.
 
-Now click on the **Buckets** hyperlink at the top of the window
+5. Now click on the **Buckets** hyperlink at the top of the window
 
 ![buckets](/static/images/buckets.png)
 
 
-Now click on the S3 bucket which has **2ndregion** in its name, which is located in us-east-2. You will notice that the **test** folder, and **testfile** have also been automatically replicated by S3 Replication.
+6. Now click on the S3 bucket which has **2ndregion** in its name, which is located in us-east-2. You will notice that the **test** folder, and **testfile** have also been automatically replicated by S3 Replication.
 
 ![target_bucket](/static/images/target_bucket.png)
 
 ## Summary
 
 In this section, you have successfully created a S3 Cross Region Replication rule between two S3 buckets. You then created test data on a Persistent Volume which is mounted one of your Pods, and observed how seamlessly the generated data gets copied back to your linked S3-bucket, and also replicated to the target S3 bucket using Amazon S3 native replication. This is useful for scenario's such as distributed data requirements to DR scenarios, where you may have an existing EKS cluster in a secondary region (i.e. DR), and can then leverage the replicated data stored in your S3 buckets, by creating an FSx for Lustre instance (linked to the S3 bucket), create an associated Persistent Volume (using the FSx instance), and then spin up your application Pod's to seamlessly consume this data in the different AWS Region.
+
+
+---
+<br>
 
 ### Conclusion
 

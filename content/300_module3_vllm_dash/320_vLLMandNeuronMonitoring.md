@@ -34,18 +34,12 @@ kubectl apply -f neuron-servicemonitor.yaml
 
 #### Deploy the vLLM + Neuron Monitoring Dashboard
 
-3. Now that we have our vLLM and Neuron metrics collectors setup, run the below command to deploy our custom "vLLM + Neuron monitoring" Grafana based dashboard. This custom dashboard combines specific Inference metrics along with Neuron metrics into a single dashboard view.
+3. Now that we have our vLLM and Neuron metrics collectors setup, run the below command to deploy our custom "**vLLM + Neuron monitoring**" Grafana based dashboard. This custom dashboard combines specific Inference metrics along with Neuron metrics into a single dashboard view.
 
 ```bash
 kubectl apply -f vllm-neuron-dashboard-configmap.yaml
 ```
 
-#### Refresh Open WebUI deployment
-1. Run the below command in your VSCode IDE terminal to refresh the Open WebUI deployment, we will need a fresh deployment of the UI for the next set of input prompt tests and reflected dashboard monitoring.
-
-```bash
-kubectl rollout restart deploy open-webui-deployment
-```
 
 #### Log into Grafana dashboard
 
@@ -68,20 +62,20 @@ echo "Password: $GRAFANA_PASSWORD"
 
 3. Within the Grafana URL, click on the "**Dashboards**" option from the right window pane.
 
-4. In the search field, enter the name of the dashboard you want to view, such as the "**vLLM + Neuron Monitoring Dashboard**" that you created in the pervious steps. Click on the name that it returns to open the Grafana dashboard. **DO NOT CLOSE** this dashboard as you will revisit it in the below steps.
+4. In the search field, enter the name of the dashboard you want to view, such as the "**vLLM + Neuron Monitoring Dashboard**" that you created in the pervious steps.
+
+5. Click on the name that it returns to open the Grafana dashboard. **DO NOT CLOSE** this dashboard as you will revisit it in the below steps.
 
 ![mistral_vllm_dash_1](/static/images/mistral_vllm_dash_1.png)
 
-5. In your VSCode IDE run the below command to get the URL of your refreshed Open WebUI Chatbot UI
+6. Navigate back to your **Open WebUI Chatbot session**. If you don't remember the URL, run the below command to get the URL and then open it (remember its a HTTP URL not a HTTPS).
 ```bash
 kubectl get ing
 ```
 
-6. Open the Open WebUI URL as shown above (remember its http://URL-address and not https based)
+7. In the Chatbot session, generate some input prompts (i.e. ask the Chatbot some questions or give it a task)
 
-7. Generate some input prompts (ask it questions or a task).
-
-8. Navigate back to your vLLM monitoring dashboard to see the inference metrics. Firstly click on the time range button and select *5min* or *15min* and select *Refresh*
+8. Navigate back to your **vLLM + Neuron monitoring** dashboard to see the inference metrics related to your input prompts. Firstly click on the time range button and select *5min* or *15min* and select *Refresh*
 
 ![refresh_dash](/static/images/refresh_dash.png)
 

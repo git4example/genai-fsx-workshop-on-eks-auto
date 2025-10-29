@@ -40,14 +40,15 @@ You can also see when vLLM Pod and the Mistral model has been loaded into the vL
 
 ::code[kubectl logs <your-vLLM-pod-name> -f]{language=bash showLineNumbers=false showCopyAction=true}
 
+<br>
 
 5. You have now successfully deployed a Generative AI Chatbot as a containerized application running on Amazon EKS, with the cached Mistral-7B model hosted on Amazon FSx Lustre, and the compute powered by AWS Inferentia Accelerators.
 
 <br>
-</br>
-
 <br>
-</br>
+<br>
+
+
 
 ---
 
@@ -55,22 +56,30 @@ You can also see when vLLM Pod and the Mistral model has been loaded into the vL
 
 
 <br>
+</br>
 
-
-1. **Scripting task** - Ask the Chatbot to generate a quick script for us. Copy and paste the below example prompt into the Chatbot (or write your own).
+###### Task 1 - Scripting task
+Ask the Chatbot to generate a quick script for us. Copy and paste the below example prompt into the Chatbot (or write your own).
 
 ::code[write a Linux bash script that creates files, taking inputs for the size of the file (in terms of KB), the number of files to create, the number of concurrent file creation threads for the script to execute, where each file has the words "this is a test file" in it. Each created filename starts with "test" and has a 5 digit suffix appended to it, starting with 00000]{language=bash showLineNumbers=false showCopyAction=true}
 
 
 <br>
+</br>
 
-
-2. **Language translation task** - Ask the Chatbot to perform a language translation, without telling it what language the document is in.
+###### Task 2 - Language translation task
+Ask the Chatbot to perform a language translation, without telling it what language the document is in.
 -  Download the document : https://pages.awscloud.com/rs/112-TZM-766/images/AWS-Summit-Japan-2025-EXPO-Guide.pdf
+
+<br>
 
 - Open the PDF, go to page 4, and copy one of the session descriptions thats in  Japanese (for example the one shown in the image below). You can copy a section by highlighting a section of the Japanese text using your mouse, then select copy.
 
+<br>
+
 ![AWS Summit Tokyo session](/static/images/aws_summit_tokyo_session.jpg)
+
+<br>
 
 - Then ask the Chatbot to perform the following:
 
@@ -78,10 +87,9 @@ You can also see when vLLM Pod and the Mistral model has been loaded into the vL
 
 <br>
 
+###### Task 3 - Context for input prompts using a context document
 
-3. **Context for prompts using files**
-
-For this testing first ask chat bot without any document upload :
+For this testing, lets first ask the Chatbot the following question, without any context documents :
 - Ask the Chatbot "What is MCP"
 
 <br>
@@ -101,7 +109,7 @@ For this testing first ask chat bot without any document upload :
 
 - Now lets give the Chatbot some context for our query on MCP. Download this file, which we will use to apply local context: https://d1.awsstatic.com/solutions/guidance/architecture-diagrams/deploying-model-context-protocol-servers-on-aws.pdf
 
-<br>
+<br></br>
 
 - In your Chatbot session click on the "**+**" icon in your prompt, and select **Upload files**, and select the file you downloaded.
 
@@ -115,7 +123,8 @@ For this testing first ask chat bot without any document upload :
 
 <br>
 
-4. Close your Open WebUI browser session as you have completed this section.
+#### Module complete
+ You have now completed this module. **DO NOT CLOSE** your Open WebUI Chatbot browser session, you will need this for the next module of the workshop
 
 
 
