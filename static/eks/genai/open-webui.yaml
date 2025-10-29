@@ -52,9 +52,11 @@ spec:
         resources:
           requests:
             cpu: "500m"
-            memory: "500Mi"
+            memory: "1Gi"
         env:
         - name: WEBUI_AUTH
+          value: "False"
+        - name: ENABLE_EVALUATION_ARENA_MODELS
           value: "False"
         - name: OPENAI_API_BASE_URLS
           value: "http://vllm-mistral7b-service/v1"

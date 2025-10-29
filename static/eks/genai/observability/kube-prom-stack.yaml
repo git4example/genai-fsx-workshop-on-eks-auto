@@ -63,6 +63,22 @@ alertmanager:
 grafana:
   enabled: true
   adminPassword: prom-operator # Please change the default password in production !!!
+  
+  # Resource configuration - Higher baseline for reliable performance
+  resources:
+    # No limits - can use all available system resources
+    requests:
+      cpu: 500m       # Higher guaranteed baseline - 0.5 CPU
+      memory: 1Gi     # Higher guaranteed baseline - 1GB memory
+  
+  # Sidecar resources - Higher baseline for dashboard/datasource processing
+  sidecar:
+    resources:
+      # No limits - can use all available system resources
+      requests:
+        cpu: 100m     # Higher guaranteed baseline - 100m CPU each
+        memory: 128Mi # Higher guaranteed baseline - 128Mi memory each
+        
 #   affinity:
 #     nodeAffinity:
 #       preferredDuringSchedulingIgnoredDuringExecution:
@@ -93,6 +109,14 @@ prometheus:
   serviceMonitorSelector:
     matchLabels:
       release: kube-prometheus-stack
+  
+  # Prometheus server resource configuration - Higher baseline for reliability
+  prometheusSpec:
+    resources:
+      # No limits - can use all available system resources
+      requests:
+        cpu: 1000m    # Higher guaranteed baseline - 1 full CPU
+        memory: 2Gi   # Higher guaranteed baseline - 2GB memory
 
   # Monitor vLLM pods using ServiceMonitor
   additionalServiceMonitors:
