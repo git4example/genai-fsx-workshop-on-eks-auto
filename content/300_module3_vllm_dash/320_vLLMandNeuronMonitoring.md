@@ -68,18 +68,24 @@ echo "Password: $GRAFANA_PASSWORD"
 
 ![mistral_vllm_dash_1](/static/images/mistral_vllm_dash_1.png)
 
-6. Navigate back to your **Open WebUI Chatbot session**. If you don't remember the URL, run the below command to get the URL and then open it (remember its a HTTP URL not a HTTPS).
+6. Now navigate back to your **Open WebUI Chatbot session**. If you accidently closed the web session, run the below command to get the URL and then open it (remember its a HTTP URL not a HTTPS).
 ```bash
 kubectl get ing
 ```
 
-7. In the Chatbot session, generate some input prompts (i.e. ask the Chatbot some questions or give it a task)
+7. From the left hand window pane of the Open WebUI client, **right-click** on your **previous chat session** and select **Delete**.
 
-8. Navigate back to your **vLLM + Neuron monitoring** dashboard to see the inference metrics related to your input prompts. Firstly click on the time range button and select *5min* or *15min* and select *Refresh*
+![new_chat](/static/images/new_chat.png)
+
+8. From the left hand window pane of the Open WebUI client, right-click on **New Chat**
+
+9. In the new chat session, generate some input prompts (i.e. ask the Chatbot some questions or give it a task)
+
+10. Navigate back to your **vLLM + Neuron monitoring** dashboard to see the inference metrics related to your input prompts. Firstly click on the time range button and select *5min* or *15min* and select *Refresh*
 
 ![refresh_dash](/static/images/refresh_dash.png)
 
-9. You will now see Inference metrics (such as below) related to inference query load, input prompt tokens, output generated tokens, Neuron compute performance etc, based on your previous prompt query.
+11. You will now see Inference metrics (such as below) related to inference query load, input prompt tokens, output generated tokens, Neuron compute performance etc, based on your previous prompt query.
 
 ![vLLMNeuronMonitoringDashboard](/static/images/vLLMNeuronMonitoringDashboard.png)
 
