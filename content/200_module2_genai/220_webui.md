@@ -1,5 +1,5 @@
 ---
-title : "Deploy WebUI chat application to interact with model"
+title : "Deploy Open WebUI chat application to interact with model"
 weight : 220
 ---
 ## Overview
@@ -11,7 +11,9 @@ A chatbot UI can interact with an Inference engine by accessing the Inference en
 
 <br></br>
 
-##### Step 1: Deploy the Open WebUI pod.
+-------------------------
+### Step 1: Deploy the Open WebUI pod.
+-------------------------
 
 1. Run the below command to deploy the Open WebUI application Pod, so we can interact with the vLLM Mistral model, that we deployed in previous step. This will also deploy an application load balancer, which will serve the chatbot Open WebUI Chat user interface.
 
@@ -40,54 +42,50 @@ You can also see when vLLM Pod and the Mistral model has been loaded into the vL
 
 ::code[kubectl logs <your-vLLM-pod-name> -f]{language=bash showLineNumbers=false showCopyAction=true}
 
-<br>
+
 
 5. You have now successfully deployed a Generative AI Chatbot as a containerized application running on Amazon EKS, with the cached Mistral-7B model hosted on Amazon FSx Lustre, and the compute powered by AWS Inferentia Accelerators.
 
-<br>
-<br>
-<br>
+-------------------------
 
-
+### Step 2: Run example input prompt queries and view Generative-AI output.
 
 ---
 
-##### Step 2: Run example input prompt queries and view Generative-AI output.
+✅   Task 1  | Scripting task
+---
 
-
-<br>
-</br>
-
-###### Task 1 - Scripting task
-Ask the Chatbot to generate a quick script for us. Copy and paste the below example prompt into the Chatbot (or write your own).
+- Ask the Chatbot to generate a quick script for us. Copy and paste the below example prompt into the Chatbot (or write your own).
 
 ::code[write a Linux bash script that creates files, taking inputs for the size of the file (in terms of KB), the number of files to create, the number of concurrent file creation threads for the script to execute, where each file has the words "this is a test file" in it. Each created filename starts with "test" and has a 5 digit suffix appended to it, starting with 00000]{language=bash showLineNumbers=false showCopyAction=true}
 
 
-<br>
-</br>
 
-###### Task 2 - Language translation task
-Ask the Chatbot to perform a language translation, without telling it what language the document is in.
+✅   Task 2  | Language translation task
+---
+
+-  Ask the Chatbot to perform a language translation, without telling it what language the document is in.
 -  Download the document : https://pages.awscloud.com/rs/112-TZM-766/images/AWS-Summit-Japan-2025-EXPO-Guide.pdf
 
-<br>
+
 
 - Open the PDF, go to page 4, and copy one of the session descriptions thats in  Japanese (for example the one shown in the image below). You can copy a section by highlighting a section of the Japanese text using your mouse, then select copy.
 
-<br>
+
 
 ![AWS Summit Tokyo session](/static/images/aws_summit_tokyo_session.jpg)
 
-<br>
+
 
 - Then ask the Chatbot to perform the following:
 
 ::code[translate this : <paste the Japanese language section that you copied>]{language=bash showLineNumbers=false showCopyAction=true}
 
-<br>
 
-###### Task 3 - Context for input prompts using a context document
+
+✅   Task 3  | Context for input prompts using a context document
+---
+
 
 For this testing, lets first ask the Chatbot the following question, without any context documents :
 - Ask the Chatbot "What is MCP"
@@ -103,7 +101,7 @@ For this testing, lets first ask the Chatbot the following question, without any
 
 
 :::alert{header="Note" type="info"}
-**Note**: You can give the Chatbot context for prompts by attaching files directly to the prompt, or by creating a library of documents (Workspaces -> knowledge) that you can reference in your prompts.
+You can give the Chatbot context for prompts by attaching files directly to the prompt, or by creating a library of documents (Workspaces -> knowledge) that you can reference in your prompts.
 :::
 
 
@@ -123,8 +121,7 @@ For this testing, lets first ask the Chatbot the following question, without any
 
 <br>
 
-#### Module complete
- You have now completed this module. **DO NOT CLOSE** your Open WebUI Chatbot browser session, you will need this for the next module of the workshop
+- You have now completed this module. **DO NOT CLOSE** your Open WebUI Chatbot browser session, you will need this for the next module of the workshop
 
 
 
