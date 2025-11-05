@@ -243,6 +243,12 @@ else
     log_info "AWS CLI already installed"
 fi
 
+# Create participant user if it doesn't exist
+if ! id "participant" &>/dev/null; then
+    log_info "Creating participant user..."
+    sudo useradd -m participant
+fi
+
 # Install Docker if not present
 if ! check_command docker; then
     log_info "Installing Docker..."
