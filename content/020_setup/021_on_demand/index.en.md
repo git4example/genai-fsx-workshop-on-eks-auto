@@ -5,24 +5,19 @@ weight: 21
 ---
 
 :::alert{header="Important" type="warning"}
-If you are in **AWS SPONSORED WORKSHOP** instead of self-paced On Demand Workshop, please SKIP this section and move to the next section **[AWS Sponsored Workshop](/020-setup/022-aws-event)**
+If you are at an AWS event and are using **[AWS Sponsored Workshop](/020-setup/022-aws-event)** instead of on-demand workshop, please **SKIP** this section and go straight to the **[AWS Sponsored Workshop](/020-setup/022-aws-event)**
 :::
 
 
-### Part 1 : Prerequisite of setting up an On-demand Workshop (using your own AWS account)
-Follow the below instructions to complete the required steps before you can launch the AWS CloudFormation Stack that will provision this workshop.
+**On-demand workshops** are workshops that you deploy in your own environment. These are different to **AWS Sponsored workshops**, where AWS will provide you with a temporary workshop lab account, which already has the workshop provisioned in it.
 
-:::alert{header="Note" type="info"}
-Here some of step you may feel as duplication of data, however its to align it with sponsored workshop setup and code managability.
-:::
+### Part 1 : Identify an Amazon EC2 instance that you can use for the initial workshop provisioning
 
+To deploy the workshop script (in part 2 of this module), you will need access to a Linux based Amazon Linux 2023 Amazon EC2 instance, with an Amazon EBS GP3 volume with at least 100GB free capacity (to download the LLM model data and other items required for the workshop)
 
-You will need a Linux based Amazon Linux 2023 based EC2 jump-box that is configured with an Amazon EBS GP3 based volume that has at least 100GB FREE. This EC2 jump-box also needs to have the required account access and permissions in-order to run the commands outline below, along with being able to create AWS resources required for this workshop.  
+This Linux based EC2 instance also needs to have the required AWS account access and permissions in-order to run the commands outlined below, along with being able to create AWS resources required for this workshop (as shown below).  
 
-
- **Note**: You may need IAM permissions attached to this EC2 instance role with following broad indicative permissions to provision workshop resouces
-
-Here's a broad IAM policy that you may includes all the required permissions for both CloudFormation and Terraform deployments:
+Below is an EXAMPLE of a broad IAM policy that you could use, which includes all the required permissions for both CloudFormation and Terraform deployments:
 
 ```json
 {
@@ -50,30 +45,33 @@ Here's a broad IAM policy that you may includes all the required permissions for
 }
 ```
 
-Alternative for simplicity, you may like to use AWS managed policies: `AdministratorAccess`
 
+### Part 2 : Automated workshop deploymentbscript
 
-### Part 2 : Automated Workshop Deployment
+The below workshop automated deployment script handles setup tasks including:
+- Tool installation (AWS CLI, Docker, Git, jq)
+- Repository cloning\
+- Creating of AWS resources: Amazon EKS cluster, Amazon EC2 instance, Amazon S3 bucket
+- Mistral-7B model download to S3 bucket
+- Deployment of the VSCode IDE terminal (which you will use to interact with the workshop)
+- CloudFormation stack deployment with monitoring
+- Deployment validation and access information
 
-
-Run the automated deployment script :
+1. Run the below commands to start the automated workshop environment deployment script:
 
 ```bash
-# Download and run the deployment script
 curl -O https://raw.githubusercontent.com/git4example/genai-fsx-workshop-on-eks-auto/mainline/static/scripts/quick-deploy-on-demand.sh
 chmod +x quick-deploy-on-demand.sh
 ./quick-deploy-on-demand.sh
 ```
 
-**Time**: ~45-60 minutes (complete infrastructure deployment)
+2. A few minutes into the deployment, the script will ask you to enter a unique name for an S3 bucket that will be created to host the downloaded Mistral-7B model and workshop artifacts.
 
-The workshop automated deployment script that handles all setup tasks including:
-- Tool installation (AWS CLI, Docker, Git, jq)
-- Repository cloning
-- S3 bucket creation and file uploads
-- Mistral-7B model download and upload
-- CloudFormation stack deployment with monitoring
-- Deployment validation and access information
+**Deployment time will take approx:** ~45 minutes (complete infrastructure deployment)
+
+3. Wait until you see the following output on your screen before progressing to the next step of **Part 3 : Use VScode IDE to access workshop**
+
+![ondemand_setup_complete](/static/images/ondemand_setup_complete.png)
 
 
 
@@ -84,7 +82,7 @@ You have now completed the workshop deployment and its components.
 Click on the following link to access your **[Open source VSCode IDE](/023_vs_code)** and begin the workshop.
 
 
-### Part 4 : Workshop Cleanup
+### Part 4 : Workshop Cleanup - Once you have finished with the workshop.
 
 When you're finished with the workshop, use the cleanup script to remove all resources:
 
