@@ -22,7 +22,7 @@ spec:
                   - key: topology.kubernetes.io/zone
                     operator: In
                     values:
-                      - us-west-2a # Replace with your FSx Lustre AZ
+                      - FSX_LUSTRE_AZ # Replace with your FSx Lustre AZ
       tolerations:
         - key: "aws.amazon.com/neuron"
           operator: "Exists"
